@@ -4,13 +4,13 @@ import "./globals.css"
 import Header from "./components/Header"
 
 const geistSans = Geist({
-	variable: "--font-geist-sans",
 	subsets: ["latin"],
+	variable: "--font-geist-sans",
 })
 
 const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
 	subsets: ["latin"],
+	variable: "--font-geist-mono",
 })
 
 export const metadata: Metadata = {
@@ -24,11 +24,9 @@ export default function RootLayout({
 	children: React.ReactNode
 }>) {
 	return (
-		<html lang="en">
-			<Header isSignedIn={false} userName="Sudarshan S" />
-			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-			>
+		<html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+			<body className="font-sans antialiased">
+				<Header isSignedIn={false} userName="Sudarshan S" />
 				{children}
 			</body>
 		</html>

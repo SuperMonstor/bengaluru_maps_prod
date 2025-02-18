@@ -15,8 +15,8 @@ interface HeaderProps {
 export default function Header({ isSignedIn, userName }: HeaderProps) {
 	return (
 		<div className="flex justify-between items-center p-4">
-			<div className="flex items-center space-x-2">
-				<h1 className="text-lg font-semibold">Bengaluru Maps</h1>
+			<div className="flex items-baseline space-x-1">
+				<h1 className="text-xl font-semibold">Bengaluru Maps</h1>
 				<Link
 					href="https://x.com/realsudarshansk"
 					target="_blank"
@@ -26,18 +26,21 @@ export default function Header({ isSignedIn, userName }: HeaderProps) {
 				</Link>
 			</div>
 
-			{isSignedIn ? (
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant="outline">{userName || "Account"}</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						<DropdownMenuItem>Sign Out</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			) : (
-				<Button variant="default">Sign In</Button>
-			)}
+			<div className="flex items-center space-x-2">
+				<Button variant="default">Submit List</Button>
+				{isSignedIn ? (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline">{userName || "Account"}</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem>Sign Out</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				) : (
+					<Button variant="outline">Sign In</Button>
+				)}
+			</div>
 		</div>
 	)
 }
