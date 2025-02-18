@@ -7,6 +7,7 @@ import React, { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import googleLogo from "@/public/google.svg"
+import { signInWithGoogle } from "@/lib/utils/auth"
 
 function Login() {
 	const [isLoading, setIsLoading] = useState(false)
@@ -24,6 +25,20 @@ function Login() {
 		console.log(data)
 	}
 
+	const handleGoogleSignIn = async () => {
+		try {
+			setIsLoading(true)
+			const { error } = await signInWithGoogle()
+
+			if (error) {
+				// Handle error (e.g., show toast notification)
+				console.error("Failed to sign in with Google:", error)
+			}
+		} finally {
+			setIsLoading(false)
+		}
+	}
+
 	return (
 		<main className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
 			<section className="w-full max-w-sm space-y-8">
@@ -35,8 +50,8 @@ function Login() {
 					<Button
 						variant="outline"
 						className="w-full flex items-center justify-center space-x-2"
-						// onClick={() => signInWithGoogle()}
-						// disabled={isLoading}
+						onClick={() => handleGoogleSignIn()}
+						disabled={isLoading}
 					>
 						<img src={googleLogo.src} alt="Google logo" className="w-5 h-5" />
 						<span>Log In with Google</span>
@@ -83,7 +98,9 @@ function Login() {
 									aria-describedby="password-error"
 								/>
 								{errors.password && (
-									<p className="text-sm text-red-500">{errors.password.message}</p>
+									<p className="text-sm text-red-500">
+										{errors.password.message}
+									</p>
 								)}
 							</div>
 
