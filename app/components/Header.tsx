@@ -16,11 +16,13 @@ export default function Header({ isSignedIn, userName }: HeaderProps) {
 	return (
 		<div className="flex justify-between items-center p-4">
 			<div className="flex items-baseline space-x-1">
-				<h1 className="text-xl font-semibold">Bengaluru Maps</h1>
+				<h1 className="text-sm md:text-2xl sm:text-xl font-semibold">
+					Bengaluru Maps
+				</h1>
 				<Link
 					href="https://x.com/realsudarshansk"
 					target="_blank"
-					className="text-gray-500 text-sm hover:underline"
+					className="text-xs text-gray-500 md:text-sm hover:underline"
 				>
 					By Sudarshan S
 				</Link>

@@ -1,33 +1,34 @@
 "use client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { SignUpInput, signUpSchema } from "@/lib/validations/auth"
+import { LoginInput, loginSchema } from "@/lib/validations/auth"
 import Link from "next/link"
 import React, { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import googleLogo from "@/public/google.svg"
 
-function Signup() {
+function Login() {
 	const [isLoading, setIsLoading] = useState(false)
 
 	const {
 		register,
 		handleSubmit,
 		formState: { errors, isSubmitting },
-	} = useForm<SignUpInput>({
-		resolver: zodResolver(signUpSchema),
+	} = useForm<LoginInput>({
+		resolver: zodResolver(loginSchema),
 	})
 
-	const onSubmit = async (data: SignUpInput) => {
+	const onSubmit = async (data: LoginInput) => {
 		// TODO: Implement your form submission logic
 		console.log(data)
 	}
+
 	return (
-		<main className="min-h-[calc(100vh-12rem)] flex items-center justify-center p-4">
+		<main className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
 			<section className="w-full max-w-sm space-y-8">
 				<header>
-					<h1 className="text-2xl font-bold">Sign Up</h1>
+					<h1 className="text-2xl font-bold">Log In</h1>
 				</header>
 
 				<section className="space-y-6">
@@ -38,7 +39,7 @@ function Signup() {
 						// disabled={isLoading}
 					>
 						<img src={googleLogo.src} alt="Google logo" className="w-5 h-5" />
-						<span>Sign Up with Google</span>
+						<span>Log In with Google</span>
 					</Button>
 
 					<div
@@ -51,20 +52,23 @@ function Signup() {
 						<div className="flex-grow h-px bg-gray-300"></div>
 					</div>
 
-					<form className="space-y-4">
+					<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 						<fieldset className="space-y-4">
-							<legend className="sr-only">Sign up form</legend>
+							<legend className="sr-only">Login form</legend>
 
 							<div className="space-y-2">
 								<label htmlFor="email" className="text-sm font-medium">
 									Email
 								</label>
 								<Input
-									// {...register("email")}
+									{...register("email")}
 									id="email"
 									type="email"
 									placeholder="name@example.com"
 								/>
+								{errors.email && (
+									<p className="text-sm text-red-500">{errors.email.message}</p>
+								)}
 							</div>
 
 							<div className="space-y-2">
@@ -72,41 +76,29 @@ function Signup() {
 									Password
 								</label>
 								<Input
-									// {...register('password')}
+									{...register("password")}
 									id="password"
 									type="password"
 									placeholder="••••••••"
 									aria-describedby="password-error"
 								/>
-							</div>
-
-							<div className="space-y-2">
-								<label
-									htmlFor="confirmPassword"
-									className="text-sm font-medium"
-								>
-									Confirm Password
-								</label>
-								<Input
-									// {...register('confirmPassword')}
-									id="confirmPassword"
-									type="password"
-									placeholder="••••••••"
-									aria-describedby="confirm-password-error"
-								/>
+								{errors.password && (
+									<p className="text-sm text-red-500">{errors.password.message}</p>
+								)}
 							</div>
 
 							<Button type="submit" className="w-full" disabled={isSubmitting}>
-								{isSubmitting ? "Signing up..." : "Sign Up"}
+								{isSubmitting ? "Logging in..." : "Log In"}
 							</Button>
 						</fieldset>
 					</form>
 				</section>
+
 				<footer className="text-center">
 					<p className="text-sm text-gray-500">
 						or{" "}
-						<Link href="/login" className="text-blue-600 hover:underline">
-							Log In
+						<Link href="/sign-up" className="text-blue-600 hover:underline">
+							Sign Up
 						</Link>
 					</p>
 				</footer>
@@ -115,4 +107,4 @@ function Signup() {
 	)
 }
 
-export default Signup
+export default Login
