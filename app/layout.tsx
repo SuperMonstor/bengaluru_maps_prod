@@ -26,7 +26,7 @@ export default function RootLayout({
 	return (
 		<html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
 			<body className="font-sans antialiased">
-				<Header isSignedIn={false} userName="Sudarshan S" />
+				<Header />
 				{children}
 			</body>
 		</html>

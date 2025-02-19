@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import {
 	DropdownMenu,
@@ -5,14 +7,42 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { createClient } from "@/lib/utils/supabase/client"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
-interface HeaderProps {
-	isSignedIn: boolean
-	userName?: string
-}
+export default function Header() {
+	const [isSignedIn, setIsSignedIn] = useState(false)
+	const [userName, setUserName] = useState("Account")
+	const router = useRouter()
+	const supabase = createClient()
 
-export default function Header({ isSignedIn, userName }: HeaderProps) {
+	useEffect(() => {
+		const checkUser = async () => {
+			const { data } = await supabase.auth.getUser()
+			setIsSignedIn(!!data.user)
+			setUserName(data.user?.email || "Account")
+		}
+
+		checkUser()
+
+		const {
+			data: { subscription },
+		} = supabase.auth.onAuthStateChange((_event, session) => {
+			setIsSignedIn(!!session)
+			setUserName(session?.user?.email || "Account")
+		})
+
+		return () => subscription.unsubscribe()
+	}, [])
+
+	const handleSignOut = async () => {
+		await supabase.auth.signOut()
+		router.refresh()
+	}
+
 	return (
 		<div className="flex justify-between items-center p-4">
 			<div className="flex items-baseline space-x-1">
@@ -33,14 +63,23 @@ export default function Header({ isSignedIn, userName }: HeaderProps) {
 				{isSignedIn ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="outline">{userName || "Account"}</Button>
+							<Avatar className="h-8 w-8 cursor-pointer hover:opacity-75">
+								<AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg" />
+								<AvatarFallback>
+									{userName.charAt(0).toUpperCase()}
+								</AvatarFallback>
+							</Avatar>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
-							<DropdownMenuItem>Sign Out</DropdownMenuItem>
+							<DropdownMenuItem onSelect={handleSignOut}>
+								Sign Out
+							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
 				) : (
-					<Button variant="outline">Sign In</Button>
+					<Link href="/login">
+						<Button variant="outline">Sign In</Button>
+					</Link>
 				)}
 			</div>
 		</div>
