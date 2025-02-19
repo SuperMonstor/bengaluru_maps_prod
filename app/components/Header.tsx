@@ -16,26 +16,37 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 export default function Header() {
 	const [isSignedIn, setIsSignedIn] = useState(false)
 	const [userName, setUserName] = useState("Account")
+	const [isLoading, setIsLoading] = useState(true)
 	const router = useRouter()
 	const supabase = createClient()
 
 	useEffect(() => {
-		const checkUser = async () => {
+		let isMounted = true // Prevents state updates if the component unmounts
+
+		async function checkUser() {
 			const { data } = await supabase.auth.getUser()
-			setIsSignedIn(!!data.user)
-			setUserName(data.user?.email || "Account")
+			if (isMounted) {
+				setIsSignedIn(!!data.user)
+				setUserName(data.user?.email || "Account")
+				setIsLoading(false)
+			}
 		}
 
 		checkUser()
 
-		const {
-			data: { subscription },
-		} = supabase.auth.onAuthStateChange((_event, session) => {
-			setIsSignedIn(!!session)
-			setUserName(session?.user?.email || "Account")
-		})
+		const { data: authListener } = supabase.auth.onAuthStateChange(
+			(_event, session) => {
+				if (isMounted) {
+					setIsSignedIn(!!session)
+					setUserName(session?.user?.email || "Account")
+				}
+			}
+		)
 
-		return () => subscription.unsubscribe()
+		return () => {
+			isMounted = false // Prevents updates on unmounted component
+			authListener?.subscription?.unsubscribe()
+		}
 	}, [])
 
 	const handleSignOut = async () => {
@@ -63,7 +74,10 @@ export default function Header() {
 
 			<div className="flex items-center gap-4">
 				<Button variant="default">Submit List</Button>
-				{isSignedIn ? (
+				{isLoading ? (
+					// Placeholder while checking authentication state
+					<div className="h-10 w-10 animate-pulse bg-gray-300 rounded-full" />
+				) : isSignedIn ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button
@@ -79,7 +93,12 @@ export default function Header() {
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="w-56">
-							<DropdownMenuItem>Sign Out</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={handleSignOut}
+								className="cursor-pointer"
+							>
+								Sign Out
+							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
 				) : (
