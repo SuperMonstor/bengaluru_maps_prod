@@ -7,11 +7,11 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { createClient } from "@/lib/utils/supabase/client"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 export default function Header() {
 	const [isSignedIn, setIsSignedIn] = useState(false)
@@ -58,22 +58,22 @@ export default function Header() {
 				</Link>
 			</div>
 
-			<div className="flex items-center space-x-2">
+			<div className="flex items-center gap-4">
 				<Button variant="default">Submit List</Button>
 				{isSignedIn ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Avatar className="h-8 w-8 cursor-pointer hover:opacity-75">
-								<AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg" />
-								<AvatarFallback>
-									{userName.charAt(0).toUpperCase()}
-								</AvatarFallback>
-							</Avatar>
+							<Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+								<Avatar className="h-9 w-9">
+									<AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg" />
+									<AvatarFallback>
+										{userName.charAt(0).toUpperCase()}
+									</AvatarFallback>
+								</Avatar>
+							</Button>
 						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onSelect={handleSignOut}>
-								Sign Out
-							</DropdownMenuItem>
+						<DropdownMenuContent align="end" className="w-56">
+							<DropdownMenuItem>Sign Out</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
 				) : (
