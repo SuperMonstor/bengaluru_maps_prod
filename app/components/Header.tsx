@@ -46,9 +46,12 @@ export default function Header() {
 	return (
 		<div className="flex justify-between items-center p-4">
 			<div className="flex items-baseline space-x-1">
-				<h1 className="text-sm md:text-2xl sm:text-xl font-semibold">
+				<Link
+					href="/"
+					className="text-sm md:text-2xl sm:text-xl font-semibold hover:opacity-80"
+				>
 					Bengaluru Maps
-				</h1>
+				</Link>
 				<Link
 					href="https://x.com/realsudarshansk"
 					target="_blank"
@@ -63,7 +66,10 @@ export default function Header() {
 				{isSignedIn ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+							<Button
+								variant="ghost"
+								className="relative h-10 w-10 rounded-full p-0"
+							>
 								<Avatar className="h-9 w-9">
 									<AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg" />
 									<AvatarFallback>
