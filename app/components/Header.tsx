@@ -8,23 +8,21 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useContext, useEffect, useState } from "react"
+import { useContext } from "react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { AuthContext } from "@/lib/context/AuthContext"
 
-	function useAuth() {
-		const context = useContext(AuthContext)
-		if(context === undefined) {
-			throw new Error("useAuth must be used within an AuthProvider")
-		}
-		return context
+function useAuth() {
+	const context = useContext(AuthContext)
+	if (context === undefined) {
+		throw new Error("useAuth must be used within an AuthProvider")
 	}
+	return context
+}
 
 export default function Header() {
 	const { user, isLoading, signOut } = useAuth()
 
-	
 	const handleSignOut = async () => {
 		await signOut()
 	}

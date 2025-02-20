@@ -8,9 +8,12 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import googleLogo from "@/public/google.svg"
 import { signInWithGoogle } from "@/lib/utils/auth"
+import { useToast } from "@/hooks/use-toast"
+import { createClient } from "@/lib/utils/supabase/client"
 
 function Login() {
 	const [isLoading, setIsLoading] = useState(false)
+	const { toast } = useToast()
 
 	const {
 		register,
@@ -20,10 +23,7 @@ function Login() {
 		resolver: zodResolver(loginSchema),
 	})
 
-	const onSubmit = async (data: LoginInput) => {
-		// TODO: Implement your form submission logic
-		console.log(data)
-	}
+	const onSubmit = async (data: LoginInput) => {}
 
 	const handleGoogleSignIn = async () => {
 		try {
@@ -31,7 +31,11 @@ function Login() {
 			const { error } = await signInWithGoogle()
 
 			if (error) {
-				// Handle error (e.g., show toast notification)
+				toast({
+					variant: "destructive",
+					title: "Error",
+					description: error.message,
+				})
 				console.error("Failed to sign in with Google:", error)
 			}
 		} finally {
