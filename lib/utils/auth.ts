@@ -1,19 +1,19 @@
+// lib/utils/auth.ts
 import { supabase } from "../supabaseClient"
 
 export async function signInWithGoogle() {
-	try {
-		const { data, error } = await supabase.auth.signInWithOAuth({
-			provider: "google",
-			options: {
-				redirectTo: `${window.location.origin}/auth/callback`,
-			},
-		})
+	const { data, error } = await supabase.auth.signInWithOAuth({
+		provider: "google",
+		options: {
+			redirectTo: `${window.location.origin}/auth/callback`,
+		},
+	})
 
-		if (error) throw error
-
-		return { data, error: null }
-	} catch (error) {
-		console.error("Error signing in with Google:", error)
-		return { data: null, error }
+	if (error) {
+		console.error("Error signing in with Google:", error.message)
+		return { error }
 	}
+
+	console.log("SignInWithGoogle - Redirect data:", data)
+	return { data, error: null }
 }
