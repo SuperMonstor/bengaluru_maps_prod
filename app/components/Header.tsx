@@ -7,51 +7,26 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { createClient } from "@/lib/utils/supabase/client"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { AuthContext } from "@/lib/context/AuthContext"
+
+	function useAuth() {
+		const context = useContext(AuthContext)
+		if(context === undefined) {
+			throw new Error("useAuth must be used within an AuthProvider")
+		}
+		return context
+	}
 
 export default function Header() {
-	const [isSignedIn, setIsSignedIn] = useState(false)
-	const [userName, setUserName] = useState("Account")
-	const [isLoading, setIsLoading] = useState(true)
-	const router = useRouter()
-	const supabase = createClient()
+	const { user, isLoading, signOut } = useAuth()
 
-	useEffect(() => {
-		let isMounted = true // Prevents state updates if the component unmounts
-
-		async function checkUser() {
-			const { data } = await supabase.auth.getUser()
-			if (isMounted) {
-				setIsSignedIn(!!data.user)
-				setUserName(data.user?.email || "Account")
-				setIsLoading(false)
-			}
-		}
-
-		checkUser()
-
-		const { data: authListener } = supabase.auth.onAuthStateChange(
-			(_event, session) => {
-				if (isMounted) {
-					setIsSignedIn(!!session)
-					setUserName(session?.user?.email || "Account")
-				}
-			}
-		)
-
-		return () => {
-			isMounted = false // Prevents updates on unmounted component
-			authListener?.subscription?.unsubscribe()
-		}
-	}, [])
-
+	
 	const handleSignOut = async () => {
-		await supabase.auth.signOut()
-		router.refresh()
+		await signOut()
 	}
 
 	return (
@@ -77,7 +52,7 @@ export default function Header() {
 				{isLoading ? (
 					// Placeholder while checking authentication state
 					<div className="h-10 w-10 animate-pulse bg-gray-300 rounded-full" />
-				) : isSignedIn ? (
+				) : user ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button
@@ -87,7 +62,7 @@ export default function Header() {
 								<Avatar className="h-9 w-9">
 									<AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg" />
 									<AvatarFallback>
-										{userName.charAt(0).toUpperCase()}
+										{user.email?.charAt(0).toUpperCase()}
 									</AvatarFallback>
 								</Avatar>
 							</Button>

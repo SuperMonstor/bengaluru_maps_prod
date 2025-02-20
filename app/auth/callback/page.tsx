@@ -2,14 +2,14 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/utils/supabase/client"
 
 export default function AuthCallback() {
 	const router = useRouter()
 
 	useEffect(() => {
 		const handleAuth = async () => {
-			const { data, error } = await supabase.auth.getSession()
+			const { data, error } = await createClient().auth.getSession()
 
 			if (error || !data?.session) {
 				console.error("Authentication failed:", error)
