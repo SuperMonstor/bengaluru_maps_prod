@@ -9,7 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import googleLogo from "@/public/google.svg"
 import { signInWithGoogle, signInWithPassword } from "@/lib/utils/auth"
 import { useToast } from "@/hooks/use-toast"
-import router from "next/router"
 
 function Login() {
 	const [isLoading, setIsLoading] = useState(false)

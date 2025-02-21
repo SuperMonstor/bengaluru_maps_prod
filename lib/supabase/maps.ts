@@ -3,6 +3,14 @@ import { ImageProcessor, IMAGE_CONFIG } from "@/lib/utils/images"
 
 const supabase = createClient()
 
+interface MapSchema {
+	title: string;
+	shortDescription: string;
+	body: string;
+	displayPicture: File;
+	ownerId: string;
+}
+
 export async function createMap({
 	title,
 	shortDescription,
@@ -11,6 +19,10 @@ export async function createMap({
 	ownerId,
 }: MapSchema) {
 	try {
+		if (!title || !shortDescription || !body || !displayPicture || !ownerId) {
+			throw new Error('All fields are required');
+		}
+
 		let displayPictureUrl = null
 
 		// Upload image if provided

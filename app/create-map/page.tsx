@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react"
 import { useForm, SubmitHandler } from "react-hook-form"
 import dynamic from "next/dynamic"
-import "@mdxeditor/editor/style.css" // Default MDXEditor styles
+import "@mdxeditor/editor/style.css"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/lib/context/AuthContext"
-import { createClient } from "@/lib/supabase/service/client"
 import MarkdownEditor from "@/components/MarkdownEditor"
 import { useRouter } from "next/navigation"
 import { createMap } from "@/lib/supabase/maps"
+import { useToast } from "@/hooks/use-toast"
 
 const MDXEditorDynamic = dynamic(
 	() => import("@mdxeditor/editor").then((mod) => mod.MDXEditor),
@@ -35,6 +35,7 @@ interface CreateMapForm {
 export default function CreateMapPage() {
 	const { user, isLoading } = useAuth()
 	const router = useRouter()
+	const { toast } = useToast()
 	const [markdownValue, setMarkdownValue] = useState<string>("")
 	const [imagePreview, setImagePreview] = useState<string>("")
 
@@ -72,24 +73,32 @@ export default function CreateMapPage() {
 				title: data.title,
 				shortDescription: data.shortDescription,
 				body: data.body,
-				displayPicture: data.displayPicture?.[0],
+				displayPicture: data.displayPicture![0],
 				ownerId: user.id,
 			})
 
 			if (error) {
 				console.error("Error creating map:", error)
-				alert(`Failed to create your map. Error: ${error}`)
+				toast({
+					variant: "destructive",
+					title: "Error creating map",
+					description: error,
+				})
 			} else {
-				alert("Map created successfully!")
-				setMarkdownValue("")
-				setImagePreview("")
-				setValue("title", "")
-				setValue("shortDescription", "")
-				setValue("displayPicture", undefined)
+				toast({
+					title: "Success!",
+					description: "Your map has been created.",
+				})
+				router.push("/")
+				router.refresh()
 			}
 		} catch (err) {
 			console.error("Unexpected error:", err)
-			alert("An unexpected error occurred. Please try again.")
+			toast({
+				variant: "destructive",
+				title: "Error",
+				description: "An unexpected error occurred. Please try again.",
+			})
 		}
 	}
 
