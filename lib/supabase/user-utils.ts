@@ -1,16 +1,6 @@
 import { User } from "@supabase/supabase-js"
 import { createClient } from "./client"
 
-interface UserData {
-	id: string
-	email: string
-	first_name: string
-	last_name: string
-	picture_url: string | null
-	created_at: string
-	updated_at: string
-}
-
 interface UpdateUserResult {
 	success: boolean
 	error?: string
@@ -31,7 +21,7 @@ export async function updateUserInDatabase(
 			const fullName = user.user_metadata?.full_name
 			const [firstName, lastName = ""] = fullName.split(" ") // Split full_name into first and last
 			// No user found
-			const userData: UserData = {
+			const userData: UserSchema = {
 				id: user.id,
 				email: user.email!,
 				first_name: firstName,

@@ -58,17 +58,28 @@ export default function Header() {
 								className="relative h-10 w-10 rounded-full p-0"
 							>
 								<Avatar className="h-9 w-9">
-									<AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg" />
+									<AvatarImage
+										src={
+											user.picture_url ??
+											"https://api.dicebear.com/7.x/avataaars/svg"
+										}
+									/>
 									<AvatarFallback>
 										{user.email?.charAt(0).toUpperCase()}
 									</AvatarFallback>
 								</Avatar>
 							</Button>
 						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end" className="w-56">
+						<DropdownMenuContent
+							align="end"
+							className="w-56 bg-white shadow-md rounded-md"
+						>
+							<DropdownMenuItem className="px-3 py-2 text-sm border-b cursor-default select-none font-semibold text-gray-700 bg-gray-100">
+								{user.first_name + " " + user.last_name}
+							</DropdownMenuItem>
 							<DropdownMenuItem
 								onClick={handleSignOut}
-								className="cursor-pointer"
+								className="px-3 py-2 text-sm text-red-600 hover:bg-red-100 cursor-pointer transition"
 							>
 								Sign Out
 							</DropdownMenuItem>

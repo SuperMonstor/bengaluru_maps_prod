@@ -7,9 +7,12 @@ import React, { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import googleLogo from "@/public/google.svg"
+import { useToast } from "@/hooks/use-toast"
+import { signInWithGoogle } from "@/lib/utils/auth"
 
 function Signup() {
 	const [isLoading, setIsLoading] = useState(false)
+	const { toast } = useToast()
 
 	const {
 		register,
@@ -23,6 +26,25 @@ function Signup() {
 		// TODO: Implement your form submission logic
 		console.log(data)
 	}
+
+	const handleGoogleSignIn = async () => {
+		try {
+			setIsLoading(true)
+			const { error } = await signInWithGoogle()
+
+			if (error) {
+				toast({
+					variant: "destructive",
+					title: "Error",
+					description: error.message,
+				})
+				console.error("Failed to sign in with Google:", error)
+			}
+		} finally {
+			setIsLoading(false)
+		}
+	}
+
 	return (
 		<main className="min-h-[calc(100vh-12rem)] flex items-center justify-center p-4">
 			<section className="w-full max-w-sm space-y-8">
@@ -34,13 +56,13 @@ function Signup() {
 					<Button
 						variant="outline"
 						className="w-full flex items-center justify-center space-x-2"
-						// onClick={() => signInWithGoogle()}
-						// disabled={isLoading}
+						onClick={signInWithGoogle}
+						disabled={isLoading}
 					>
 						<img src={googleLogo.src} alt="Google logo" className="w-5 h-5" />
 						<span>Sign Up with Google</span>
 					</Button>
-
+					{/* 
 					<div
 						className="flex items-center w-full"
 						role="separator"
@@ -100,7 +122,7 @@ function Signup() {
 								{isSubmitting ? "Signing up..." : "Sign Up"}
 							</Button>
 						</fieldset>
-					</form>
+					</form> */}
 				</section>
 				<footer className="text-center">
 					<p className="text-sm text-gray-500">
