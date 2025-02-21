@@ -1,7 +1,8 @@
 // lib/utils/auth.ts
-import { supabase } from "../supabaseClient"
+import { createClient } from "../supabase/client"
 
 export async function signInWithGoogle() {
+	const supabase = createClient()
 	const { data, error } = await supabase.auth.signInWithOAuth({
 		provider: "google",
 		options: {

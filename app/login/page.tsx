@@ -9,7 +9,10 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import googleLogo from "@/public/google.svg"
 import { signInWithGoogle } from "@/lib/utils/auth"
 import { useToast } from "@/hooks/use-toast"
-import { createClient } from "@/lib/utils/supabase/client"
+import { createClient } from "@/lib/supabase/client"
+import router from "next/router"
+import { updateUserInDatabase } from "@/lib/supabase/user-utils"
+import { User } from "@supabase/supabase-js"
 
 function Login() {
 	const [isLoading, setIsLoading] = useState(false)
@@ -23,7 +26,32 @@ function Login() {
 		resolver: zodResolver(loginSchema),
 	})
 
-	const onSubmit = async (data: LoginInput) => {}
+	const onSubmit = async (data: LoginInput) => {
+		try {
+			setIsLoading(true)
+			const supabase = createClient()
+			const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+				email: data.email,
+				password: data.password,
+			})
+	
+			if (authError) throw authError
+	
+			const { success, error: updateError } = await updateUserInDatabase(authData.user as User)
+			if (!success) throw new Error(updateError)
+	
+			router.push('/')
+		} catch (error) {
+			toast({
+				variant: "destructive",
+				title: "Error",
+				description: error instanceof Error ? error.message : String(error),
+			})
+			console.error("Login failed:", error)
+		} finally {
+			setIsLoading(false)
+		}
+	}
 
 	const handleGoogleSignIn = async () => {
 		try {
