@@ -177,7 +177,6 @@ export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
 		if (mapsError) throw mapsError
 
 		const mapsData = (data as unknown as MapData[]) || []
-		console.log("Raw maps data:", JSON.stringify(mapsData, null, 2)) // Debug log
 		if (!mapsData.length) {
 			return { data: [], total: count || 0, page, limit, error: null }
 		}
