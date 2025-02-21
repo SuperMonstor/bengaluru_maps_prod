@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/service/client"
 import { updateUserInDatabase } from "@/lib/supabase/user-utils"
 
 export default function AuthCallback() {
