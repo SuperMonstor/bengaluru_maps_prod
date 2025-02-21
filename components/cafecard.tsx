@@ -13,6 +13,7 @@ interface CafeCardProps {
   contributors: number
   upvotes: number
   username: string
+  userProfilePicture?: string | null
   className?: string
 }
 
@@ -24,6 +25,7 @@ export function CafeCard({
   contributors, 
   upvotes, 
   username,
+  userProfilePicture,
   className 
 }: CafeCardProps) {
   return (
@@ -83,9 +85,9 @@ export function CafeCard({
       <CardFooter className="border-t border-border/50 px-6 py-4">
         <div className="flex items-center gap-2.5 text-sm text-muted-foreground/90">
           <Avatar className="h-6 w-6 border border-border/50">
-            <AvatarImage src="/placeholder.svg" />
+            <AvatarImage src={userProfilePicture || "/placeholder.svg"} />
             <AvatarFallback>
-              {username.slice(0, 2).toUpperCase()}
+              {username.split(' ').map(n => n[0]).join('').toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <span className="text-muted-foreground/75">
@@ -96,4 +98,3 @@ export function CafeCard({
     </Card>
   )
 }
-
