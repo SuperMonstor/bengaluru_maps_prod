@@ -1,6 +1,32 @@
+// page.tsx
 import { CafeCard } from "@/components/cafecard"
+import { getMaps } from "@/lib/supabase/maps"
+import { Button } from "@/components/ui/button"
 
-export default function Home() {
+export const revalidate = 0 // Disable caching for fresh data
+
+interface HomeProps {
+	searchParams: Promise<{ page?: string }> // Explicitly type as Promise
+}
+
+export default async function Home({ searchParams }: HomeProps) {
+	const resolvedSearchParams = await searchParams // Await the Promise
+	const page = parseInt(resolvedSearchParams.page || "1", 10)
+	const limit = 10
+
+	const { data: maps, total, error } = await getMaps(page, limit)
+	const totalPages = Math.ceil(total / limit)
+
+	if (error) {
+		return (
+			<main className="min-h-screen bg-gray-50/50">
+				<div className="container mx-auto px-4 py-8">
+					<p className="text-red-500">Error loading maps: {error}</p>
+				</div>
+			</main>
+		)
+	}
+
 	return (
 		<main className="min-h-screen bg-gray-50/50">
 			<div className="container mx-auto px-4 py-8 md:py-12 lg:py-16">
@@ -16,36 +42,42 @@ export default function Home() {
 				</div>
 
 				<div className="grid gap-6 max-w-5xl mx-auto">
-					<CafeCard
-						title="Cafes with Wi-fi near me"
-						description="A list of great public places with wi-fi to work"
-						image="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-39F4n2pgBGV7ES7BHKRbmBoje0XxTY.jpeg"
-						locations={129}
-						contributors={2}
-						upvotes={28}
-						username="@sudarshansk"
-					/>
-
-					<CafeCard
-						title="Pool Tables Near Me"
-						description="Bars with free pool tables"
-						image="/placeholder.svg"
-						locations={129}
-						contributors={2}
-						upvotes={28}
-						username="@sudarshansk"
-					/>
-
-					<CafeCard
-						title="Best Chinese Food Bangalore"
-						description="Authentic Chinese restaurants in Bangalore"
-						image="/placeholder.svg"
-						locations={129}
-						contributors={8}
-						upvotes={28}
-						username="@sudarshansk"
-					/>
+					{maps.map((map) => (
+						<CafeCard
+							key={map.id}
+							title={map.title}
+							description={map.description}
+							image={map.image}
+							locations={map.locations}
+							contributors={map.contributors}
+							upvotes={map.upvotes}
+							username={map.username}
+							userProfilePicture={map.userProfilePicture}
+						/>
+					))}
 				</div>
+
+				{totalPages > 1 && (
+					<div className="flex justify-center gap-4 mt-8">
+						<Button
+							variant="outline"
+							disabled={page === 1}
+							asChild={page !== 1}
+						>
+							<a href={`/?page=${page - 1}`}>Previous</a>
+						</Button>
+						<span className="self-center">
+							Page {page} of {totalPages}
+						</span>
+						<Button
+							variant="outline"
+							disabled={page === totalPages}
+							asChild={page !== totalPages}
+						>
+							<a href={`/?page=${page + 1}`}>Next</a>
+						</Button>
+					</div>
+				)}
 			</div>
 		</main>
 	)
