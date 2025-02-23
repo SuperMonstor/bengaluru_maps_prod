@@ -2,6 +2,7 @@
 import { CafeCard } from "@/components/cafecard"
 import { getMaps } from "@/lib/supabase/maps"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export const revalidate = 0 // Disable caching for fresh data
 
@@ -43,17 +44,19 @@ export default async function Home({ searchParams }: HomeProps) {
 
 				<div className="grid gap-6 max-w-5xl mx-auto">
 					{maps.map((map) => (
-						<CafeCard
-							key={map.id}
-							title={map.title}
-							description={map.description}
-							image={map.image}
-							locations={map.locations}
-							contributors={map.contributors}
-							upvotes={map.upvotes}
-							username={map.username}
-							userProfilePicture={map.userProfilePicture}
-						/>
+						<Link href={`/maps/${map.id}`}>
+							<CafeCard
+								key={map.id}
+								title={map.title}
+								description={map.description}
+								image={map.image}
+								locations={map.locations}
+								contributors={map.contributors}
+								upvotes={map.upvotes}
+								username={map.username}
+								userProfilePicture={map.userProfilePicture}
+							/>
+						</Link>
 					))}
 				</div>
 

@@ -241,3 +241,84 @@ export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
 		return handleMapsError(error, page, limit)
 	}
 }
+
+export async function getMapById(mapId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("maps")
+      .select(
+        `
+        id,
+        name,
+        short_description,
+        body,
+        display_picture,
+        owner_id,
+        created_at,
+        users (
+          id,
+          first_name,
+          last_name,
+          picture_url
+        ),
+        locations (
+          id,
+          name,
+          coordinates,
+          note,
+          created_at
+        ),
+        votes (
+          id
+        )
+      `
+      )
+      .eq("id", mapId)
+      .single();
+
+    if (error) throw error;
+
+    console.log("Raw map data:", JSON.stringify(data, null, 2)); // Debug log to verify users data
+
+    // Fetch distinct contributors using RPC
+    const { data: contributorCountsRes, error: contributorError } = await supabase.rpc(
+      "get_contributor_counts",
+      { map_ids: [data.id] }
+    );
+
+    if (contributorError) throw contributorError;
+
+    const contributorCounts = new Map<string, number>(
+      contributorCountsRes?.map((c: { map_id: string; contributor_count: number }) => [
+        c.map_id,
+        Number(c.contributor_count),
+      ]) || []
+    );
+
+    const user = data.users as unknown as User;
+
+    return {
+      data: {
+        id: data.id,
+        title: data.name,
+        description: data.short_description,
+        body: data.body,
+        image: data.display_picture || "/placeholder.svg",
+        locations: data.locations.length,
+        contributors: contributorCounts.get(data.id) ?? 0,
+        upvotes: data.votes.length,
+        username: user
+          ? `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim()
+          : "Unknown User",
+        userProfilePicture: user?.picture_url || null,
+      },
+      error: null,
+    };
+  } catch (error) {
+    console.error("Error in getMapById:", error);
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
