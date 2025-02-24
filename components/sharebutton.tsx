@@ -1,42 +1,40 @@
+// components/ShareButton.tsx
 "use client"
 
-import { useToast } from "@/hooks/use-toast"
+import { Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Copy } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 interface ShareButtonProps {
-	url: string
+	mapId: string
 }
 
-export default function ShareButton({ url }: ShareButtonProps) {
+export default function ShareButton({ mapId }: ShareButtonProps) {
 	const { toast } = useToast()
 
 	const handleShare = async () => {
+		const url = `${window.location.origin}/maps/${mapId}`
 		try {
 			await navigator.clipboard.writeText(url)
 			toast({
-				title: "Link Copied",
-				description: "The map link has been copied to your clipboard.",
-				duration: 2000,
+				title: "Link Copied!",
+				description: "The map URL has been copied to your clipboard.",
+				duration: 3000,
 			})
-		} catch (error) {
+		} catch (err) {
 			toast({
-				title: "Error",
-				description: "Failed to copy the link. Please try again.",
+				title: "Failed to Copy",
+				description: "Couldn’t copy the URL. Please try again.",
 				variant: "destructive",
-				duration: 2000,
+				duration: 3000,
 			})
 		}
 	}
 
 	return (
-		<Button
-			variant="outline"
-			size="icon"
-			onClick={handleShare}
-			className="hidden md:inline-flex" // Hidden on mobile to match screenshot
-		>
-			<Copy className="h-4 w-4" />
+		<Button variant="outline" size="sm" onClick={handleShare}>
+			<Share2 className="h-4 w-4 mr-2" />
+			Share
 		</Button>
 	)
 }

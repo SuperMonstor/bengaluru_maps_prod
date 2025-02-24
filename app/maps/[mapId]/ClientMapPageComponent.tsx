@@ -5,8 +5,9 @@ import { useState, useRef } from "react"
 import { Markdown } from "@/components/markdown-renderer"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { MapPin, Users, ThumbsUp, ChevronUp, ChevronDown } from "lucide-react"
-import ShareButton from "@/components/sharebutton"
 import Image from "next/image"
+import ShareButton from "@/components/sharebutton"
+import { Button } from "@/components/ui/button"
 
 const PLACEHOLDER_MAP_URL =
 	"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.1599581471747!2d-74.0060!3d40.7128!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a27e51633e3%3A0x51c6e1819a5b51a8!2sNew%20York%2C%20NY!5e0!3m2!1sen!2sus!4v1631834567890"
@@ -51,10 +52,15 @@ export default function ClientMapPageContent({
 				{/* Left Column: Scrollable */}
 				<div className="w-1/2 p-4 md:p-8 lg:p-12 space-y-6 overflow-y-auto">
 					<div className="flex items-center gap-4">
-						<h1 className="text-3xl font-bold tracking-tight text-foreground">
+						<h1 className="text-3xl font-bold tracking-tight text-foreground flex-1">
 							{map.title}
 						</h1>
-						{/* <ShareButton mapId={map.id} /> */}
+						<div className="flex items-center gap-2">
+							<Button variant="default" size="sm">
+								Contribute
+							</Button>
+							<ShareButton mapId={map.id} />
+						</div>
 					</div>
 					<div className="space-y-2">
 						<p className="text-muted-foreground text-sm line-clamp-2">
@@ -90,8 +96,17 @@ export default function ClientMapPageContent({
 							{map.upvotes} upvotes
 						</span>
 					</div>
+					{/* Image before Markdown */}
+					<div className="relative w-full h-[200px] mt-6">
+						<Image
+							src={map.image}
+							alt={map.title}
+							fill
+							className="object-cover rounded-md"
+						/>
+					</div>
 					{/* Markdown at the bottom */}
-					<div className="mt-6">
+					<div className="mt-4">
 						<Markdown content={map.body} />
 					</div>
 				</div>
@@ -99,6 +114,7 @@ export default function ClientMapPageContent({
 				{/* Right Column: Full-height Map up to the edge */}
 				<div className="w-1/2">
 					<iframe
+						ref={iframeRef} // Added ref here for desktop too
 						src={PLACEHOLDER_MAP_URL}
 						width="100%"
 						height="100%"
@@ -106,6 +122,7 @@ export default function ClientMapPageContent({
 						allowFullScreen
 						loading="lazy"
 						referrerPolicy="no-referrer-when-downgrade"
+						onClick={handleMapInteraction} // Trigger collapse on click
 					/>
 				</div>
 			</div>
@@ -128,7 +145,7 @@ export default function ClientMapPageContent({
 					/>
 				</div>
 
-				{/* Bottom Bar with Title, Image, Subtitle, and Metadata */}
+				{/* Bottom Bar with Title, NO Image, Subtitle, and Metadata */}
 				<div
 					className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 cursor-pointer z-10"
 					onClick={() => setIsOpen(!isOpen)}
@@ -138,14 +155,6 @@ export default function ClientMapPageContent({
 							<h2 className="text-lg font-semibold truncate flex-1">
 								{map.title}
 							</h2>
-							<div className="relative w-16 h-9 shrink-0">
-								<Image
-									src={map.image}
-									alt={map.title}
-									fill
-									className="object-cover rounded-md"
-								/>
-							</div>
 							<ChevronUp
 								className={`h-6 w-6 transition-transform ${
 									isOpen ? "rotate-180" : ""
@@ -189,21 +198,19 @@ export default function ClientMapPageContent({
 							<h1 className="text-2xl font-bold tracking-tight text-foreground truncate flex-1">
 								{map.title}
 							</h1>
-							<div className="relative w-16 h-9 shrink-0">
-								<Image
-									src={map.image}
-									alt={map.title}
-									fill
-									className="object-cover rounded-md"
-								/>
+							<div className="flex items-center gap-2">
+								<Button variant="default" size="sm">
+									Contribute
+								</Button>
+								<ShareButton mapId={map.id} />
+								<button
+									onClick={handleCollapse}
+									className="p-2 rounded-full hover:bg-gray-100"
+									aria-label="Collapse panel"
+								>
+									<ChevronDown className="h-6 w-6" />
+								</button>
 							</div>
-							<button
-								onClick={handleCollapse}
-								className="p-2 rounded-full hover:bg-gray-100"
-								aria-label="Collapse panel"
-							>
-								<ChevronDown className="h-6 w-6" />
-							</button>
 						</div>
 						<div className="space-y-2">
 							<p className="text-muted-foreground text-sm">{map.description}</p>
@@ -239,6 +246,16 @@ export default function ClientMapPageContent({
 								{map.upvotes} upvotes
 							</span>
 						</div>
+						{/* Image before Markdown */}
+						<div className="relative w-full h-[180px] mt-4">
+							<Image
+								src={map.image}
+								alt={map.title}
+								fill
+								className="object-cover rounded-md"
+							/>
+						</div>
+						{/* Markdown at the bottom */}
 						<div className="mt-4">
 							<Markdown content={map.body} />
 						</div>
