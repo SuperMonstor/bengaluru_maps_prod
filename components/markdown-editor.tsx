@@ -1,5 +1,5 @@
+// components/MarkdownEditor.tsx
 import dynamic from "next/dynamic";
-import { useState } from "react";
 import {
   MDXEditor,
   headingsPlugin,
@@ -19,7 +19,6 @@ import {
   InsertThematicBreak,
 } from "@mdxeditor/editor";
 import "@mdxeditor/editor/style.css";
-import "./MarkdownEditor.css";
 
 const MDXEditorDynamic = dynamic(
   () => import("@mdxeditor/editor").then((mod) => mod.MDXEditor),
@@ -73,7 +72,8 @@ export default function MarkdownEditor({
         }),
       ]}
       placeholder={placeholder}
-      className={className}
+      className={`rounded-md border border-gray-200 shadow-sm bg-white ${className || ""}`}
+      contentEditableClassName="prose prose-sm max-w-none p-4 text-gray-700"
     />
   );
 }

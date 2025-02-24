@@ -1,12 +1,10 @@
 // app/maps/[mapId]/page.tsx
 import { getMapById } from "@/lib/supabase/maps"
-import { Markdown } from "@/components/markdown"
-import { Button } from "@/components/ui/button"
+import { Markdown } from "@/components/markdown-renderer"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { MapPin, Users, ThumbsUp } from "lucide-react"
 import ShareButton from "@/components/sharebutton"
 
-// Placeholder map embed URL (centered on NYC, as in your screenshot)
 const PLACEHOLDER_MAP_URL =
 	"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.1599581471747!2d-74.0060!3d40.7128!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a27e51633e3%3A0x51c6e1819a5b51a8!2sNew%20York%2C%20NY!5e0!3m2!1sen!2sus!4v1631834567890"
 
