@@ -1,3 +1,4 @@
+// components/CafeCard.tsx
 import Image from "next/image"
 import { ThumbsUp, MapPin, Users } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -36,9 +37,9 @@ export function CafeCard({
 				className
 			)}
 		>
-			<CardHeader className="flex flex-row items-start gap-6 space-y-0 p-6">
-				{/* Upvote Button */}
-				<div className="flex flex-col items-center gap-1">
+			<CardHeader className="p-4 md:p-6 space-y-4 md:flex md:flex-row md:items-start md:gap-6 md:space-y-0">
+				{/* Upvote Button (Desktop only, Mobile moves upvotes below) */}
+				<div className="hidden md:flex flex-col items-center gap-1 shrink-0">
 					<Button
 						variant="ghost"
 						size="icon"
@@ -52,7 +53,7 @@ export function CafeCard({
 				</div>
 
 				{/* Image Container */}
-				<div className="relative aspect-[16/10] w-64 overflow-hidden rounded-md">
+				<div className="relative w-full md:w-64 aspect-[16/10] overflow-hidden rounded-md shrink-0">
 					<Image
 						src={image || "/placeholder.svg"}
 						alt={title}
@@ -65,7 +66,7 @@ export function CafeCard({
 				{/* Content Container */}
 				<div className="flex-1 space-y-2.5">
 					<div className="space-y-1">
-						<h3 className="font-semibold text-xl leading-tight tracking-tight text-foreground/90 group-hover:text-foreground">
+						<h3 className="font-semibold text-lg md:text-xl leading-tight tracking-tight text-foreground/90 group-hover:text-foreground">
 							{title}
 						</h3>
 						<p className="text-sm text-muted-foreground/90 line-clamp-2">
@@ -73,7 +74,7 @@ export function CafeCard({
 						</p>
 					</div>
 
-					<div className="flex gap-4">
+					<div className="flex flex-wrap gap-4">
 						<div className="flex items-center text-sm text-muted-foreground/75 transition-colors group-hover:text-muted-foreground">
 							<MapPin className="mr-1.5 h-4 w-4" />
 							{locations} locations
@@ -82,11 +83,16 @@ export function CafeCard({
 							<Users className="mr-1.5 h-4 w-4" />
 							{contributors} contributors
 						</div>
+						{/* Upvotes on Mobile */}
+						<div className="flex md:hidden items-center text-sm text-muted-foreground/75 transition-colors group-hover:text-muted-foreground">
+							<ThumbsUp className="mr-1.5 h-4 w-4" />
+							{upvotes} upvotes
+						</div>
 					</div>
 				</div>
 			</CardHeader>
 
-			<CardFooter className="border-t border-border/50 px-6 py-4">
+			<CardFooter className="border-t border-border/50 px-4 py-3 md:px-6 md:py-4">
 				<div className="flex items-center gap-2.5 text-sm text-muted-foreground/90">
 					<Avatar className="h-6 w-6 border border-border/50">
 						<AvatarImage src={userProfilePicture || "/placeholder.svg"} />
