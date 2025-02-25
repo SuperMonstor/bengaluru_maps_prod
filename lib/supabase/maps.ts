@@ -37,6 +37,18 @@ interface User {
 	picture_url: string | null
 }
 
+interface Location {
+	id: string
+	map_id: string
+	creator_id: string
+	name: string
+	latitude: number
+	longitude: number
+	google_maps_url: string | null
+	note: string | null
+	created_at: string
+}
+
 interface MapData {
 	id: string
 	name: string
@@ -45,6 +57,8 @@ interface MapData {
 	owner_id: string
 	created_at: string
 	users: User
+	locations: Location[]
+	votes: { id: string }[]
 }
 
 interface MapResponse {
@@ -69,6 +83,11 @@ interface MapsResult {
 
 interface CreateMapResult {
 	data: any // Adjust based on what Supabase returns
+	error: string | null
+}
+
+interface CreateLocationResult {
+	data: any
 	error: string | null
 }
 
@@ -167,6 +186,20 @@ export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
           first_name,
           last_name,
           picture_url
+        ),
+        locations (
+          id,
+          map_id,
+          creator_id,
+          name,
+          latitude,
+          longitude,
+          google_maps_url,
+          note,
+          created_at
+        ),
+        votes (
+          id
         )
       `,
 				{ count: "exact" }
@@ -177,6 +210,10 @@ export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
 		if (mapsError) throw mapsError
 
 		const mapsData = (data as unknown as MapData[]) || []
+		console.log(
+			"Raw maps data (unauthenticated check):",
+			JSON.stringify(mapsData, null, 2)
+		)
 		if (!mapsData.length) {
 			return { data: [], total: count || 0, page, limit, error: null }
 		}
@@ -188,7 +225,7 @@ export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
 			await Promise.all([
 				supabase.rpc("get_location_counts", { map_ids: mapIds }),
 				supabase.rpc("get_vote_counts", { map_ids: mapIds }),
-				supabase.rpc("get_contributor_counts", { map_ids: mapIds }), // Added for distinct contributors
+				supabase.rpc("get_contributor_counts", { map_ids: mapIds }),
 			])
 
 		if (locationCountsRes.error) throw locationCountsRes.error
@@ -220,21 +257,22 @@ export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
 		)
 
 		// Transform maps data into the desired response format
-		const maps: MapResponse[] = mapsData.map((map) => ({
-			id: map.id,
-			title: map.name,
-			description: map.short_description,
-			image: map.display_picture || "/placeholder.svg",
-			locations: locationCounts.get(map.id) ?? 0,
-			contributors: contributorCounts.get(map.id) ?? 0, // Now uses distinct contributor count
-			upvotes: voteCounts.get(map.id) ?? 0,
-			username: map.users
-				? `${map.users.first_name || "Unnamed"} ${
-						map.users.last_name || "User"
-				  }`.trim()
-				: "Unknown User",
-			userProfilePicture: map.users?.picture_url || null,
-		}))
+		const maps: MapResponse[] = mapsData.map((map) => {
+			const user = map.users as unknown as User
+			return {
+				id: map.id,
+				title: map.name,
+				description: map.short_description,
+				image: map.display_picture || "/placeholder.svg",
+				locations: locationCounts.get(map.id) ?? 0,
+				contributors: contributorCounts.get(map.id) ?? 0, // Now uses distinct contributor count
+				upvotes: voteCounts.get(map.id) ?? 0,
+				username: user
+					? `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim()
+					: "Unknown User",
+				userProfilePicture: user?.picture_url || null,
+			}
+		})
 
 		return { data: maps, total: count || 0, page, limit, error: null }
 	} catch (error) {
@@ -243,11 +281,11 @@ export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
 }
 
 export async function getMapById(mapId: string) {
-  try {
-    const { data, error } = await supabase
-      .from("maps")
-      .select(
-        `
+	try {
+		const { data, error } = await supabase
+			.from("maps")
+			.select(
+				`
         id,
         name,
         short_description,
@@ -255,7 +293,7 @@ export async function getMapById(mapId: string) {
         display_picture,
         owner_id,
         created_at,
-        users (
+        users!maps_owner_id_fkey (
           id,
           first_name,
           last_name,
@@ -263,8 +301,12 @@ export async function getMapById(mapId: string) {
         ),
         locations (
           id,
+          map_id,
+          creator_id,
           name,
-          coordinates,
+          latitude,
+          longitude,
+          google_maps_url,
           note,
           created_at
         ),
@@ -272,53 +314,116 @@ export async function getMapById(mapId: string) {
           id
         )
       `
-      )
-      .eq("id", mapId)
-      .single();
+			)
+			.eq("id", mapId)
+			.single()
 
-    if (error) throw error;
+		if (error) throw error
 
-    console.log("Raw map data:", JSON.stringify(data, null, 2)); // Debug log to verify users data
+		console.log("Raw map data:", JSON.stringify(data, null, 2))
 
-    // Fetch distinct contributors using RPC
-    const { data: contributorCountsRes, error: contributorError } = await supabase.rpc(
-      "get_contributor_counts",
-      { map_ids: [data.id] }
-    );
+		// Fetch distinct contributors using RPC
+		const { data: contributorCountsRes, error: contributorError } =
+			await supabase.rpc("get_contributor_counts", { map_ids: [data.id] })
 
-    if (contributorError) throw contributorError;
+		if (contributorError) throw contributorError
 
-    const contributorCounts = new Map<string, number>(
-      contributorCountsRes?.map((c: { map_id: string; contributor_count: number }) => [
-        c.map_id,
-        Number(c.contributor_count),
-      ]) || []
-    );
+		const contributorCounts = new Map<string, number>(
+			contributorCountsRes?.map(
+				(c: { map_id: string; contributor_count: number }) => [
+					c.map_id,
+					Number(c.contributor_count),
+				]
+			) || []
+		)
 
-    const user = data.users as unknown as User;
+		const user = data.users as unknown as User
 
-    return {
-      data: {
-        id: data.id,
-        title: data.name,
-        description: data.short_description,
-        body: data.body,
-        image: data.display_picture || "/placeholder.svg",
-        locations: data.locations.length,
-        contributors: contributorCounts.get(data.id) ?? 0,
-        upvotes: data.votes.length,
-        username: user
-          ? `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim()
-          : "Unknown User",
-        userProfilePicture: user?.picture_url || null,
-      },
-      error: null,
-    };
-  } catch (error) {
-    console.error("Error in getMapById:", error);
-    return {
-      data: null,
-      error: error instanceof Error ? error.message : "An unexpected error occurred",
-    };
-  }
+		return {
+			data: {
+				id: data.id,
+				title: data.name,
+				description: data.short_description,
+				body: data.body,
+				image: data.display_picture || "/placeholder.svg",
+				locations: data.locations.length,
+				contributors: contributorCounts.get(data.id) ?? 0,
+				upvotes: data.votes.length,
+				username: user
+					? `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim()
+					: "Unknown User",
+				userProfilePicture: user?.picture_url || null,
+			},
+			error: null,
+		}
+	} catch (error) {
+		console.error("Error in getMapById:", error)
+		return {
+			data: null,
+			error:
+				error instanceof Error ? error.message : "An unexpected error occurred",
+		}
+	}
+}
+
+export async function createLocation({
+	mapId,
+	creatorId,
+	name,
+	latitude,
+	longitude,
+	googleMapsUrl,
+	note,
+}: {
+	mapId: string
+	creatorId: string
+	name: string
+	latitude: number
+	longitude: number
+	googleMapsUrl?: string
+	note?: string
+}) {
+	try {
+		// Validate latitude and longitude are provided and non-null
+		if (latitude === undefined || latitude === null || isNaN(latitude)) {
+			throw new Error("Latitude is required and must be a valid number")
+		}
+		if (longitude === undefined || longitude === null || isNaN(longitude)) {
+			throw new Error("Longitude is required and must be a valid number")
+		}
+
+		// Ensure latitude and longitude are within valid ranges
+		if (latitude < -90 || latitude > 90) {
+			throw new Error("Latitude must be between -90 and 90")
+		}
+		if (longitude < -180 || longitude > 180) {
+			throw new Error("Longitude must be between -180 and 180")
+		}
+
+		const { data, error } = await supabase
+			.from("locations")
+			.insert({
+				map_id: mapId,
+				creator_id: creatorId,
+				name,
+				latitude,
+				longitude,
+				google_maps_url: googleMapsUrl,
+				note,
+				created_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+			})
+			.select()
+			.single()
+
+		if (error) throw new Error(`Failed to create location: ${error.message}`)
+		return { data, error: null }
+	} catch (error) {
+		console.error("Error in createLocation:", error)
+		return {
+			data: null,
+			error:
+				error instanceof Error ? error.message : "An unexpected error occurred",
+		}
+	}
 }
