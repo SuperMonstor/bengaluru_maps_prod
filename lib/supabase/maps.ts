@@ -120,7 +120,6 @@ async function uploadImage(file: File): Promise<string> {
 	return publicUrl
 }
 
-// Simplified createMap with its own error handling
 export async function createMap({
 	title,
 	shortDescription,
@@ -369,35 +368,113 @@ export async function getMapById(mapId: string) {
 export async function createLocation({
 	mapId,
 	creatorId,
-	name,
-	latitude,
-	longitude,
-	googleMapsUrl,
-	note,
+	location, // Place name or Google Maps place URL
+	description, // Use as note
 }: {
 	mapId: string
 	creatorId: string
-	name: string
-	latitude: number
-	longitude: number
-	googleMapsUrl?: string
-	note?: string
-}) {
+	location: string // Can be a place name or URL
+	description: string
+}): Promise<CreateLocationResult> {
 	try {
-		// Validate latitude and longitude are provided and non-null
-		if (latitude === undefined || latitude === null || isNaN(latitude)) {
-			throw new Error("Latitude is required and must be a valid number")
-		}
-		if (longitude === undefined || longitude === null || isNaN(longitude)) {
-			throw new Error("Longitude is required and must be a valid number")
+		let latitude: number = 0
+		let longitude: number = 0
+		let googleMapsUrl: string = ""
+		let name: string = ""
+
+		// Check if location is a URL or a place name
+		if (location.startsWith("http")) {
+			// Try to parse the URL to extract lat/lng if it's a Google Maps place URL
+			try {
+				const url = new URL(location)
+				const pathParts = url.pathname.split("/")
+				if (pathParts.includes("place") && url.hash) {
+					const hashParams = new URLSearchParams(url.hash.slice(1))
+					const coordsMatch =
+						hashParams.get("q") || url.hash.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+					if (coordsMatch) {
+						const coords =
+							coordsMatch instanceof Array
+								? coordsMatch.slice(1)
+								: coordsMatch.split(",")
+						latitude = parseFloat(coords[0])
+						longitude = parseFloat(coords[1])
+					} else {
+						// Fallback: Use Places API to get lat/lng from the place URL
+						const placesService = new google.maps.places.PlacesService(
+							document.createElement("div")
+						)
+						await new Promise((resolve) => {
+							placesService.findPlaceFromQuery(
+								{ query: location, fields: ["geometry", "name"] }, // Removed 'url'
+								(results, status) => {
+									if (
+										status === google.maps.places.PlacesServiceStatus.OK &&
+										results &&
+										results[0]?.geometry?.location
+									) {
+										latitude = results[0].geometry.location.lat()
+										longitude = results[0].geometry.location.lng()
+										name = results[0].name || ""
+										googleMapsUrl = `https://www.google.com/maps/place/${encodeURIComponent(
+											name.replace(/ /g, "+")
+										)}/@${latitude},${longitude},15z` // Manually construct URL
+									}
+									resolve(null)
+								}
+							)
+						})
+					}
+				}
+			} catch (parseError) {
+				console.error("Error parsing Google Maps URL:", parseError)
+				throw new Error(
+					"Invalid Google Maps URL format. Please ensure it’s a valid place URL."
+				)
+			}
+		} else {
+			// If location is a place name (e.g., "Bakingo"), use Places API to fetch details
+			const placesService = new google.maps.places.PlacesService(
+				document.createElement("div")
+			)
+			await new Promise((resolve) => {
+				placesService.findPlaceFromQuery(
+					{ query: location, fields: ["geometry", "name"] }, // Removed 'url'
+					(results, status) => {
+						if (
+							status === google.maps.places.PlacesServiceStatus.OK &&
+							results &&
+							results[0]?.geometry?.location
+						) {
+							latitude = results[0].geometry.location.lat()
+							longitude = results[0].geometry.location.lng()
+							name = results[0].name || location
+							googleMapsUrl = `https://www.google.com/maps/place/${encodeURIComponent(
+								name.replace(/ /g, "+")
+							)}/@${latitude},${longitude},15z` // Manually construct URL
+						} else {
+							throw new Error(
+								"Could not find location. Please check the location name or URL."
+							)
+						}
+						resolve(null)
+					}
+				)
+			})
 		}
 
-		// Ensure latitude and longitude are within valid ranges
-		if (latitude < -90 || latitude > 90) {
-			throw new Error("Latitude must be between -90 and 90")
-		}
-		if (longitude < -180 || longitude > 180) {
-			throw new Error("Longitude must be between -180 and 180")
+		// Validate latitude and longitude
+		if (
+			isNaN(latitude) ||
+			isNaN(longitude) ||
+			latitude < -90 ||
+			latitude > 90 ||
+			longitude < -180 ||
+			longitude > 180
+		) {
+			throw new Error(
+				"Invalid latitude or longitude values derived from the location."
+			)
 		}
 
 		const { data, error } = await supabase
@@ -405,11 +482,11 @@ export async function createLocation({
 			.insert({
 				map_id: mapId,
 				creator_id: creatorId,
-				name,
+				name, // Use the derived or provided name
 				latitude,
 				longitude,
 				google_maps_url: googleMapsUrl,
-				note,
+				note: description,
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
 			})

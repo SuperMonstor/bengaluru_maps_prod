@@ -8,6 +8,7 @@ import { MapPin, Users, ThumbsUp, ChevronUp, ChevronDown } from "lucide-react"
 import Image from "next/image"
 import ShareButton from "@/components/sharebutton"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 const PLACEHOLDER_MAP_URL =
 	"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d248849.84916296526!2d77.49085577916772!3d12.954294595483615!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae1670c9b44e6d%3A0xf8dfc3e8517e4fe0!2sBengaluru%2C%20Karnataka!5e0!3m2!1sen!2sin!4v1710115165609!5m2!1sen!2sin"
@@ -56,9 +57,11 @@ export default function ClientMapPageContent({
 							{map.title}
 						</h1>
 						<div className="flex items-center gap-2">
-							<Button variant="default" size="sm">
-								Contribute
-							</Button>
+							<Link href={`/maps/${map.id}/submit`}>
+								<Button variant="default" size="sm">
+									Contribute
+								</Button>
+							</Link>
 							<ShareButton mapId={map.id} />
 						</div>
 					</div>
@@ -199,9 +202,11 @@ export default function ClientMapPageContent({
 								{map.title}
 							</h1>
 							<div className="flex items-center gap-2">
-								<Button variant="default" size="sm">
-									Contribute
-								</Button>
+								<Link href={`/maps/${map.id}/submit`}>
+									<Button variant="default" size="sm">
+										Contribute
+									</Button>
+								</Link>
 								<ShareButton mapId={map.id} />
 								<button
 									onClick={handleCollapse}

@@ -2,7 +2,7 @@
 
 import { getMapById } from "@/lib/supabase/maps"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { createLocation } from "@/lib/supabase/maps"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import Image from "next/image"
@@ -27,6 +27,7 @@ import "@reach/combobox/styles.css"
 
 // Import Google Maps types for better TypeScript support
 import {} from "@googlemaps/js-api-loader"
+import { useToast } from "@/hooks/use-toast"
 
 interface SubmitLocationProps {
 	params: Promise<{ mapId: string }> // Explicitly type params as a Promise
@@ -50,6 +51,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 	// Unwrap params using React.use()
 	const resolvedParams = use(params)
 	const mapId = resolvedParams.mapId
+	const { toast } = useToast()
 
 	const { user, isLoading } = useAuth()
 	const router = useRouter()
@@ -197,10 +199,43 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 			setSuggestions([]) // Clear suggestions after selection
 		}
 	}
-
 	const onSubmit: SubmitHandler<any> = async (data) => {
-		// Placeholder for submission logic (to be added later as per your request)
-		console.log("Form submitted:", data)
+		if (!user) {
+			router.push("/login")
+			return
+		}
+
+		try {
+			const result = await createLocation({
+				mapId,
+				creatorId: user.id,
+				location: data.location, // Google Maps place URL
+				description: data.description, // Use as note
+			})
+
+			if (result.error) {
+				console.error("Error creating location:", result.error)
+				toast({
+					variant: "destructive",
+					title: "Error submitting location",
+					description: result.error,
+				})
+			} else {
+				toast({
+					title: "Success!",
+					description: "Your location has been submitted to the community.",
+				})
+				router.push(`/maps/${mapId}`)
+				router.refresh()
+			}
+		} catch (err) {
+			console.error("Unexpected error:", err)
+			toast({
+				variant: "destructive",
+				title: "Error",
+				description: "An unexpected error occurred. Please try again.",
+			})
+		}
 	}
 
 	if (isLoading) {
@@ -344,7 +379,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 							</p>
 						)}
 					</div>
-
+					{/* 
 					<div className="space-y-4">
 						<p className="text-sm text-muted-foreground">
 							Do you love working from coffee shops, hotels, and libraries? Help
@@ -352,7 +387,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 							Google Maps. All of these places have wi-fi and seating. See the
 							notes for how busy it gets or if they have no laptop policies.
 						</p>
-					</div>
+					</div> */}
 
 					<Button
 						type="submit"
