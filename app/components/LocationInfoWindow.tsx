@@ -1,9 +1,12 @@
+"use client"
+
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Map, Clock, Star, MapPin as LocationIcon } from "lucide-react"
+import { Map, Clock, Star, Calendar, User } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { UserInfo } from "@/lib/hooks/useUserInfo"
 import { Location, PlaceDetails } from "@/lib/hooks/useGoogleMaps"
+import { useState } from "react"
 
 interface LocationInfoWindowProps {
   location: Location
@@ -18,9 +21,27 @@ export default function LocationInfoWindow({
   placeDetails,
   onClose,
 }: LocationInfoWindowProps) {
+  const [showFullNote, setShowFullNote] = useState(false);
+  
+  // Format the date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    }).format(date);
+  };
+  
+  // Truncate note if it's too long
+  const noteIsLong = location.note && location.note.length > 120;
+  const displayNote = noteIsLong && !showFullNote 
+    ? `${location.note?.substring(0, 120)}...` 
+    : location.note;
+
   return (
     <div
-      className="relative w-72 bg-white bg-opacity-90 backdrop-blur-md rounded-xl shadow-lg popup-card border border-gray-100"
+      className="relative w-72 bg-white bg-opacity-95 backdrop-blur-md rounded-xl shadow-lg popup-card border border-gray-100"
       style={{ marginTop: "-10px" }}
     >
       <button
@@ -48,7 +69,7 @@ export default function LocationInfoWindow({
           {location.name}
         </h3>
         
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-3">
           <Avatar className="h-8 w-8 border border-border/50">
             <AvatarImage
               src={userInfo.profilePicture || "/placeholder.svg"}
@@ -61,9 +82,10 @@ export default function LocationInfoWindow({
                 .toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <span className="text-sm text-muted-foreground">
-            by {userInfo.username}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">Added by</span>
+            <span className="text-sm font-medium">{userInfo.username}</span>
+          </div>
         </div>
         
         {placeDetails?.imageUrl ? (
@@ -83,35 +105,70 @@ export default function LocationInfoWindow({
           </p>
         )}
         
-        <p className="text-sm text-foreground/90 leading-relaxed mb-3 bg-gray-50 p-2 rounded-md">
-          {location.note || "No description available"}
-        </p>
-        
+        {/* Status and Ratings Section */}
         {placeDetails && (
-          <div className="text-sm text-muted-foreground mb-3 space-y-1.5">
-            {placeDetails.rating && (
-              <div className="flex items-center gap-1.5">
-                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                <span>{placeDetails.rating.toFixed(1)}/5</span>
-              </div>
-            )}
-            
-            {placeDetails.isOpenNow !== null && (
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4" />
-                <span className={placeDetails.isOpenNow ? "text-green-600 font-medium" : "text-red-600"}>
+          <div className="mb-3 p-2 bg-gray-50 rounded-md">
+            <div className="flex justify-between items-center mb-1">
+              {placeDetails.isOpenNow !== null && (
+                <span className={`text-sm font-medium ${placeDetails.isOpenNow ? "text-green-600" : "text-red-600"}`}>
                   {placeDetails.isOpenNow ? "Open Now" : "Closed Now"}
                 </span>
+              )}
+              
+              {placeDetails.rating && (
+                <div className="flex items-center gap-1">
+                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                  <span className="text-sm font-medium">{placeDetails.rating.toFixed(1)}/5</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Today's hours */}
+            {placeDetails.todayHours && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3 flex-shrink-0" />
+                <span>Today: {placeDetails.todayHours}</span>
               </div>
             )}
           </div>
         )}
         
+        {/* Note Section */}
+        {location.note && (
+          <div className="mb-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <User className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">
+                Note from contributor:
+              </span>
+            </div>
+            <div className="text-sm text-foreground/90 bg-gray-50 p-2 rounded-md">
+              <p>{displayNote}</p>
+              {noteIsLong && (
+                <button 
+                  onClick={() => setShowFullNote(!showFullNote)}
+                  className="text-xs text-primary mt-1 hover:underline"
+                >
+                  {showFullNote ? "Show less" : "Read more"}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Date added */}
+        <div className="flex items-center gap-1.5 mb-3">
+          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">
+            Added on {formatDate(location.created_at)}
+          </span>
+        </div>
+        
         <Link
           href={location.google_maps_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center w-full bg-[#4285F4] text-white py-2 rounded-md text-sm font-medium hover:bg-[#357abd] transition-colors"
+          className="inline-flex items-center justify-center w-full bg-[#E53935] text-white py-2 rounded-md text-sm font-medium hover:bg-[#D32F2F] transition-colors"
         >
           <Map className="w-4 h-4 mr-2" />
           Open in Google Maps

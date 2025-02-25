@@ -17,6 +17,10 @@ export interface PlaceDetails {
   imageUrl: string | null
   rating: number | null
   isOpenNow: boolean | null
+  address: string | null
+  phone: string | null
+  website: string | null
+  todayHours: string | null
 }
 
 export const mapStyles = [
@@ -88,18 +92,44 @@ export function useGoogleMaps(locations: Location[]) {
     const placeId = placeIdMatch[1]
     const placesService = new google.maps.places.PlacesService(mapRef.current)
     placesService.getDetails(
-      { placeId, fields: ["photos", "rating", "opening_hours"] },
+      { 
+        placeId, 
+        fields: [
+          "photos", 
+          "rating", 
+          "opening_hours",
+          "formatted_address",
+          "formatted_phone_number",
+          "website"
+        ] 
+      },
       (place, status) => {
         if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+          // Get today's opening hours
+          let todayHours = null;
+          if (place.opening_hours && place.opening_hours.weekday_text) {
+            const today = new Date().getDay(); // 0 is Sunday, 1 is Monday, etc.
+            // Adjust index since Google's weekday_text starts with Monday at index 0
+            const todayIndex = today === 0 ? 6 : today - 1;
+            const fullText = place.opening_hours.weekday_text[todayIndex];
+            // Extract just the hours part (e.g., "Monday: 9:00 AM – 10:00 PM" -> "9:00 AM – 10:00 PM")
+            todayHours = fullText.split(': ')[1];
+          }
+
           setPlaceDetails({
             imageUrl:
-              place.photos?.[0]?.getUrl({ maxWidth: 300, maxHeight: 300 }) ||
+              place.photos?.[0]?.getUrl({ maxWidth: 600, maxHeight: 400 }) ||
               null,
             rating: place.rating || null,
             isOpenNow: place.opening_hours?.isOpen() ?? null,
-          })
+            address: place.formatted_address || null,
+            phone: place.formatted_phone_number || null,
+            website: place.website || null,
+            todayHours: todayHours
+          });
         } else {
-          setPlaceDetails(null)
+          console.error("Place details error:", status);
+          setPlaceDetails(null);
         }
       }
     )
