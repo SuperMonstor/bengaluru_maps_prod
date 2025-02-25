@@ -47,7 +47,7 @@ export default function Header() {
 			</div>
 
 			<div className="flex items-center gap-4">
-				<Button variant="default">Submit List</Button>
+				<Button variant="default">Create Map</Button>
 				{isLoading ? (
 					<div className="h-10 w-10 animate-pulse bg-gray-300 rounded-full" />
 				) : user ? (
