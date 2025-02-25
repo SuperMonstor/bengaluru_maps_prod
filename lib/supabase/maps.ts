@@ -400,13 +400,13 @@ export async function createLocation({
 						latitude = parseFloat(coords[0])
 						longitude = parseFloat(coords[1])
 					} else {
-						// Fallback: Use Places API to get lat/lng from the place URL
+						// Fallback: Use Places API to get lat/lng and name from the place URL
 						const placesService = new google.maps.places.PlacesService(
 							document.createElement("div")
 						)
 						await new Promise((resolve) => {
 							placesService.findPlaceFromQuery(
-								{ query: location, fields: ["geometry", "name"] }, // Removed 'url'
+								{ query: location, fields: ["geometry", "name"] },
 								(results, status) => {
 									if (
 										status === google.maps.places.PlacesServiceStatus.OK &&
@@ -416,9 +416,10 @@ export async function createLocation({
 										latitude = results[0].geometry.location.lat()
 										longitude = results[0].geometry.location.lng()
 										name = results[0].name || ""
+										// Construct Google Maps place URL using place ID if available, or fallback to name and coordinates
 										googleMapsUrl = `https://www.google.com/maps/place/${encodeURIComponent(
 											name.replace(/ /g, "+")
-										)}/@${latitude},${longitude},15z` // Manually construct URL
+										)}/@${latitude},${longitude},15z`
 									}
 									resolve(null)
 								}
@@ -433,13 +434,13 @@ export async function createLocation({
 				)
 			}
 		} else {
-			// If location is a place name (e.g., "Bakingo"), use Places API to fetch details
+			// If location is a place name (e.g., "Glen's Bakehouse KalyanNagar"), use Places API to fetch details
 			const placesService = new google.maps.places.PlacesService(
 				document.createElement("div")
 			)
 			await new Promise((resolve) => {
 				placesService.findPlaceFromQuery(
-					{ query: location, fields: ["geometry", "name"] }, // Removed 'url'
+					{ query: location, fields: ["geometry", "name", "place_id"] }, // Added place_id to construct the exact URL
 					(results, status) => {
 						if (
 							status === google.maps.places.PlacesServiceStatus.OK &&
@@ -449,9 +450,9 @@ export async function createLocation({
 							latitude = results[0].geometry.location.lat()
 							longitude = results[0].geometry.location.lng()
 							name = results[0].name || location
-							googleMapsUrl = `https://www.google.com/maps/place/${encodeURIComponent(
-								name.replace(/ /g, "+")
-							)}/@${latitude},${longitude},15z` // Manually construct URL
+							const placeId = results[0].place_id
+							// Construct the exact Google Maps place URL using the place ID
+							googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${placeId}`
 						} else {
 							throw new Error(
 								"Could not find location. Please check the location name or URL."
