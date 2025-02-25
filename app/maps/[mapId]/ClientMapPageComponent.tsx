@@ -53,6 +53,24 @@ const popupStyles = `
 	}
 `
 
+const CustomMarker = ({ position, onClick }: any) => {
+	return (
+		<Marker
+			position={position}
+			onClick={onClick}
+			icon={{
+				path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+				fillColor: "#4285F4",
+				fillOpacity: 1,
+				strokeWeight: 1,
+				strokeColor: "#FFFFFF",
+				scale: 1.5,
+				anchor: new google.maps.Point(12, 22),
+			}}
+		/>
+	)
+}
+
 export default function ClientMapPageContent({
 	map,
 }: ClientMapPageContentProps) {
@@ -83,6 +101,39 @@ export default function ClientMapPageContent({
 		setSelectedLocation(null)
 		if (isOpen) setIsOpen(false)
 	}
+
+	useEffect(() => {
+		if (!isLoaded || !mapRef.current) return;
+		
+		// Apply optimal zoom and bounds
+		const bounds = new google.maps.LatLngBounds();
+		map.locations.forEach(location => {
+			bounds.extend({ lat: location.latitude, lng: location.longitude });
+		});
+		
+		if (map.locations.length > 1) {
+			mapRef.current.fitBounds(bounds, {
+				padding: { top: 50, right: 50, bottom: 50, left: 50 }
+			});
+		} else if (map.locations.length === 1) {
+			mapRef.current.setCenter({ 
+				lat: map.locations[0].latitude, 
+				lng: map.locations[0].longitude 
+			});
+			mapRef.current.setZoom(15);
+		}
+		
+		// Ensure zoom stays within a reasonable range
+		const listener = google.maps.event.addListenerOnce(mapRef.current, "idle", () => {
+			const currentZoom = mapRef.current?.getZoom();
+			if (currentZoom && currentZoom < 10) mapRef.current?.setZoom(10);
+			if (currentZoom && currentZoom > 15) mapRef.current?.setZoom(15);
+		});
+		
+		return () => {
+			google.maps.event.removeListener(listener);
+		};
+	}, [isLoaded, map.locations]);
 
 	if (!isLoaded) {
 		return (
@@ -173,10 +224,16 @@ export default function ClientMapPageContent({
 								mapTypeControl: false,
 								fullscreenControl: false,
 								styles: mapStyles,
+								gestureHandling: 'greedy',
+								maxZoom: 18,
+								minZoom: 3,
+								disableDefaultUI: false,
+								zoomControl: true,
+								clickableIcons: false,
 							}}
 						>
 							{map.locations.map((location) => (
-								<Marker
+								<CustomMarker
 									key={location.id}
 									position={{ lat: location.latitude, lng: location.longitude }}
 									onClick={() => onMarkerClick(location)}
@@ -216,10 +273,16 @@ export default function ClientMapPageContent({
 								mapTypeControl: false,
 								fullscreenControl: false,
 								styles: mapStyles,
+								gestureHandling: 'greedy',
+								maxZoom: 18,
+								minZoom: 3,
+								disableDefaultUI: false,
+								zoomControl: true,
+								clickableIcons: false,
 							}}
 						>
 							{map.locations.map((location) => (
-								<Marker
+								<CustomMarker
 									key={location.id}
 									position={{ lat: location.latitude, lng: location.longitude }}
 									onClick={() => onMarkerClick(location)}
@@ -242,6 +305,15 @@ export default function ClientMapPageContent({
 								</InfoWindow>
 							)}
 						</GoogleMap>
+					</div>
+
+					<div className="fixed top-4 right-4 z-10 flex gap-2">
+						<Link href={`/maps/${map.id}/submit`}>
+							<Button variant="default" size="sm" className="shadow-md">
+								Contribute
+							</Button>
+						</Link>
+						<ShareButton mapId={map.id} />
 					</div>
 
 					<div
