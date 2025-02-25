@@ -10,7 +10,7 @@ interface HomeProps {
 	searchParams: Promise<{ page?: string }> // Explicitly type as Promise
 }
 
-export default async function Home({ searchParams }: HomeProps) {
+export default async function HomePage({ searchParams }: HomeProps) {
 	const resolvedSearchParams = await searchParams // Await the Promise
 	const page = parseInt(resolvedSearchParams.page || "1", 10)
 	const limit = 10
