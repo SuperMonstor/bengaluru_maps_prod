@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Markdown } from "@/components/markdown-renderer"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { MapPin, Users, ThumbsUp, ChevronUp, ChevronDown } from "lucide-react"
@@ -85,11 +85,44 @@ export default function ClientMapPageContent({
 
 	const handleCollapse = () => setIsOpen(false)
 
+	const mapStateRef = useRef({
+		center: null as google.maps.LatLng | null | undefined,
+		zoom: null as number | null | undefined
+	});
+
+	const handleMapLoad = (map: google.maps.Map) => {
+		onMapLoad(map);
+		
+		const center = map.getCenter();
+		const zoom = map.getZoom();
+		
+		if (center) mapStateRef.current.center = center;
+		if (zoom !== undefined) mapStateRef.current.zoom = zoom;
+		
+		map.addListener('idle', () => {
+			if (!selectedLocation) {
+				const center = map.getCenter();
+				const zoom = map.getZoom();
+				
+				if (center) mapStateRef.current.center = center;
+				if (zoom !== undefined) mapStateRef.current.zoom = zoom;
+			}
+		});
+	};
+
 	const onMarkerClick = (location: Location) => {
-		setSelectedLocation(location)
-		fetchUserInfo(location.creator_id)
-		fetchPlaceDetails(location.google_maps_url)
-	}
+		setSelectedLocation(location);
+		fetchUserInfo(location.creator_id);
+		fetchPlaceDetails(location.google_maps_url);
+	};
+
+	const handleInfoWindowClose = () => {
+		if (mapRef.current && mapStateRef.current.center && mapStateRef.current.zoom) {
+			mapRef.current.setCenter(mapStateRef.current.center);
+			mapRef.current.setZoom(mapStateRef.current.zoom);
+		}
+		setSelectedLocation(null);
+	};
 
 	const handleMapClick = () => {
 		setSelectedLocation(null)
@@ -213,7 +246,7 @@ export default function ClientMapPageContent({
 							mapContainerStyle={{ width: "100%", height: "100%" }}
 							center={initialSettings.center}
 							zoom={initialSettings.zoom}
-							onLoad={onMapLoad}
+							onLoad={handleMapLoad}
 							onClick={handleMapClick}
 							options={{
 								streetViewControl: false,
@@ -246,13 +279,13 @@ export default function ClientMapPageContent({
 										lat: selectedLocation.latitude,
 										lng: selectedLocation.longitude,
 									}}
-									onCloseClick={() => setSelectedLocation(null)}
+									onCloseClick={handleInfoWindowClose}
 								>
 									<LocationInfoWindow
 										location={selectedLocation}
 										userInfo={userInfo}
 										placeDetails={placeDetails}
-										onClose={() => setSelectedLocation(null)}
+										onClose={handleInfoWindowClose}
 									/>
 								</InfoWindow>
 							)}
@@ -267,7 +300,7 @@ export default function ClientMapPageContent({
 							mapContainerStyle={{ width: "100%", height: "100%" }}
 							center={initialSettings.center}
 							zoom={initialSettings.zoom}
-							onLoad={onMapLoad}
+							onLoad={handleMapLoad}
 							onClick={handleMapClick}
 							options={{
 								streetViewControl: false,
@@ -295,13 +328,13 @@ export default function ClientMapPageContent({
 										lat: selectedLocation.latitude,
 										lng: selectedLocation.longitude,
 									}}
-									onCloseClick={() => setSelectedLocation(null)}
+									onCloseClick={handleInfoWindowClose}
 								>
 									<LocationInfoWindow
 										location={selectedLocation}
 										userInfo={userInfo}
 										placeDetails={placeDetails}
-										onClose={() => setSelectedLocation(null)}
+										onClose={handleInfoWindowClose}
 									/>
 								</InfoWindow>
 							)}
