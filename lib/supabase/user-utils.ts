@@ -1,5 +1,6 @@
 import { User } from "@supabase/supabase-js"
 import { createClient } from "./service/client"
+import { UserSchema } from "../types/user"
 
 interface UpdateUserResult {
 	success: boolean

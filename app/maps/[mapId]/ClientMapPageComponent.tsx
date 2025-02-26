@@ -3,13 +3,7 @@
 import { useState, useEffect } from "react"
 import { Markdown } from "@/components/markdown-renderer"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import {
-	MapPin,
-	Users,
-	ThumbsUp,
-	ChevronUp,
-	ChevronDown,
-} from "lucide-react"
+import { MapPin, Users, ThumbsUp, ChevronUp, ChevronDown } from "lucide-react"
 import Image from "next/image"
 import ShareButton from "@/components/sharebutton"
 import { Button } from "@/components/ui/button"
@@ -75,18 +69,18 @@ export default function ClientMapPageContent({
 	map,
 }: ClientMapPageContentProps) {
 	const [isOpen, setIsOpen] = useState(false)
-	const { 
-		isLoaded, 
-		mapRef, 
-		selectedLocation, 
-		setSelectedLocation, 
-		placeDetails, 
-		fetchPlaceDetails, 
-		initialSettings, 
-		onMapLoad, 
-		mapStyles 
+	const {
+		isLoaded,
+		mapRef,
+		selectedLocation,
+		setSelectedLocation,
+		placeDetails,
+		fetchPlaceDetails,
+		initialSettings,
+		onMapLoad,
+		mapStyles,
 	} = useGoogleMaps(map.locations)
-	
+
 	const { userInfo, fetchUserInfo } = useUserInfo()
 
 	const handleCollapse = () => setIsOpen(false)
@@ -103,35 +97,39 @@ export default function ClientMapPageContent({
 	}
 
 	useEffect(() => {
-		if (!isLoaded || !mapRef.current) return;
-		
+		if (!isLoaded || !mapRef.current) return
+
 		// Apply optimal zoom and bounds
-		const bounds = new google.maps.LatLngBounds();
-		map.locations.forEach(location => {
-			bounds.extend({ lat: location.latitude, lng: location.longitude });
-		});
-		
+		const bounds = new google.maps.LatLngBounds()
+		map.locations.forEach((location) => {
+			bounds.extend({ lat: location.latitude, lng: location.longitude })
+		})
+
 		if (map.locations.length > 1) {
-			mapRef.current.fitBounds(bounds);
+			mapRef.current.fitBounds(bounds)
 		} else if (map.locations.length === 1) {
-			mapRef.current.setCenter({ 
-				lat: map.locations[0].latitude, 
-				lng: map.locations[0].longitude 
-			});
-			mapRef.current.setZoom(15);
+			mapRef.current.setCenter({
+				lat: map.locations[0].latitude,
+				lng: map.locations[0].longitude,
+			})
+			mapRef.current.setZoom(15)
 		}
-		
+
 		// Ensure zoom stays within a reasonable range
-		const listener = google.maps.event.addListenerOnce(mapRef.current, "idle", () => {
-			const currentZoom = mapRef.current?.getZoom();
-			if (currentZoom && currentZoom < 10) mapRef.current?.setZoom(10);
-			if (currentZoom && currentZoom > 15) mapRef.current?.setZoom(15);
-		});
-		
+		const listener = google.maps.event.addListenerOnce(
+			mapRef.current,
+			"idle",
+			() => {
+				const currentZoom = mapRef.current?.getZoom()
+				if (currentZoom && currentZoom < 10) mapRef.current?.setZoom(10)
+				if (currentZoom && currentZoom > 15) mapRef.current?.setZoom(15)
+			}
+		)
+
 		return () => {
-			google.maps.event.removeListener(listener);
-		};
-	}, [isLoaded, map.locations]);
+			google.maps.event.removeListener(listener)
+		}
+	}, [isLoaded, map.locations])
 
 	if (!isLoaded) {
 		return (
@@ -222,7 +220,7 @@ export default function ClientMapPageContent({
 								mapTypeControl: false,
 								fullscreenControl: false,
 								styles: mapStyles,
-								gestureHandling: 'greedy',
+								gestureHandling: "greedy",
 								maxZoom: 18,
 								minZoom: 3,
 								disableDefaultUI: false,
@@ -230,13 +228,18 @@ export default function ClientMapPageContent({
 								clickableIcons: false,
 							}}
 						>
-							{map.locations.map((location) => (
-								<CustomMarker
-									key={location.id}
-									position={{ lat: location.latitude, lng: location.longitude }}
-									onClick={() => onMarkerClick(location)}
-								/>
-							))}
+							{map.locations
+								.filter((location) => location.is_approved) // Only show approved locations
+								.map((location) => (
+									<CustomMarker
+										key={location.id}
+										position={{
+											lat: location.latitude,
+											lng: location.longitude,
+										}}
+										onClick={() => onMarkerClick(location)}
+									/>
+								))}
 							{selectedLocation && userInfo && (
 								<InfoWindow
 									position={{
@@ -271,7 +274,7 @@ export default function ClientMapPageContent({
 								mapTypeControl: false,
 								fullscreenControl: false,
 								styles: mapStyles,
-								gestureHandling: 'greedy',
+								gestureHandling: "greedy",
 								maxZoom: 18,
 								minZoom: 3,
 								disableDefaultUI: false,

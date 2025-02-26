@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/context/AuthContext"
 import MarkdownEditor from "@/components/markdown-editor"
 import { useRouter } from "next/navigation"
 import { createMap } from "@/lib/supabase/maps"
+import { Toaster } from "@/components/ui/toaster"
 import { useToast } from "@/hooks/use-toast"
 
 const MDXEditorDynamic = dynamic(

@@ -32,18 +32,14 @@ export default function GoogleSignInButton() {
 	}
 
 	return (
-		<Button 
+		<Button
 			variant="outline"
 			onClick={handleGoogleSignIn}
 			className="flex items-center gap-2"
 		>
-			<Image
-				src={googleLogo}
-				alt="Google logo"
-				className="w-4 h-4"
-			/>
+			<Image src={googleLogo} alt="Google logo" className="w-4 h-4" />
 			<span className="hidden sm:inline">Sign In with Google</span>
 			<span className="sm:hidden">Sign In</span>
 		</Button>
 	)
-} 
+}
