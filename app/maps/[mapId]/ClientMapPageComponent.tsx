@@ -112,9 +112,7 @@ export default function ClientMapPageContent({
 		});
 		
 		if (map.locations.length > 1) {
-			mapRef.current.fitBounds(bounds, {
-				padding: { top: 50, right: 50, bottom: 50, left: 50 }
-			});
+			mapRef.current.fitBounds(bounds);
 		} else if (map.locations.length === 1) {
 			mapRef.current.setCenter({ 
 				lat: map.locations[0].latitude, 
