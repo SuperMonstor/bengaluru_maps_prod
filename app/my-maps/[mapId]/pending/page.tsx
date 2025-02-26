@@ -205,24 +205,33 @@ export default function PendingSubmissionsPage({
 
 	return (
 		<main className="flex flex-col min-h-screen bg-gray-50">
-			<div className="container mx-auto px-4 py-8">
-				<div className="mb-8">
-					<h1 className="text-3xl font-bold text-gray-900 mb-2">{`Pending Submissions for ${mapName}`}</h1>
-					<p className="text-gray-500">Review and approve location submissions from contributors</p>
+			<div className="container mx-auto px-3 py-4 md:px-4 md:py-8">
+				<div className="mb-4 md:mb-8">
+					<h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
+						{`Pending Submissions for ${mapName}`}
+					</h1>
+					<p className="text-sm md:text-base text-gray-500">
+						Review and approve location submissions from contributors
+					</p>
 				</div>
-				
+
 				{submissions.length === 0 ? (
-					<div className="bg-white rounded-lg shadow p-8 text-center">
-						<p className="text-gray-500 text-lg">No pending submissions to review.</p>
+					<div className="bg-white rounded-lg shadow p-6 md:p-8 text-center">
+						<p className="text-gray-500 text-base md:text-lg">
+							No pending submissions to review.
+						</p>
 					</div>
 				) : (
-					<div className="grid gap-4">
+					<div className="grid gap-3 md:gap-4">
 						{submissions.map((submission) => (
-							<Card key={submission.id} className="overflow-hidden border-0 shadow-sm">
+							<Card
+								key={submission.id}
+								className="overflow-hidden border-0 shadow-sm"
+							>
 								<CardContent className="p-0">
-									<div className="flex flex-row">
-										{/* Image section - smaller */}
-										<div className="w-32 h-32 bg-gray-100 flex-shrink-0">
+									<div className="flex flex-col sm:flex-row">
+										{/* Image section - full width on mobile, fixed width on desktop */}
+										<div className="w-full sm:w-32 h-40 sm:h-32 bg-gray-100 flex-shrink-0">
 											{submission.image_url ? (
 												<Image
 													src={submission.image_url}
@@ -237,15 +246,15 @@ export default function PendingSubmissionsPage({
 												</div>
 											)}
 										</div>
-										
+
 										{/* Content section */}
-										<div className="flex-1 p-4">
-											<div className="flex justify-between items-start mb-2">
-												<h3 className="text-lg font-semibold text-gray-900 truncate max-w-[70%]">
+										<div className="flex-1 p-3 sm:p-4">
+											<div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0 mb-2">
+												<h3 className="text-lg font-semibold text-gray-900 truncate max-w-full sm:max-w-[70%]">
 													{submission.name}
 												</h3>
-												
-												<div className="flex gap-1">
+
+												<div className="flex gap-1 self-end sm:self-auto">
 													<Button
 														variant="outline"
 														size="sm"
@@ -266,9 +275,9 @@ export default function PendingSubmissionsPage({
 													</Button>
 												</div>
 											</div>
-											
+
 											{/* User info and rating in one row */}
-											<div className="flex items-center justify-between mb-2">
+											<div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-0 mb-2">
 												<div className="flex items-center gap-2 text-xs text-gray-600">
 													<Avatar className="h-5 w-5 border border-gray-200">
 														<AvatarImage
@@ -283,34 +292,52 @@ export default function PendingSubmissionsPage({
 														</AvatarFallback>
 													</Avatar>
 													<span>
-														Submitted by <span className="font-medium">{submission.submitted_by.first_name}{" "}
-														{submission.submitted_by.last_name}</span>
+														Submitted by{" "}
+														<span className="font-medium">
+															{submission.submitted_by.first_name}{" "}
+															{submission.submitted_by.last_name}
+														</span>
 													</span>
 												</div>
-												
+
 												{/* Rating */}
 												{submission.rating && (
 													<div className="flex items-center">
 														<div className="flex items-center text-yellow-500">
 															{[...Array(5)].map((_, i) => (
-																<svg key={i} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" 
-																	className={`w-3 h-3 ${i < Math.floor(submission.rating || 0) ? 'text-yellow-500' : 'text-gray-200'}`}>
-																	<path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+																<svg
+																	key={i}
+																	xmlns="http://www.w3.org/2000/svg"
+																	viewBox="0 0 24 24"
+																	fill="currentColor"
+																	className={`w-3 h-3 ${
+																		i < Math.floor(submission.rating || 0)
+																			? "text-yellow-500"
+																			: "text-gray-200"
+																	}`}
+																>
+																	<path
+																		fillRule="evenodd"
+																		d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"
+																		clipRule="evenodd"
+																	/>
 																</svg>
 															))}
-															<span className="ml-1 text-xs font-medium text-gray-700">{submission.rating.toFixed(1)}</span>
+															<span className="ml-1 text-xs font-medium text-gray-700">
+																{submission.rating.toFixed(1)}
+															</span>
 														</div>
 													</div>
 												)}
 											</div>
-											
+
 											{/* Note */}
 											{submission.note && (
 												<div className="bg-gray-50 p-2 rounded-md text-xs text-gray-700 mb-2">
 													<p className="italic">"{submission.note}"</p>
 												</div>
 											)}
-											
+
 											{/* Google Maps Link at the bottom */}
 											<Link
 												href={submission.google_maps_url}

@@ -79,11 +79,11 @@ export default function Header() {
 	}
 
 	return (
-		<div className="flex justify-between items-center p-4">
+		<div className="flex justify-between items-center p-3 md:p-4 flex-wrap gap-y-2">
 			<div className="flex items-baseline space-x-1">
 				<Link
 					href="/"
-					className="text-sm md:text-2xl sm:text-xl font-semibold hover:opacity-80"
+					className="text-lg md:text-2xl sm:text-xl font-semibold hover:opacity-80"
 				>
 					Bengaluru Maps
 				</Link>
@@ -96,10 +96,82 @@ export default function Header() {
 				</Link>
 			</div>
 
-			<div className="flex items-center gap-4">
+			<div className="flex items-center gap-2 md:gap-3">
+				{!isLoading && user && (
+					<Link href="/my-maps" className="relative mr-1">
+						<Button
+							variant="ghost"
+							size="sm"
+							className="text-gray-700 hover:text-gray-900 hidden md:flex items-center gap-2"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								className="w-4 h-4"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth="2"
+									d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+								/>
+							</svg>
+							My Maps
+							{pendingCount > 0 && (
+								<span className="ml-1 bg-red-100 text-red-600 text-xs font-medium px-1.5 py-0.5 rounded-full">
+									{pendingCount}
+								</span>
+							)}
+						</Button>
+					</Link>
+				)}
+
 				<Link href="/create-map">
-					<Button variant="default">Create Map</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 hidden sm:flex items-center gap-2"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							className="w-4 h-4"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth="2"
+								d="M12 4v16m8-8H4"
+							/>
+						</svg>
+						Create Map
+					</Button>
+					<Button
+						variant="outline"
+						size="icon"
+						className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 sm:hidden w-8 h-8"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							className="w-4 h-4"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth="2"
+								d="M12 4v16m8-8H4"
+							/>
+						</svg>
+					</Button>
 				</Link>
+
 				{isLoading ? (
 					<div className="h-8 w-8 md:h-9 md:w-9 animate-pulse bg-gray-300 rounded-full" />
 				) : user ? (
@@ -119,21 +191,23 @@ export default function Header() {
 											alt={`${user.first_name} ${user.last_name}`}
 										/>
 										<AvatarFallback className="bg-primary/10 text-primary font-medium">
-											{user.first_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
+											{user.first_name?.[0]?.toUpperCase() ||
+												user.email?.[0]?.toUpperCase()}
 										</AvatarFallback>
 									</Avatar>
 								</div>
-								
+
 								{pendingCount > 0 && (
-									<div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-medium rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-white shadow-sm">
-										{pendingCount > 99 ? '99+' : pendingCount}
+									<div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-medium rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-white shadow-sm md:hidden">
+										{pendingCount > 99 ? "99+" : pendingCount}
 									</div>
 								)}
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent
 							align="end"
-							className="w-64 p-0 bg-white shadow-lg rounded-lg border border-gray-100"
+							sideOffset={8}
+							className="w-[calc(100vw-2rem)] max-w-[320px] p-0 bg-white shadow-lg rounded-lg border border-gray-100"
 						>
 							<div className="p-3 border-b border-gray-100 bg-gray-50 rounded-t-lg">
 								<div className="flex items-center gap-3">
@@ -145,7 +219,8 @@ export default function Header() {
 											}
 										/>
 										<AvatarFallback className="bg-primary/10 text-primary font-medium">
-											{user.first_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
+											{user.first_name?.[0]?.toUpperCase() ||
+												user.email?.[0]?.toUpperCase()}
 										</AvatarFallback>
 									</Avatar>
 									<div className="flex flex-col">
@@ -158,13 +233,24 @@ export default function Header() {
 									</div>
 								</div>
 							</div>
-							
-							<div className="py-1">
+
+							<div className="py-1 md:hidden">
 								<Link href="/my-maps">
 									<DropdownMenuItem className="cursor-pointer flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
 										<div className="flex items-center gap-2">
-											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-4 h-4 text-gray-500">
-												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												className="w-4 h-4 text-gray-500"
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													strokeWidth="2"
+													d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+												/>
 											</svg>
 											My Maps
 										</div>
@@ -175,24 +261,46 @@ export default function Header() {
 										)}
 									</DropdownMenuItem>
 								</Link>
-								
+
 								<Link href="/create-map">
-									<DropdownMenuItem className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-4 h-4 text-gray-500">
-											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+									<DropdownMenuItem className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 md:hidden">
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											className="w-4 h-4 text-gray-500"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												strokeWidth="2"
+												d="M12 4v16m8-8H4"
+											/>
 										</svg>
 										Create New Map
 									</DropdownMenuItem>
 								</Link>
 							</div>
-							
+
 							<div className="border-t border-gray-100">
 								<DropdownMenuItem
 									onClick={handleSignOut}
 									className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
 								>
-									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-4 h-4">
-										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										className="w-4 h-4"
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth="2"
+											d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+										/>
 									</svg>
 									Sign Out
 								</DropdownMenuItem>
