@@ -5,11 +5,12 @@ import { useAuth } from "@/lib/context/AuthContext"
 import { createClient } from "@/lib/supabase/service/client"
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
-import { useGoogleMaps } from "@/lib/hooks/useGoogleMaps"
-import { Check, X } from "lucide-react"
+import { Check, X, MapPin } from "lucide-react"
 import { getMapById } from "@/lib/supabase/maps"
-import React from "react" // Import React for use()
+import React from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { useLoadScript } from "@react-google-maps/api"
 
 interface Submission {
 	id: string
@@ -18,6 +19,7 @@ interface Submission {
 	google_maps_url: string
 	note: string | null
 	image_url: string | null
+	rating: number | null
 }
 
 export default function PendingSubmissionsPage({
@@ -30,7 +32,11 @@ export default function PendingSubmissionsPage({
 	const [mapName, setMapName] = useState<string>("")
 	const [loading, setLoading] = useState(true)
 	const supabase = createClient()
-	const { isLoaded, mapRef } = useGoogleMaps([]) // Load Google Maps API without rendering a map
+
+	const { isLoaded } = useLoadScript({
+		googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+		libraries: ["places"],
+	})
 
 	// Unwrap params with React.use()
 	const { mapId } = React.use(params)
@@ -39,6 +45,8 @@ export default function PendingSubmissionsPage({
 		if (!user || !isLoaded) return
 
 		const fetchMapAndSubmissions = async () => {
+			console.log("Fetching map and submissions for mapId:", mapId)
+
 			// Fetch map name
 			const { data: mapData, error: mapError } = await getMapById(mapId)
 			if (mapError || !mapData) {
@@ -61,39 +69,57 @@ export default function PendingSubmissionsPage({
 				return
 			}
 
-			// Fetch images from Google Places API
-			const submissionsWithImages = await Promise.all(
+			console.log("Submissions fetched:", data)
+
+			// Fetch images, ratings from Google Places API
+			const dummyElement = document.createElement("div")
+			const placesService = new google.maps.places.PlacesService(dummyElement)
+			const submissionsWithDetails = await Promise.all(
 				data.map(async (submission) => {
 					const placeIdMatch =
 						submission.google_maps_url.match(/place_id:([^&]+)/)
 					let imageUrl: string | null = null
-					if (placeIdMatch && mapRef.current) {
+					let rating: number | null = null
+
+					if (placeIdMatch) {
 						const placeId = placeIdMatch[1]
-						const placesService = new google.maps.places.PlacesService(
-							mapRef.current
-						)
-						imageUrl = await new Promise((resolve) => {
-							placesService.getDetails(
-								{ placeId, fields: ["photos"] },
-								(place, status) => {
-									resolve(
-										status === google.maps.places.PlacesServiceStatus.OK &&
-											place?.photos?.[0]
-											? place.photos[0].getUrl({
-													maxWidth: 100,
-													maxHeight: 100,
-											  })
-											: null
+						const details =
+							await new Promise<google.maps.places.PlaceResult | null>(
+								(resolve) => {
+									placesService.getDetails(
+										{ placeId, fields: ["photos", "rating"] },
+										(place, status) => {
+											console.log(
+												`Place ${submission.name} status:`,
+												status,
+												place
+											)
+											resolve(
+												status === google.maps.places.PlacesServiceStatus.OK
+													? place
+													: null
+											)
+										}
 									)
 								}
 							)
-						})
+
+						if (details) {
+							imageUrl =
+								details.photos?.[0]?.getUrl({
+									maxWidth: 100,
+									maxHeight: 100,
+								}) || null
+							rating = details.rating || null
+						}
 					}
-					return { ...submission, image_url: imageUrl }
+
+					return { ...submission, image_url: imageUrl, rating }
 				})
 			)
 
-			setSubmissions(submissionsWithImages)
+			console.log("Submissions with details:", submissionsWithDetails)
+			setSubmissions(submissionsWithDetails)
 			setLoading(false)
 		}
 
@@ -178,9 +204,23 @@ export default function PendingSubmissionsPage({
 										<h3 className="text-h5 font-semibold text-foreground mb-2">
 											{submission.name}
 										</h3>
-										<p className="text-body-sm text-muted-foreground">
+										<p className="text-body-sm text-muted-foreground mb-2">
 											{submission.note || "No description"}
 										</p>
+										{submission.rating && (
+											<p className="text-body-sm text-muted-foreground mb-2">
+												Rating: {submission.rating}/5
+											</p>
+										)}
+										<Link
+											href={submission.google_maps_url}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="inline-flex items-center text-body-sm text-primary hover:underline"
+										>
+											<MapPin className="w-4 h-4 mr-1" />
+											View on Google Maps
+										</Link>
 									</div>
 									<div className="flex gap-2">
 										<Button

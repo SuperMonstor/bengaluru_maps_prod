@@ -1,4 +1,3 @@
-// lib/supabase/maps.ts
 import { createClient } from "./service/client"
 import { ImageProcessor, IMAGE_CONFIG } from "@/lib/utils/images"
 import {
@@ -8,7 +7,7 @@ import {
 	MapsResult,
 	CreateMapResult,
 	CreateLocationResult,
-} from "@/lib/types/map" // Import from types folder
+} from "@/lib/types/map"
 import { User } from "@/lib/types/user"
 
 const supabase = createClient()
@@ -59,7 +58,6 @@ async function uploadImage(file: File): Promise<string> {
 	return publicUrl
 }
 
-// Simplified createMap with its own error handling
 export async function createMap({
 	title,
 	shortDescription,
@@ -282,7 +280,7 @@ export async function getMapById(mapId: string) {
 				description: data.short_description,
 				body: data.body,
 				image: data.display_picture || "/placeholder.svg",
-				locations: data.locations || [], // Now includes is_approved
+				locations: data.locations || [],
 				contributors: contributorCounts.get(data.id) ?? 0,
 				upvotes: data.votes.length,
 				username: user
@@ -320,7 +318,6 @@ export async function createLocation({
 		let name: string = ""
 
 		if (location.startsWith("http")) {
-			// URL parsing logic remains the same
 			const url = new URL(location)
 			const pathParts = url.pathname.split("/")
 			if (pathParts.includes("place") && url.hash) {
@@ -336,7 +333,7 @@ export async function createLocation({
 					longitude = parseFloat(coords[1])
 				}
 			}
-			name = location // Simplified, adjust as needed
+			name = location
 			googleMapsUrl = location
 		} else {
 			const placesService = new google.maps.places.PlacesService(
@@ -387,7 +384,7 @@ export async function createLocation({
 				note: description,
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
-				is_approved: false, // New submissions are unapproved by default
+				is_approved: false,
 			})
 			.select()
 			.single()
