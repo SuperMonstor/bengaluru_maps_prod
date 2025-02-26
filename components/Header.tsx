@@ -88,7 +88,7 @@ export default function Header() {
 					Bengaluru Maps
 				</Link>
 				<Link
-					href="https://x.com/realsdarshansk"
+					href="https://x.com/realsudarshansk"
 					target="_blank"
 					className="text-xs text-gray-500 md:text-sm hover:underline"
 				>
