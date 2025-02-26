@@ -87,42 +87,46 @@ export default function ClientMapPageContent({
 
 	const mapStateRef = useRef({
 		center: null as google.maps.LatLng | null | undefined,
-		zoom: null as number | null | undefined
-	});
+		zoom: null as number | null | undefined,
+	})
 
 	const handleMapLoad = (map: google.maps.Map) => {
-		onMapLoad(map);
-		
-		const center = map.getCenter();
-		const zoom = map.getZoom();
-		
-		if (center) mapStateRef.current.center = center;
-		if (zoom !== undefined) mapStateRef.current.zoom = zoom;
-		
-		map.addListener('idle', () => {
+		onMapLoad(map)
+
+		const center = map.getCenter()
+		const zoom = map.getZoom()
+
+		if (center) mapStateRef.current.center = center
+		if (zoom !== undefined) mapStateRef.current.zoom = zoom
+
+		map.addListener("idle", () => {
 			if (!selectedLocation) {
-				const center = map.getCenter();
-				const zoom = map.getZoom();
-				
-				if (center) mapStateRef.current.center = center;
-				if (zoom !== undefined) mapStateRef.current.zoom = zoom;
+				const center = map.getCenter()
+				const zoom = map.getZoom()
+
+				if (center) mapStateRef.current.center = center
+				if (zoom !== undefined) mapStateRef.current.zoom = zoom
 			}
-		});
-	};
+		})
+	}
 
 	const onMarkerClick = (location: Location) => {
-		setSelectedLocation(location);
-		fetchUserInfo(location.creator_id);
-		fetchPlaceDetails(location.google_maps_url);
-	};
+		setSelectedLocation(location)
+		fetchUserInfo(location.creator_id)
+		fetchPlaceDetails(location.google_maps_url)
+	}
 
 	const handleInfoWindowClose = () => {
-		if (mapRef.current && mapStateRef.current.center && mapStateRef.current.zoom) {
-			mapRef.current.setCenter(mapStateRef.current.center);
-			mapRef.current.setZoom(mapStateRef.current.zoom);
+		if (
+			mapRef.current &&
+			mapStateRef.current.center &&
+			mapStateRef.current.zoom
+		) {
+			mapRef.current.setCenter(mapStateRef.current.center)
+			mapRef.current.setZoom(mapStateRef.current.zoom)
 		}
-		setSelectedLocation(null);
-	};
+		setSelectedLocation(null)
+	}
 
 	const handleMapClick = () => {
 		setSelectedLocation(null)
@@ -339,15 +343,6 @@ export default function ClientMapPageContent({
 								</InfoWindow>
 							)}
 						</GoogleMap>
-					</div>
-
-					<div className="fixed top-4 right-4 z-10 flex gap-2">
-						<Link href={`/maps/${map.id}/submit`}>
-							<Button variant="default" size="sm" className="shadow-md">
-								Contribute
-							</Button>
-						</Link>
-						<ShareButton mapId={map.id} />
 					</div>
 
 					<div
