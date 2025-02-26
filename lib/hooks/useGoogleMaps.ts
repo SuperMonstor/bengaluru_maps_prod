@@ -47,7 +47,6 @@ export function useGoogleMaps(locations: Location[]) {
 	)
 	const [placeDetails, setPlaceDetails] = useState<PlaceDetails | null>(null)
 	const mapRef = useRef<google.maps.Map | null>(null)
-	console.log("Locations: ", locations)
 
 	const { isLoaded } = useLoadScript({
 		googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
