@@ -1,6 +1,3 @@
-import { User } from "./user";
-
-// types/map.ts
 export interface MapSchema {
   title: string;
   shortDescription: string;
@@ -35,6 +32,22 @@ export interface Location {
   is_approved: boolean;
 }
 
+export interface Submission {
+  id: string;
+  map_id: string;
+  name: string;
+  google_maps_url: string;
+  note: string | null;
+  image_url: string | null;
+  rating: number | null;
+  address: string | null;
+  submitted_by: {
+    first_name: string | null;
+    last_name: string | null;
+    picture_url: string | null;
+  };
+}
+
 export interface MapData {
   id: string;
   name: string;
@@ -43,7 +56,7 @@ export interface MapData {
   display_picture: string | null;
   owner_id: string;
   created_at: string;
-  users: User;
+  users: import("./user").User;
   locations: Location[];
   votes: { id: string }[];
 }
@@ -69,7 +82,7 @@ export interface MapsResult {
 }
 
 export interface CreateMapResult {
-  data: any; // Adjust based on what Supabase returns
+  data: any;
   error: string | null;
 }
 
