@@ -80,7 +80,7 @@ export default function Header() {
 
 	return (
 		<div className="flex justify-between items-center p-3 md:p-4 flex-wrap gap-y-2">
-			<div className="flex items-baseline space-x-1">
+			<div className="flex flex-col sm:flex-row sm:items-baseline">
 				<Link
 					href="/"
 					className="text-lg md:text-2xl sm:text-xl font-semibold hover:opacity-80"
@@ -90,9 +90,24 @@ export default function Header() {
 				<Link
 					href="https://x.com/realsudarshansk"
 					target="_blank"
-					className="text-xs text-gray-500 md:text-sm hover:underline"
+					rel="noopener noreferrer"
+					className="text-xs text-gray-500 md:text-sm hover:text-blue-500 transition-colors flex items-center gap-1 mt-0.5 sm:mt-0 sm:ml-2"
 				>
-					By Sudarshan S
+					<span>By Sudarshan S</span>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						className="w-3 h-3 inline-block"
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth="2"
+							d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+						/>
+					</svg>
 				</Link>
 			</div>
 
