@@ -4,21 +4,25 @@ import { updateUserInDatabase } from "../supabase/user-utils"
 import { LoginInput } from "../validations/auth"
 
 export async function signInWithGoogle() {
-	const supabase = createClient()
-	const { data, error } = await supabase.auth.signInWithOAuth({
-		provider: "google",
-		options: {
-			redirectTo: `${window.location.origin}/auth/callback`,
-		},
-	})
+  const supabase = createClient()
+  const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL
+    ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+    : "http://localhost:3000/auth/callback" // Fallback for local dev
 
-	if (error) {
-		console.error("Error signing in with Google:", error.message)
-		return { error }
-	}
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: redirectUrl,
+    },
+  })
 
-	console.log("SignInWithGoogle - Redirect data:", data)
-	return { data, error: null }
+  if (error) {
+    console.error("Error signing in with Google:", error.message)
+    return { error }
+  }
+
+  console.log("SignInWithGoogle - Redirect data:", data)
+  return { data, error: null }
 }
 
 export async function signInWithPassword(data: LoginInput) {
