@@ -8,6 +8,7 @@ import {
 	ReactNode,
 } from "react"
 import { createClient } from "../supabase/service/client"
+import { UserSchema } from "../types/user"
 
 interface AuthContextValue {
 	user: UserSchema | null
