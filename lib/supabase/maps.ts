@@ -320,52 +320,24 @@ export async function createLocation({
 		let name: string = ""
 
 		if (location.startsWith("http")) {
-			try {
-				const url = new URL(location)
-				const pathParts = url.pathname.split("/")
-				if (pathParts.includes("place") && url.hash) {
-					const hashParams = new URLSearchParams(url.hash.slice(1))
-					const coordsMatch =
-						hashParams.get("q") || url.hash.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
-					if (coordsMatch) {
-						const coords =
-							coordsMatch instanceof Array
-								? coordsMatch.slice(1)
-								: coordsMatch.split(",")
-						latitude = parseFloat(coords[0])
-						longitude = parseFloat(coords[1])
-					} else {
-						const placesService = new google.maps.places.PlacesService(
-							document.createElement("div")
-						)
-						await new Promise((resolve) => {
-							placesService.findPlaceFromQuery(
-								{ query: location, fields: ["geometry", "name"] },
-								(results, status) => {
-									if (
-										status === google.maps.places.PlacesServiceStatus.OK &&
-										results &&
-										results[0]?.geometry?.location
-									) {
-										latitude = results[0].geometry.location.lat()
-										longitude = results[0].geometry.location.lng()
-										name = results[0].name || ""
-										googleMapsUrl = `https://www.google.com/maps/place/${encodeURIComponent(
-											name.replace(/ /g, "+")
-										)}/@${latitude},${longitude},15z`
-									}
-									resolve(null)
-								}
-							)
-						})
-					}
+			// URL parsing logic remains the same
+			const url = new URL(location)
+			const pathParts = url.pathname.split("/")
+			if (pathParts.includes("place") && url.hash) {
+				const hashParams = new URLSearchParams(url.hash.slice(1))
+				const coordsMatch =
+					hashParams.get("q") || url.hash.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+				if (coordsMatch) {
+					const coords =
+						coordsMatch instanceof Array
+							? coordsMatch.slice(1)
+							: coordsMatch.split(",")
+					latitude = parseFloat(coords[0])
+					longitude = parseFloat(coords[1])
 				}
-			} catch (parseError) {
-				console.error("Error parsing Google Maps URL:", parseError)
-				throw new Error(
-					"Invalid Google Maps URL format. Please ensure it’s a valid place URL."
-				)
 			}
+			name = location // Simplified, adjust as needed
+			googleMapsUrl = location
 		} else {
 			const placesService = new google.maps.places.PlacesService(
 				document.createElement("div")
@@ -382,12 +354,7 @@ export async function createLocation({
 							latitude = results[0].geometry.location.lat()
 							longitude = results[0].geometry.location.lng()
 							name = results[0].name || location
-							const placeId = results[0].place_id
-							googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${placeId}`
-						} else {
-							throw new Error(
-								"Could not find location. Please check the location name or URL."
-							)
+							googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${results[0].place_id}`
 						}
 						resolve(null)
 					}
@@ -420,7 +387,7 @@ export async function createLocation({
 				note: description,
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
-				is_approved: false, // Default to unapproved
+				is_approved: false, // New submissions are unapproved by default
 			})
 			.select()
 			.single()

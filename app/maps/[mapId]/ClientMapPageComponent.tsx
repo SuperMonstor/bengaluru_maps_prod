@@ -11,7 +11,7 @@ import Link from "next/link"
 import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api"
 import { useGoogleMaps, Location } from "@/lib/hooks/useGoogleMaps"
 import { useUserInfo } from "@/lib/hooks/useUserInfo"
-import LocationInfoWindow from "@/app/components/LocationInfoWindow"
+import LocationInfoWindow from "@/components/LocationInfoWindow"
 
 interface MapData {
 	id: string
