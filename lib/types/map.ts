@@ -90,3 +90,17 @@ export interface CreateLocationResult {
   data: any;
   error: string | null;
 }
+
+export interface UserMap {
+  id: string;
+  title: string;
+  description: string;
+  body: string;
+  image: string;
+  locations: Location[];
+  contributors: number;
+  upvotes: number;
+  username: string;
+  userProfilePicture: string | null;
+  pendingCount: number;
+}
