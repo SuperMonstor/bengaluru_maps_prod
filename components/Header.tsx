@@ -12,7 +12,7 @@ import { useContext, useState, useEffect } from "react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { AuthContext } from "@/lib/context/AuthContext"
 import GoogleSignInButton from "@/components/GoogleSignInButton"
-import { createClient } from "@/lib/supabase/service/client"
+import { usePendingCount } from "@/lib/context/PendingCountContext"
 
 function useAuth() {
 	const context = useContext(AuthContext)
@@ -23,56 +23,8 @@ function useAuth() {
 }
 
 export default function Header() {
-	const { user, isLoading, signOut } = useAuth()
-	const [pendingCount, setPendingCount] = useState(0)
-	const supabase = createClient()
-
-	useEffect(() => {
-		if (!user || isLoading) return
-
-		const fetchPendingCount = async () => {
-			try {
-				// Fetch all maps owned by the user
-				const { data: maps, error: mapsError } = await supabase
-					.from("maps")
-					.select("id")
-					.eq("owner_id", user.id)
-
-				if (mapsError) {
-					console.error("Error fetching maps:", mapsError)
-					setPendingCount(0)
-					return
-				}
-
-				if (!maps.length) {
-					setPendingCount(0)
-					return
-				}
-
-				const mapIds = maps.map((map) => map.id)
-
-				// Fetch count of unapproved locations across all user-owned maps
-				const { count, error: countError } = await supabase
-					.from("locations")
-					.select("id", { count: "exact" })
-					.in("map_id", mapIds)
-					.eq("is_approved", false)
-
-				if (countError) {
-					console.error("Error fetching pending count:", countError)
-					setPendingCount(0)
-					return
-				}
-
-				setPendingCount(count || 0)
-			} catch (error) {
-				console.error("Unexpected error fetching pending count:", error)
-				setPendingCount(0)
-			}
-		}
-
-		fetchPendingCount()
-	}, [user, isLoading])
+	const { user, isLoading: authLoading, signOut } = useAuth()
+	const { pendingCount } = usePendingCount()
 
 	const handleSignOut = async () => {
 		await signOut()
@@ -112,7 +64,7 @@ export default function Header() {
 			</div>
 
 			<div className="flex items-center gap-2 md:gap-3">
-				{!isLoading && user && (
+				{!authLoading && user && (
 					<Link href="/my-maps" className="relative mr-1">
 						<Button
 							variant="ghost"
@@ -187,7 +139,7 @@ export default function Header() {
 					</Button>
 				</Link>
 
-				{isLoading ? (
+				{authLoading ? (
 					<div className="h-8 w-8 md:h-9 md:w-9 animate-pulse bg-gray-300 rounded-full" />
 				) : user ? (
 					<DropdownMenu>

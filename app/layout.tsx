@@ -4,6 +4,7 @@ import "./globals.css"
 import Header from "../components/Header"
 import { AuthProvider } from "@/lib/context/AuthContext"
 import { Toaster } from "@/components/ui/toaster"
+import { PendingCountProvider } from "@/lib/context/PendingCountContext"
 
 const geistSans = Geist({
 	subsets: ["latin"],
@@ -29,8 +30,10 @@ export default function RootLayout({
 		<html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
 			<body className="font-sans antialiased">
 				<AuthProvider>
-					<Header />
-					{children}
+					<PendingCountProvider>
+						<Header />
+						{children}
+					</PendingCountProvider>
 				</AuthProvider>
 				<Toaster />
 			</body>
