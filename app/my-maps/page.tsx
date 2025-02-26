@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/context/AuthContext"
-import { createClient } from "@/lib/supabase/service/client"
+import { fetchUserMaps } from "@/lib/supabase/my-maps"
 import {
 	Card,
 	CardContent,
@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import Link from "next/link"
-import { getMapById } from "@/lib/supabase/maps"
 import { MapPin, Users, ThumbsUp, Clock } from "lucide-react"
 import { UserMap } from "@/lib/types/map"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
@@ -26,75 +25,30 @@ export default function MyMapsPage() {
 	const [maps, setMaps] = useState<UserMap[]>([])
 	const [loading, setLoading] = useState(true)
 	const { refreshPendingCount } = usePendingCount()
-	const supabase = createClient()
 
 	useEffect(() => {
 		if (!user) return
 
-		const fetchMaps = async () => {
+		const loadMaps = async () => {
 			try {
-				// First, get all maps owned by the user
-				const { data: userMaps, error } = await supabase
-					.from("maps")
-					.select("id")
-					.eq("owner_id", user.id)
+				const { data, error } = await fetchUserMaps(user.id)
 
 				if (error) {
 					console.error("Error fetching maps:", error)
-					setLoading(false)
-					return
+				} else {
+					setMaps(data)
 				}
-
-				if (!userMaps.length) {
-					setMaps([])
-					setLoading(false)
-					return
-				}
-
-				// Then, get detailed information for each map
-				const mapsWithDetails = await Promise.all(
-					userMaps.map(async (map) => {
-						const { data: mapData, error: mapError } = await getMapById(map.id)
-
-						if (mapError || !mapData) {
-							console.error(`Error fetching map ${map.id}:`, mapError)
-							return null
-						}
-
-						// Get pending submissions count
-						const { count, error: countError } = await supabase
-							.from("locations")
-							.select("id", { count: "exact" })
-							.eq("map_id", map.id)
-							.eq("status", "pending")
-
-						if (countError) {
-							console.error(
-								`Error fetching pending count for map ${map.id}:`,
-								countError
-							)
-						}
-
-						return {
-							...mapData,
-							pendingCount: count || 0,
-						}
-					})
-				)
-
-				// Filter out any null results from failed fetches
-				setMaps(mapsWithDetails.filter(Boolean) as UserMap[])
 
 				// Refresh the global pending count
 				refreshPendingCount()
 			} catch (err) {
-				console.error("Unexpected error fetching maps:", err)
+				console.error("Unexpected error:", err)
 			} finally {
 				setLoading(false)
 			}
 		}
 
-		fetchMaps()
+		loadMaps()
 	}, [user])
 
 	if (!user) {

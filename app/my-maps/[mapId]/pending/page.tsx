@@ -6,11 +6,15 @@ import Image from "next/image"
 import { useLoadScript } from "@react-google-maps/api"
 import { Check, X, MapPin } from "lucide-react"
 import { getMapById } from "@/lib/supabase/maps"
+import {
+	fetchPendingSubmissions,
+	approveLocation,
+	rejectLocation,
+} from "@/lib/supabase/pending"
 import React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { createClient } from "@/lib/supabase/service/client"
 import { Card, CardContent } from "@/components/ui/card"
 import { Submission } from "@/lib/types/map"
 import { useToast } from "@/hooks/use-toast"
@@ -25,7 +29,6 @@ export default function PendingSubmissionsPage({
 	const [submissions, setSubmissions] = useState<Submission[]>([])
 	const [mapName, setMapName] = useState<string>("")
 	const [loading, setLoading] = useState(true)
-	const supabase = createClient()
 	const { refreshPendingCount } = usePendingCount()
 	const { toast } = useToast()
 
@@ -52,30 +55,18 @@ export default function PendingSubmissionsPage({
 				setMapName(mapData.title)
 			}
 
-			// Fetch pending submissions with user details
-			const { data, error } = await supabase
-				.from("locations")
-				.select(
-					`
-          id,
-          map_id,
-          name,
-          google_maps_url,
-          note,
-          creator_id,
-          status,
-          users!locations_creator_id_fkey (
-            first_name,
-            last_name,
-            picture_url
-          )
-        `
-				)
-				.eq("map_id", mapId)
-				.eq("status", "pending")
+			// Fetch pending submissions
+			const { data, error } = await fetchPendingSubmissions(mapId)
 
 			if (error) {
 				console.error("Error fetching submissions:", error)
+				setLoading(false)
+				return
+			}
+
+			if (!data) {
+				console.log("No submissions data returned")
+				setSubmissions([])
 				setLoading(false)
 				return
 			}
@@ -163,17 +154,9 @@ export default function PendingSubmissionsPage({
 	}, [user, isLoaded, mapId])
 
 	const handleApprove = async (locationId: string) => {
-		try {
-			const { error } = await supabase
-				.from("locations")
-				.update({
-					is_approved: true,
-					status: "approved",
-				})
-				.eq("id", locationId)
+		const { success, error } = await approveLocation(locationId)
 
-			if (error) throw error
-
+		if (success) {
 			// Update UI and refresh pending count
 			setSubmissions((prev) => prev.filter((loc) => loc.id !== locationId))
 			refreshPendingCount()
@@ -182,32 +165,19 @@ export default function PendingSubmissionsPage({
 				title: "Location approved",
 				description: "The location has been added to your map.",
 			})
-		} catch (err) {
-			console.error("Error approving location:", err)
+		} else {
 			toast({
 				variant: "destructive",
 				title: "Error",
-				description: "Failed to approve location. Please try again.",
+				description: error || "Failed to approve location. Please try again.",
 			})
 		}
 	}
 
 	const handleReject = async (locationId: string) => {
-		try {
-			console.log("Rejecting location:", locationId)
+		const { success, error } = await rejectLocation(locationId)
 
-			const { data, error } = await supabase
-				.from("locations")
-				.update({
-					status: "rejected",
-				})
-				.eq("id", locationId)
-				.select() // Add this to return the updated record
-
-			console.log("Update result:", { data, error })
-
-			if (error) throw error
-
+		if (success) {
 			// Update UI and refresh pending count
 			setSubmissions((prev) => prev.filter((loc) => loc.id !== locationId))
 			refreshPendingCount()
@@ -216,12 +186,11 @@ export default function PendingSubmissionsPage({
 				title: "Location rejected",
 				description: "The location has been rejected.",
 			})
-		} catch (err) {
-			console.error("Error rejecting location:", err)
+		} else {
 			toast({
 				variant: "destructive",
 				title: "Error",
-				description: "Failed to reject location. Please try again.",
+				description: error || "Failed to reject location. Please try again.",
 			})
 		}
 	}
