@@ -385,6 +385,7 @@ export async function createLocation({
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
 				is_approved: false,
+				status: "pending",
 			})
 			.select()
 			.single()

@@ -6,13 +6,19 @@ import Image from "next/image"
 import { useLoadScript } from "@react-google-maps/api"
 import { Check, X, MapPin } from "lucide-react"
 import { getMapById } from "@/lib/supabase/maps"
+import {
+	fetchPendingSubmissions,
+	approveLocation,
+	rejectLocation,
+} from "@/lib/supabase/pending"
 import React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { createClient } from "@/lib/supabase/service/client"
 import { Card, CardContent } from "@/components/ui/card"
 import { Submission } from "@/lib/types/map"
+import { useToast } from "@/hooks/use-toast"
+import { usePendingCount } from "@/lib/context/PendingCountContext"
 
 export default function PendingSubmissionsPage({
 	params,
@@ -23,7 +29,8 @@ export default function PendingSubmissionsPage({
 	const [submissions, setSubmissions] = useState<Submission[]>([])
 	const [mapName, setMapName] = useState<string>("")
 	const [loading, setLoading] = useState(true)
-	const supabase = createClient()
+	const { refreshPendingCount } = usePendingCount()
+	const { toast } = useToast()
 
 	const { isLoaded } = useLoadScript({
 		googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -48,29 +55,18 @@ export default function PendingSubmissionsPage({
 				setMapName(mapData.title)
 			}
 
-			// Fetch pending submissions with user details
-			const { data, error } = await supabase
-				.from("locations")
-				.select(
-					`
-          id,
-          map_id,
-          name,
-          google_maps_url,
-          note,
-          creator_id,
-          users!locations_creator_id_fkey (
-            first_name,
-            last_name,
-            picture_url
-          )
-        `
-				)
-				.eq("map_id", mapId)
-				.eq("is_approved", false)
+			// Fetch pending submissions
+			const { data, error } = await fetchPendingSubmissions(mapId)
 
 			if (error) {
 				console.error("Error fetching submissions:", error)
+				setLoading(false)
+				return
+			}
+
+			if (!data) {
+				console.log("No submissions data returned")
+				setSubmissions([])
 				setLoading(false)
 				return
 			}
@@ -157,32 +153,46 @@ export default function PendingSubmissionsPage({
 		fetchMapAndSubmissions()
 	}, [user, isLoaded, mapId])
 
-	const handleApprove = async (submissionId: string) => {
-		const { error } = await supabase
-			.from("locations")
-			.update({ is_approved: true })
-			.eq("id", submissionId)
+	const handleApprove = async (locationId: string) => {
+		const { success, error } = await approveLocation(locationId)
 
-		if (error) {
-			console.error("Error approving submission:", error)
-			return
+		if (success) {
+			// Update UI and refresh pending count
+			setSubmissions((prev) => prev.filter((loc) => loc.id !== locationId))
+			refreshPendingCount()
+
+			toast({
+				title: "Location approved",
+				description: "The location has been added to your map.",
+			})
+		} else {
+			toast({
+				variant: "destructive",
+				title: "Error",
+				description: error || "Failed to approve location. Please try again.",
+			})
 		}
-
-		setSubmissions(submissions.filter((sub) => sub.id !== submissionId))
 	}
 
-	const handleReject = async (submissionId: string) => {
-		const { error } = await supabase
-			.from("locations")
-			.delete()
-			.eq("id", submissionId)
+	const handleReject = async (locationId: string) => {
+		const { success, error } = await rejectLocation(locationId)
 
-		if (error) {
-			console.error("Error rejecting submission:", error)
-			return
+		if (success) {
+			// Update UI and refresh pending count
+			setSubmissions((prev) => prev.filter((loc) => loc.id !== locationId))
+			refreshPendingCount()
+
+			toast({
+				title: "Location rejected",
+				description: "The location has been rejected.",
+			})
+		} else {
+			toast({
+				variant: "destructive",
+				title: "Error",
+				description: error || "Failed to reject location. Please try again.",
+			})
 		}
-
-		setSubmissions(submissions.filter((sub) => sub.id !== submissionId))
 	}
 
 	if (!user) {

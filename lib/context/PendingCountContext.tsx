@@ -56,12 +56,12 @@ export function PendingCountProvider({ children }: { children: ReactNode }) {
 
 			const mapIds = maps.map((map) => map.id)
 
-			// Fetch count of unapproved locations across all user-owned maps
+			// Fetch count of pending locations (not rejected)
 			const { count, error: countError } = await supabase
 				.from("locations")
 				.select("id", { count: "exact" })
 				.in("map_id", mapIds)
-				.eq("is_approved", false)
+				.eq("status", "pending")
 
 			if (countError) {
 				console.error("Error fetching pending count:", countError)
