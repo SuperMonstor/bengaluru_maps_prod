@@ -346,41 +346,38 @@ export default function ClientMapPageContent({
 					</div>
 
 					<div
-						className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 cursor-pointer z-10"
+						className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 cursor-pointer z-10 shadow-lg rounded-t-xl"
 						onClick={() => setIsOpen(!isOpen)}
 					>
-						<div className="flex flex-col gap-1">
-							<div className="flex items-center justify-between gap-2">
+						<div className="flex flex-col gap-2">
+							<div className="flex items-center justify-between">
 								<h2 className="text-lg font-semibold truncate flex-1">
 									{map.title}
 								</h2>
-								<ChevronUp
-									className={`h-6 w-6 transition-transform ${
-										isOpen ? "rotate-180" : ""
-									}`}
-								/>
+								<div className="bg-gray-100 rounded-full p-1">
+									<ChevronUp
+										className={`h-5 w-5 transition-transform ${
+											isOpen ? "rotate-180" : ""
+										}`}
+									/>
+								</div>
 							</div>
 							<p className="text-muted-foreground text-sm truncate">
 								{map.description}
 							</p>
-							<div className="flex flex-col gap-1 text-sm text-muted-foreground">
-								<span>
-									Started by <span className="font-medium">{map.username}</span>
+							<div className="flex gap-4 text-sm text-muted-foreground pt-1">
+								<span className="flex items-center">
+									<MapPin className="mr-1 h-4 w-4" />
+									{map.locations.length}
 								</span>
-								<div className="flex gap-4">
-									<span>
-										<MapPin className="inline mr-1 h-4 w-4" />
-										{map.locations.length} locations
-									</span>
-									<span>
-										<Users className="inline mr-1 h-4 w-4" />
-										{map.contributors} contributors
-									</span>
-									<span>
-										<ThumbsUp className="inline mr-1 h-4 w-4" />
-										{map.upvotes} upvotes
-									</span>
-								</div>
+								<span className="flex items-center">
+									<Users className="mr-1 h-4 w-4" />
+									{map.contributors}
+								</span>
+								<span className="flex items-center">
+									<ThumbsUp className="mr-1 h-4 w-4" />
+									{map.upvotes}
+								</span>
 							</div>
 						</div>
 					</div>
@@ -388,75 +385,69 @@ export default function ClientMapPageContent({
 					<div
 						className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 transition-transform duration-300 ease-in-out transform ${
 							isOpen ? "translate-y-0" : "translate-y-full"
-						} max-h-[80vh] overflow-y-auto z-20`}
+						} max-h-[80vh] overflow-y-auto z-20 rounded-t-xl shadow-lg`}
 					>
+						<div className="sticky top-0 bg-white p-4 border-b border-gray-100 flex items-center justify-between">
+							<h1 className="text-xl font-bold tracking-tight truncate flex-1">
+								{map.title}
+							</h1>
+							<button
+								onClick={handleCollapse}
+								className="p-2 rounded-full hover:bg-gray-100"
+								aria-label="Collapse panel"
+							>
+								<ChevronDown className="h-5 w-5" />
+							</button>
+						</div>
+
 						<div className="p-4 space-y-4">
-							<div className="flex items-center justify-between gap-2">
-								<h1 className="text-2xl font-bold tracking-tight truncate flex-1">
-									{map.title}
-								</h1>
-								<div className="flex items-center gap-2">
-									<Link href={`/maps/${map.id}/submit`}>
-										<Button variant="default" size="sm">
-											Contribute
-										</Button>
-									</Link>
-									<ShareButton mapId={map.id} />
-									<button
-										onClick={handleCollapse}
-										className="p-2 rounded-full hover:bg-gray-100"
-										aria-label="Collapse panel"
-									>
-										<ChevronDown className="h-6 w-6" />
-									</button>
+							<div className="flex items-center gap-2 mb-4">
+								<Link href={`/maps/${map.id}/submit`} className="flex-1">
+									<Button variant="default" size="sm" className="w-full">
+										Add Location
+									</Button>
+								</Link>
+								<ShareButton mapId={map.id} />
+							</div>
+
+							<div className="space-y-4">
+								<p className="text-muted-foreground">{map.description}</p>
+
+								{/* Map creator info */}
+								<div className="flex items-center gap-3 py-2">
+									<Avatar className="h-10 w-10">
+										{map.userProfilePicture ? (
+											<AvatarImage
+												src={map.userProfilePicture}
+												alt={map.username}
+											/>
+										) : (
+											<AvatarFallback>
+												{map.username.charAt(0).toUpperCase()}
+											</AvatarFallback>
+										)}
+									</Avatar>
+									<div>
+										<p className="text-sm font-medium">
+											Created by {map.username}
+										</p>
+										<div className="flex gap-3 text-xs text-muted-foreground">
+											<span className="flex items-center">
+												<Users className="inline mr-1 h-3 w-3" />
+												{map.contributors}
+											</span>
+											<span className="flex items-center">
+												<ThumbsUp className="inline mr-1 h-3 w-3" />
+												{map.upvotes}
+											</span>
+										</div>
+									</div>
 								</div>
-							</div>
-							<div className="space-y-2">
-								<p className="text-muted-foreground text-sm">
-									{map.description}
-								</p>
-							</div>
-							<div className="flex items-center gap-2 text-sm text-muted-foreground">
-								<Avatar className="h-8 w-8 border border-border/50">
-									<AvatarImage
-										src={map.userProfilePicture || "/placeholder.svg"}
-									/>
-									<AvatarFallback>
-										{map.username
-											.split(" ")
-											.map((n) => n[0])
-											.join("")
-											.toUpperCase()}
-									</AvatarFallback>
-								</Avatar>
-								<span>
-									Started by <span className="font-medium">{map.username}</span>
-								</span>
-							</div>
-							<div className="flex gap-4 text-sm text-muted-foreground">
-								<span>
-									<MapPin className="inline mr-1 h-4 w-4" />
-									{map.locations.length} locations
-								</span>
-								<span>
-									<Users className="inline mr-1 h-4 w-4" />
-									{map.contributors} contributors
-								</span>
-								<span>
-									<ThumbsUp className="inline mr-1 h-4 w-4" />
-									{map.upvotes} upvotes
-								</span>
-							</div>
-							<div className="relative w-full h-[180px] mt-4">
-								<Image
-									src={map.image}
-									alt={map.title}
-									fill
-									className="object-cover rounded-md"
-								/>
-							</div>
-							<div className="mt-4">
-								<Markdown content={map.body} />
+
+								{/* Map content */}
+								<div className="prose prose-sm max-w-none">
+									<Markdown content={map.body} />
+								</div>
 							</div>
 						</div>
 					</div>
