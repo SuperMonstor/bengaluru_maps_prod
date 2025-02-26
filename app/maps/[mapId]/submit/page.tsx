@@ -363,21 +363,36 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 							htmlFor="description"
 							className="text-sm font-medium text-foreground"
 						>
-							Description about the place
+							Leave a note about the place (the funnier the better)
 						</Label>
 						<Textarea
 							id="description"
 							{...register("description", {
 								required: "Description is required",
+								maxLength: {
+									value: 60,
+									message: "Description must be less than 60 characters",
+								},
 							} as RegisterOptions)}
 							placeholder="Great sushi, awesome vibes"
-							className="w-full border border-border rounded-md shadow-sm text-foreground placeholder-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary h-24 px-3 py-2" // Added padding
+							className="w-full border border-border rounded-md shadow-sm text-foreground placeholder-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary h-24 px-3 py-2"
 						/>
-						{errors.description && (
-							<p className="text-sm text-destructive">
-								{errors.description.message?.toString()}
-							</p>
-						)}
+						<div className="flex justify-between">
+							{errors.description && (
+								<p className="text-sm text-destructive">
+									{errors.description.message?.toString()}
+								</p>
+							)}
+							<span
+								className={`text-xs ${
+									(watch("description")?.length || 0) > 60
+										? "text-destructive"
+										: "text-muted-foreground"
+								}`}
+							>
+								{watch("description")?.length || 0}/60
+							</span>
+						</div>
 					</div>
 					{/* 
 					<div className="space-y-4">
