@@ -181,7 +181,7 @@ export default function ClientMapPageContent({
 			<style>{popupStyles}</style>
 			<main className="bg-gray-50/50 flex flex-col">
 				{/* Desktop Layout */}
-				<div className="hidden md:flex h-[calc(100vh-4rem)]">
+				<div className="hidden md:flex h-[calc(100vh-65px)]">
 					<div className="w-1/2 p-4 md:p-8 lg:p-12 space-y-6 overflow-y-auto">
 						<div className="flex items-center gap-4">
 							<h1 className="text-3xl font-bold tracking-tight text-foreground flex-1">
@@ -298,7 +298,7 @@ export default function ClientMapPageContent({
 				</div>
 
 				{/* Mobile Layout */}
-				<div className="md:hidden relative h-screen">
+				<div className="md:hidden relative h-[calc(100vh-65px)]">
 					<div className="absolute inset-0">
 						<GoogleMap
 							mapContainerStyle={{ width: "100%", height: "100%" }}
