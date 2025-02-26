@@ -30,6 +30,7 @@ export interface Location {
   note: string | null;
   created_at: string;
   is_approved: boolean;
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 export interface Submission {

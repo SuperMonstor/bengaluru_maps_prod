@@ -13,6 +13,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/service/client"
 import { Card, CardContent } from "@/components/ui/card"
 import { Submission } from "@/lib/types/map"
+import { useToast } from "@/hooks/use-toast"
+import { usePendingCount } from "@/lib/context/PendingCountContext"
 
 export default function PendingSubmissionsPage({
 	params,
@@ -24,6 +26,8 @@ export default function PendingSubmissionsPage({
 	const [mapName, setMapName] = useState<string>("")
 	const [loading, setLoading] = useState(true)
 	const supabase = createClient()
+	const { refreshPendingCount } = usePendingCount()
+	const { toast } = useToast()
 
 	const { isLoaded } = useLoadScript({
 		googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -59,6 +63,7 @@ export default function PendingSubmissionsPage({
           google_maps_url,
           note,
           creator_id,
+          status,
           users!locations_creator_id_fkey (
             first_name,
             last_name,
@@ -67,7 +72,7 @@ export default function PendingSubmissionsPage({
         `
 				)
 				.eq("map_id", mapId)
-				.eq("is_approved", false)
+				.eq("status", "pending")
 
 			if (error) {
 				console.error("Error fetching submissions:", error)
@@ -157,32 +162,68 @@ export default function PendingSubmissionsPage({
 		fetchMapAndSubmissions()
 	}, [user, isLoaded, mapId])
 
-	const handleApprove = async (submissionId: string) => {
-		const { error } = await supabase
-			.from("locations")
-			.update({ is_approved: true })
-			.eq("id", submissionId)
+	const handleApprove = async (locationId: string) => {
+		try {
+			const { error } = await supabase
+				.from("locations")
+				.update({
+					is_approved: true,
+					status: "approved",
+				})
+				.eq("id", locationId)
 
-		if (error) {
-			console.error("Error approving submission:", error)
-			return
+			if (error) throw error
+
+			// Update UI and refresh pending count
+			setSubmissions((prev) => prev.filter((loc) => loc.id !== locationId))
+			refreshPendingCount()
+
+			toast({
+				title: "Location approved",
+				description: "The location has been added to your map.",
+			})
+		} catch (err) {
+			console.error("Error approving location:", err)
+			toast({
+				variant: "destructive",
+				title: "Error",
+				description: "Failed to approve location. Please try again.",
+			})
 		}
-
-		setSubmissions(submissions.filter((sub) => sub.id !== submissionId))
 	}
 
-	const handleReject = async (submissionId: string) => {
-		const { error } = await supabase
-			.from("locations")
-			.delete()
-			.eq("id", submissionId)
+	const handleReject = async (locationId: string) => {
+		try {
+			console.log("Rejecting location:", locationId)
 
-		if (error) {
-			console.error("Error rejecting submission:", error)
-			return
+			const { data, error } = await supabase
+				.from("locations")
+				.update({
+					status: "rejected",
+				})
+				.eq("id", locationId)
+				.select() // Add this to return the updated record
+
+			console.log("Update result:", { data, error })
+
+			if (error) throw error
+
+			// Update UI and refresh pending count
+			setSubmissions((prev) => prev.filter((loc) => loc.id !== locationId))
+			refreshPendingCount()
+
+			toast({
+				title: "Location rejected",
+				description: "The location has been rejected.",
+			})
+		} catch (err) {
+			console.error("Error rejecting location:", err)
+			toast({
+				variant: "destructive",
+				title: "Error",
+				description: "Failed to reject location. Please try again.",
+			})
 		}
-
-		setSubmissions(submissions.filter((sub) => sub.id !== submissionId))
 	}
 
 	if (!user) {

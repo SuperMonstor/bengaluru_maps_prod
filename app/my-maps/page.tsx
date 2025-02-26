@@ -66,7 +66,7 @@ export default function MyMapsPage() {
 							.from("locations")
 							.select("id", { count: "exact" })
 							.eq("map_id", map.id)
-							.eq("is_approved", false)
+							.eq("status", "pending")
 
 						if (countError) {
 							console.error(
@@ -147,11 +147,14 @@ export default function MyMapsPage() {
 				) : (
 					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 						{maps.map((mapItem) => (
-							<Card 
-								key={mapItem.id} 
+							<Card
+								key={mapItem.id}
 								className="overflow-hidden flex flex-col group hover:shadow-md transition-all duration-200"
 							>
-								<Link href={`/maps/${mapItem.id}`} className="flex-grow flex flex-col">
+								<Link
+									href={`/maps/${mapItem.id}`}
+									className="flex-grow flex flex-col"
+								>
 									<div className="relative h-48">
 										<Image
 											src={mapItem.image}
@@ -159,12 +162,16 @@ export default function MyMapsPage() {
 											fill
 											className="object-cover group-hover:scale-105 transition-transform duration-300"
 										/>
-										
+
 										<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
 											<div className="flex justify-between text-white text-xs">
 												<span className="flex items-center gap-1">
 													<MapPin className="h-3 w-3" />
-													{mapItem.locations.filter((l) => l.is_approved).length} locations
+													{
+														mapItem.locations.filter((l) => l.is_approved)
+															.length
+													}{" "}
+													locations
 												</span>
 												<span className="flex items-center gap-1">
 													<Users className="h-3 w-3" />
@@ -176,11 +183,11 @@ export default function MyMapsPage() {
 												</span>
 											</div>
 										</div>
-										
+
 										{mapItem.pendingCount > 0 && (
 											<div className="absolute top-3 right-3">
-												<Badge 
-													variant="destructive" 
+												<Badge
+													variant="destructive"
 													className="flex items-center gap-1 shadow-md"
 												>
 													<Clock className="h-3 w-3" />
@@ -201,7 +208,9 @@ export default function MyMapsPage() {
 
 									<CardContent className="pb-2 flex-grow">
 										<p className="text-sm text-muted-foreground line-clamp-3">
-											{mapItem.body.replace(/\[.*?\]\(.*?\)/g, '').replace(/[#*_]/g, '')}
+											{mapItem.body
+												.replace(/\[.*?\]\(.*?\)/g, "")
+												.replace(/[#*_]/g, "")}
 										</p>
 									</CardContent>
 								</Link>
@@ -210,19 +219,26 @@ export default function MyMapsPage() {
 									<div className="flex items-center gap-2 flex-grow">
 										<Avatar className="h-6 w-6">
 											{mapItem.userProfilePicture ? (
-												<AvatarImage src={mapItem.userProfilePicture} alt={mapItem.username} />
+												<AvatarImage
+													src={mapItem.userProfilePicture}
+													alt={mapItem.username}
+												/>
 											) : (
-												<AvatarFallback>{mapItem.username.charAt(0).toUpperCase()}</AvatarFallback>
+												<AvatarFallback>
+													{mapItem.username.charAt(0).toUpperCase()}
+												</AvatarFallback>
 											)}
 										</Avatar>
-										<span className="text-xs text-muted-foreground">By you</span>
+										<span className="text-xs text-muted-foreground">
+											By you
+										</span>
 									</div>
-									
+
 									{mapItem.pendingCount > 0 ? (
 										<Link href={`/my-maps/${mapItem.id}/pending`}>
-											<Button 
-												variant="default" 
-												size="sm" 
+											<Button
+												variant="default"
+												size="sm"
 												className="flex items-center gap-1"
 											>
 												<Clock className="h-3 w-3" />
@@ -231,10 +247,7 @@ export default function MyMapsPage() {
 										</Link>
 									) : (
 										<Link href={`/my-maps/${mapItem.id}/pending`}>
-											<Button 
-												variant="outline" 
-												size="sm"
-											>
+											<Button variant="outline" size="sm">
 												Manage
 											</Button>
 										</Link>
