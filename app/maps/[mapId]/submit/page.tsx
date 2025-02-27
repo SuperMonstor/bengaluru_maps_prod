@@ -28,7 +28,7 @@ import "@reach/combobox/styles.css"
 // Import Google Maps types for better TypeScript support
 import {} from "@googlemaps/js-api-loader"
 import { useToast } from "@/hooks/use-toast"
-
+import { createClient } from "@/lib/supabase/service/client"
 interface SubmitLocationProps {
 	params: Promise<{ mapId: string }> // Explicitly type params as a Promise
 }
@@ -52,8 +52,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 	const resolvedParams = use(params)
 	const mapId = resolvedParams.mapId
 	const { toast } = useToast()
-
-	const { user, isLoading } = useAuth()
+	const { user, isLoading: authLoading } = useAuth()
 	const router = useRouter()
 	const [map, setMap] = useState<any>(null) // State to hold map data
 	const [error, setError] = useState<string | null>(null)
@@ -65,12 +64,14 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 		photos: google.maps.places.PlacePhoto[] | null
 		address: string | null
 	} | null>(null)
-	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [isSubmitting, setIsSubmitting] = useState(false) // Add loading state for form submission
 
 	const { isLoaded } = useLoadScript({
 		googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
 		libraries: ["places"],
 	})
+
+	const supabase = createClient()
 
 	const {
 		control,
@@ -211,7 +212,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 
 		try {
 			setIsSubmitting(true)
-			
+
 			const result = await createLocation({
 				mapId,
 				creatorId: user.id,
@@ -220,12 +221,21 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 			})
 
 			if (result.error) {
-				console.error("Error creating location:", result.error)
-				toast({
-					variant: "destructive",
-					title: "Error submitting location",
-					description: result.error,
-				})
+				// Check if the error is about a duplicate
+				if (result.error.includes("already been added")) {
+					toast({
+						variant: "destructive",
+						title: "Duplicate Location",
+						description: result.error,
+					})
+				} else {
+					console.error("Error creating location:", result.error)
+					toast({
+						variant: "destructive",
+						title: "Error submitting location",
+						description: result.error,
+					})
+				}
 			} else {
 				toast({
 					title: "Success!",
@@ -246,7 +256,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 		}
 	}
 
-	if (isLoading) {
+	if (authLoading) {
 		return <div>Loading...</div>
 	}
 
@@ -415,14 +425,30 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 					<Button
 						type="submit"
 						className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-md py-2"
-						disabled={isSubmitting || isLoading}
+						disabled={isSubmitting || authLoading}
 					>
 						{isSubmitting ? (
 							<>
 								<span className="mr-2">Submitting...</span>
-								<svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-									<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-									<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+								<svg
+									className="animate-spin h-4 w-4"
+									xmlns="http://www.w3.org/2000/svg"
+									fill="none"
+									viewBox="0 0 24 24"
+								>
+									<circle
+										className="opacity-25"
+										cx="12"
+										cy="12"
+										r="10"
+										stroke="currentColor"
+										strokeWidth="4"
+									></circle>
+									<path
+										className="opacity-75"
+										fill="currentColor"
+										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+									></path>
 								</svg>
 							</>
 						) : (

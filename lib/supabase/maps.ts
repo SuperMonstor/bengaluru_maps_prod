@@ -372,33 +372,22 @@ export async function createLocation({
 			)
 		}
 
-		// Check for duplicate locations by coordinates
+		// Check for duplicate locations in this map
 		const { data: existingLocations, error: checkError } = await supabase
 			.from("locations")
-			.select("id, name, latitude, longitude")
+			.select("id, name")
 			.eq("map_id", mapId)
-			.limit(20)
+			.or(`name.eq.${name},google_maps_url.eq.${googleMapsUrl}`)
+			.limit(1)
 
 		if (checkError) {
 			throw new Error(`Error checking for duplicate: ${checkError.message}`)
 		}
 
-		// Check if any existing location is very close to this one
 		if (existingLocations && existingLocations.length > 0) {
-			const isDuplicate = existingLocations.some(loc => {
-				// Check if coordinates are very close (within ~50 meters)
-				// 0.0005 degrees is approximately 50 meters at the equator
-				return (
-					Math.abs(loc.latitude - latitude) < 0.0005 && 
-					Math.abs(loc.longitude - longitude) < 0.0005
-				)
-			});
-
-			if (isDuplicate) {
-				throw new Error(
-					`A location very close to this one already exists on this map.`
-				)
-			}
+			throw new Error(
+				`This location (${name}) has already been added to this map.`
+			)
 		}
 
 		const { data, error } = await supabase
