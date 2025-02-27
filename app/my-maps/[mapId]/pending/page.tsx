@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Submission } from "@/lib/types/map"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/lib/hooks/use-toast"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
 
 export default function PendingSubmissionsPage({

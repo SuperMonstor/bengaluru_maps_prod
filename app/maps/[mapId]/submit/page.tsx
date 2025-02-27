@@ -27,7 +27,7 @@ import "@reach/combobox/styles.css"
 
 // Import Google Maps types for better TypeScript support
 import {} from "@googlemaps/js-api-loader"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/lib/hooks/use-toast"
 import { createClient } from "@/lib/supabase/service/client"
 interface SubmitLocationProps {
 	params: Promise<{ mapId: string }> // Explicitly type params as a Promise

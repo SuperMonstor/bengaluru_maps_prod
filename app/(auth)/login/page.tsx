@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import googleLogo from "@/public/google.svg"
 import { signInWithGoogle, signInWithPassword } from "@/lib/utils/auth"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/lib/hooks/use-toast"
 
 function Login() {
 	const [isLoading, setIsLoading] = useState(false)

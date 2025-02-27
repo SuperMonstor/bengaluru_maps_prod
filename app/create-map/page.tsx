@@ -12,7 +12,7 @@ import MarkdownEditor from "@/components/markdown-editor"
 import { useRouter } from "next/navigation"
 import { createMap } from "@/lib/supabase/maps"
 import { Toaster } from "@/components/ui/toaster"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/lib/hooks/use-toast"
 
 const MDXEditorDynamic = dynamic(
 	() => import("@mdxeditor/editor").then((mod) => mod.MDXEditor),

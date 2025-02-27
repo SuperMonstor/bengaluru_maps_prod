@@ -7,7 +7,7 @@ import React, { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import googleLogo from "@/public/google.svg"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/lib/hooks/use-toast"
 import { signInWithGoogle } from "@/lib/utils/auth"
 
 function Signup() {

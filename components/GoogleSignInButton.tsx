@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import googleLogo from "@/public/google.svg"
 import { signInWithGoogle } from "@/lib/utils/auth"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/lib/hooks/use-toast"
 
 export default function GoogleSignInButton() {
 	const { toast } = useToast()
