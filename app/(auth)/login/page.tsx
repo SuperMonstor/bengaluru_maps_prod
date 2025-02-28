@@ -134,14 +134,14 @@ function Login() {
 					</form> */}
 				</section>
 
-				<footer className="text-center">
+				{/* <footer className="text-center">
 					<p className="text-sm text-gray-500">
 						or{" "}
 						<Link href="/sign-up" className="text-blue-600 hover:underline">
 							Sign Up
 						</Link>
 					</p>
-				</footer>
+				</footer> */}
 			</section>
 		</main>
 	)

@@ -124,14 +124,14 @@ function Signup() {
 						</fieldset>
 					</form> */}
 				</section>
-				<footer className="text-center">
+				{/* <footer className="text-center">
 					<p className="text-sm text-gray-500">
 						or{" "}
 						<Link href="/login" className="text-blue-600 hover:underline">
 							Log In
 						</Link>
 					</p>
-				</footer>
+				</footer> */}
 			</section>
 		</main>
 	)
