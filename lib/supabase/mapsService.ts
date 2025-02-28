@@ -1,4 +1,4 @@
-import { createClient } from "./service/client"
+import { createClient } from "./api/supabaseClient"
 import { ImageProcessor, IMAGE_CONFIG } from "@/lib/utils/images"
 import {
 	Location,
@@ -7,8 +7,8 @@ import {
 	MapsResult,
 	CreateMapResult,
 	CreateLocationResult,
-} from "@/lib/types/map"
-import { User } from "@/lib/types/user"
+} from "@/lib/types/mapTypes"
+import { User } from "@/lib/types/userTypes"
 
 const supabase = createClient()
 

@@ -1,4 +1,4 @@
-import { getMapById } from "@/lib/supabase/maps"
+import { getMapById } from "@/lib/supabase/mapsService"
 import ClientMapPageContent from "./ClientMapPageComponent"
 
 interface MapPageProps {

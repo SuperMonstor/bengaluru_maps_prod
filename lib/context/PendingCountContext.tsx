@@ -7,7 +7,7 @@ import {
 	useEffect,
 	ReactNode,
 } from "react"
-import { createClient } from "@/lib/supabase/service/client"
+import { createClient } from "@/lib/supabase/api/supabaseClient"
 import { useAuth } from "@/lib/context/AuthContext"
 
 interface PendingCountContextType {

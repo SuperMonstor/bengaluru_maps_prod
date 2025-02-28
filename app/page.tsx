@@ -1,6 +1,6 @@
 // page.tsx
 import { CafeCard } from "@/components/cafecard"
-import { getMaps } from "@/lib/supabase/maps"
+import { getMaps } from "@/lib/supabase/mapsService"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 

@@ -1,5 +1,5 @@
-import { createClient } from "./service/client"
-import { Submission } from "@/lib/types/map"
+import { createClient } from "./api/supabaseClient"
+import { Submission } from "@/lib/types/mapTypes"
 import { toast } from "@/lib/hooks/use-toast"
 
 export async function fetchPendingSubmissions(mapId: string) {

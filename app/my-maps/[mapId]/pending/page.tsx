@@ -5,18 +5,18 @@ import { useAuth } from "@/lib/context/AuthContext"
 import Image from "next/image"
 import { useLoadScript } from "@react-google-maps/api"
 import { Check, X, MapPin } from "lucide-react"
-import { getMapById } from "@/lib/supabase/maps"
+import { getMapById } from "@/lib/supabase/mapsService"
 import {
 	fetchPendingSubmissions,
 	approveLocation,
 	rejectLocation,
-} from "@/lib/supabase/pending"
+} from "@/lib/supabase/mapSubmissionService"
 import React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
-import { Submission } from "@/lib/types/map"
+import { Submission } from "@/lib/types/mapTypes"
 import { useToast } from "@/lib/hooks/use-toast"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
 

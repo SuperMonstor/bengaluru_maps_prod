@@ -7,8 +7,8 @@ import {
 	useEffect,
 	ReactNode,
 } from "react"
-import { createClient } from "../supabase/service/client"
-import { UserSchema } from "../types/user"
+import { createClient } from "../supabase/api/supabaseClient"
+import { UserSchema } from "../types/userTypes"
 
 interface AuthContextValue {
 	user: UserSchema | null

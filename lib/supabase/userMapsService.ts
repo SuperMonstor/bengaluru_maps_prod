@@ -1,6 +1,6 @@
-import { createClient } from "./service/client"
-import { getMapById } from "./maps"
-import { UserMap } from "@/lib/types/map"
+import { createClient } from "./api/supabaseClient"
+import { getMapById } from "./mapsService"
+import { UserMap } from "@/lib/types/mapTypes"
 
 export async function fetchUserMaps(
 	userId: string

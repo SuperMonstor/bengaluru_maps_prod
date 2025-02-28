@@ -1,8 +1,8 @@
 "use client"
 
-import { getMapById } from "@/lib/supabase/maps"
+import { getMapById } from "@/lib/supabase/mapsService"
 import { Button } from "@/components/ui/button"
-import { createLocation } from "@/lib/supabase/maps"
+import { createLocation } from "@/lib/supabase/mapsService"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import Image from "next/image"
@@ -26,8 +26,8 @@ import {
 import "@reach/combobox/styles.css"
 import {} from "@googlemaps/js-api-loader"
 import { useToast } from "@/lib/hooks/use-toast"
-import { LocationSuggestion, SubmitLocationProps } from "@/lib/types/map"
-import { createClient } from "@/lib/supabase/service/client"
+import { LocationSuggestion, SubmitLocationProps } from "@/lib/types/mapTypes"
+import { createClient } from "@/lib/supabase/api/supabaseClient"
 
 export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 	// Unwrap params using React.use()

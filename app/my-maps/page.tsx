@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/context/AuthContext"
-import { fetchUserMaps } from "@/lib/supabase/my-maps"
+import { fetchUserMaps } from "@/lib/supabase/userMapsService"
 import {
 	Card,
 	CardContent,
@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import Link from "next/link"
 import { MapPin, Users, ThumbsUp, Clock } from "lucide-react"
-import { UserMap } from "@/lib/types/map"
+import { UserMap } from "@/lib/types/mapTypes"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 

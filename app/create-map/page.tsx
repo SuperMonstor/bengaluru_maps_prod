@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/lib/context/AuthContext"
 import MarkdownEditor from "@/components/markdown-editor"
 import { useRouter } from "next/navigation"
-import { createMap } from "@/lib/supabase/maps"
+import { createMap } from "@/lib/supabase/mapsService"
 import { Toaster } from "@/components/ui/toaster"
 import { useToast } from "@/lib/hooks/use-toast"
 
