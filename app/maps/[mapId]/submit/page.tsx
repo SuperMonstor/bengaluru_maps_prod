@@ -1,8 +1,6 @@
 "use client"
 
-import { getMapById } from "@/lib/supabase/mapsService"
 import { Button } from "@/components/ui/button"
-import { createLocation } from "@/lib/supabase/mapsService"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import Image from "next/image"
@@ -10,12 +8,7 @@ import { useAuth } from "@/lib/context/AuthContext"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, use } from "react"
 import { useLoadScript } from "@react-google-maps/api"
-import {
-	SubmitHandler,
-	useForm,
-	FieldValues,
-	RegisterOptions,
-} from "react-hook-form"
+import { SubmitHandler, useForm, FieldValues } from "react-hook-form"
 import {
 	Combobox,
 	ComboboxInput,
@@ -27,33 +20,30 @@ import "@reach/combobox/styles.css"
 import {} from "@googlemaps/js-api-loader"
 import { useToast } from "@/lib/hooks/use-toast"
 import { LocationSuggestion, SubmitLocationProps } from "@/lib/types/mapTypes"
-import { createClient } from "@/lib/supabase/api/supabaseClient"
+import { getMapById } from "@/lib/supabase/mapsService"
+import { createLocation } from "@/lib/supabase/locationService"
 
 export default function SubmitLocationPage({ params }: SubmitLocationProps) {
-	// Unwrap params using React.use()
 	const resolvedParams = use(params)
 	const mapId = resolvedParams.mapId
 	const { toast } = useToast()
 	const { user, isLoading: authLoading } = useAuth()
 	const router = useRouter()
-	const [map, setMap] = useState<any>(null) // State to hold map data
+	const [map, setMap] = useState<any>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([])
-	const [selectedLocation, setSelectedLocation] =
-		useState<LocationSuggestion | null>(null)
+	const [selectedLocation, setSelectedLocation] = useState<LocationSuggestion | null>(null)
 	const [metadata, setMetadata] = useState<{
 		name: string
 		photos: google.maps.places.PlacePhoto[] | null
 		address: string | null
 	} | null>(null)
-	const [isSubmitting, setIsSubmitting] = useState(false) // Add loading state for form submission
+	const [isSubmitting, setIsSubmitting] = useState(false)
 
 	const { isLoaded } = useLoadScript({
 		googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
 		libraries: ["places"],
 	})
-
-	const supabase = createClient()
 
 	const {
 		control,
@@ -373,7 +363,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 									value: 60,
 									message: "Description must be less than 60 characters",
 								},
-							} as RegisterOptions)}
+							})}
 							placeholder="Great sushi, awesome vibes"
 							className="w-full border border-border rounded-md shadow-sm text-foreground placeholder-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary h-24 px-3 py-2"
 						/>
