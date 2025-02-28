@@ -21,7 +21,7 @@ import {} from "@googlemaps/js-api-loader"
 import { useToast } from "@/lib/hooks/use-toast"
 import { LocationSuggestion, SubmitLocationProps } from "@/lib/types/mapTypes"
 import { getMapById } from "@/lib/supabase/mapsService"
-import { createLocation } from "@/lib/supabase/locationService"
+import { createLocation } from "@/lib/supabase/mapsService"
 
 export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 	const resolvedParams = use(params)
@@ -32,7 +32,8 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 	const [map, setMap] = useState<any>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([])
-	const [selectedLocation, setSelectedLocation] = useState<LocationSuggestion | null>(null)
+	const [selectedLocation, setSelectedLocation] =
+		useState<LocationSuggestion | null>(null)
 	const [metadata, setMetadata] = useState<{
 		name: string
 		photos: google.maps.places.PlacePhoto[] | null
