@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
-import Header from "../components/Header"
+import Header from "../components/custom-ui/Header"
 import { AuthProvider } from "@/lib/context/AuthContext"
 import { Toaster } from "@/components/ui/toaster"
 import { PendingCountProvider } from "@/lib/context/PendingCountContext"

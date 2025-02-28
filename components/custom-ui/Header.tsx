@@ -11,7 +11,7 @@ import Link from "next/link"
 import { useContext, useState, useEffect } from "react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { AuthContext } from "@/lib/context/AuthContext"
-import GoogleSignInButton from "@/components/GoogleSignInButton"
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
 
 function useAuth() {

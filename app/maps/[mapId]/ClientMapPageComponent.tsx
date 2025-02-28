@@ -1,17 +1,17 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Markdown } from "@/components/markdown-renderer"
+import { Markdown } from "@/components/markdown/MarkdownRenderer"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { MapPin, Users, ThumbsUp, ChevronUp, ChevronDown } from "lucide-react"
 import Image from "next/image"
-import ShareButton from "@/components/sharebutton"
+import ShareButton from "@/components/ShareButton"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api"
 import { useGoogleMaps, Location } from "@/lib/hooks/useGoogleMaps"
 import { useUserInfo } from "@/lib/hooks/useUserInfo"
-import LocationInfoWindow from "@/components/LocationInfoWindow"
+import LocationInfoWindow from "@/components/map/LocationInfoWindow"
 
 interface MapData {
 	id: string
