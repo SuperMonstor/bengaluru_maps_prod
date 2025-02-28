@@ -105,3 +105,21 @@ export interface UserMap {
   userProfilePicture: string | null;
   pendingCount: number;
 }
+
+export interface LocationSuggestion {
+  place_id: string
+  description: string
+  geometry: google.maps.LatLngLiteral
+  structured_formatting?: {
+    main_text: string
+    secondary_text: string
+  }
+  url?: string
+  name?: string
+  photos?: google.maps.places.PlacePhoto[]
+  address?: string
+}
+
+export interface SubmitLocationProps {
+  params: Promise<{ mapId: string }>
+}

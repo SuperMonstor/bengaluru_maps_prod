@@ -24,28 +24,10 @@ import {
 	ComboboxOption,
 } from "@reach/combobox"
 import "@reach/combobox/styles.css"
-
-// Import Google Maps types for better TypeScript support
 import {} from "@googlemaps/js-api-loader"
 import { useToast } from "@/lib/hooks/use-toast"
+import { LocationSuggestion, SubmitLocationProps } from "@/lib/types/map"
 import { createClient } from "@/lib/supabase/service/client"
-interface SubmitLocationProps {
-	params: Promise<{ mapId: string }> // Explicitly type params as a Promise
-}
-
-interface LocationSuggestion {
-	place_id: string
-	description: string
-	geometry: google.maps.LatLngLiteral // Use LatLngLiteral for simpler typing
-	structured_formatting?: {
-		main_text: string
-		secondary_text: string
-	}
-	url?: string // Google Maps place URL
-	name?: string // Place name
-	photos?: google.maps.places.PlacePhoto[] // Updated to use PlacePhoto
-	address?: string // Formatted address for metadata
-}
 
 export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 	// Unwrap params using React.use()
