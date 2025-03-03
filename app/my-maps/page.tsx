@@ -19,6 +19,7 @@ import { MapPin, Users, ThumbsUp, Clock } from "lucide-react"
 import { UserMap } from "@/lib/types/mapTypes"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 
 export default function MyMapsPage() {
 	const { user } = useAuth()
@@ -67,15 +68,7 @@ export default function MyMapsPage() {
 	}
 
 	if (loading) {
-		return (
-			<main className="bg-gray-50/50 flex flex-col min-h-screen">
-				<div className="container mx-auto px-4 py-8">
-					<div className="flex items-center justify-center h-64">
-						<div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-					</div>
-				</div>
-			</main>
-		)
+		return <LoadingIndicator />
 	}
 
 	return (

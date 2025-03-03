@@ -3,6 +3,7 @@ import { CafeCard } from "@/components/custom-ui/CafeCard"
 import { getMaps } from "@/lib/supabase/mapsService"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 
 export const revalidate = 0 // Disable caching for fresh data
 

@@ -101,7 +101,7 @@ export default function CreateMapPage() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingIndicator />;
   }
 
   if (!user) {
