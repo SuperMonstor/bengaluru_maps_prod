@@ -351,7 +351,9 @@ export async function createLocation({
 							latitude = results[0].geometry.location.lat()
 							longitude = results[0].geometry.location.lng()
 							name = results[0].name || location
-							googleMapsUrl = `https://maps.google.com/?cid=${results[0].place_id}`
+							googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+								name
+							)}&query_place_id=${results[0].place_id}`
 						}
 						resolve(null)
 					}

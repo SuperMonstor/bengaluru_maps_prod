@@ -172,10 +172,15 @@ export default function LocationInfoWindow({
 				<Link
 					href={
 						location.google_maps_url.includes("place/?q=place_id:")
-							? location.google_maps_url.replace(
-									"https://www.google.com/maps/place/?q=place_id:",
-									"https://maps.google.com/?cid="
-							  )
+							? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+									location.name
+							  )}&query_place_id=${
+									location.google_maps_url.split("place_id:")[1]
+							  }`
+							: location.google_maps_url.includes("maps.google.com/?cid=")
+							? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+									location.name
+							  )}&query_place_id=${location.google_maps_url.split("cid=")[1]}`
 							: location.google_maps_url
 					}
 					target="_blank"
