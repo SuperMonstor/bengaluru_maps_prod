@@ -13,6 +13,7 @@ import { useGoogleMaps, Location } from "@/lib/hooks/useGoogleMaps"
 import { useUserInfo } from "@/lib/hooks/useUserInfo"
 import LocationInfoWindow from "@/components/map/LocationInfoWindow"
 import { UpvoteButton } from "@/components/custom-ui/UpvoteButton"
+import { useSearchParams } from "next/navigation"
 
 interface MapData {
 	id: string
@@ -71,7 +72,9 @@ export default function ClientMapPageContent({
 	map,
 	initialIsUpvoted = false,
 }: ClientMapPageContentProps) {
-	const [isOpen, setIsOpen] = useState(false)
+	const searchParams = useSearchParams()
+	const shouldExpand = searchParams.get("expand") === "true"
+	const [isOpen, setIsOpen] = useState(shouldExpand)
 	const {
 		isLoaded,
 		mapRef,
@@ -135,6 +138,13 @@ export default function ClientMapPageContent({
 		setSelectedLocation(null)
 		if (isOpen) setIsOpen(false)
 	}
+
+	// Effect to ensure slider stays expanded when expand parameter is present
+	useEffect(() => {
+		if (shouldExpand) {
+			setIsOpen(true)
+		}
+	}, [shouldExpand])
 
 	useEffect(() => {
 		if (!isLoaded || !mapRef.current) return

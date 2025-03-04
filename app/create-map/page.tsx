@@ -85,14 +85,14 @@ export default function CreateMapPage() {
 			} else {
 				toast({
 					title: "Success!",
-					description: "Your map has been created and automatically upvoted.",
+					description: "Your map has been created.",
 				})
 
 				// Increase the delay to ensure the upvote is processed
 				setTimeout(() => {
 					// If we have the map data, redirect to the map page instead of home
 					if (mapData && mapData.id) {
-						router.push(`/maps/${mapData.id}`)
+						router.push(`/maps/${mapData.id}?expand=true`)
 					} else {
 						router.push("/")
 					}
