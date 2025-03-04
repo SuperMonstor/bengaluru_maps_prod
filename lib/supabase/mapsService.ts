@@ -226,6 +226,7 @@ export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
 					? `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim()
 					: "Unknown User",
 				userProfilePicture: user?.picture_url || null,
+				owner_id: map.owner_id,
 			}
 		})
 
@@ -306,6 +307,7 @@ export async function getMapById(mapId: string) {
 					? `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim()
 					: "Unknown User",
 				userProfilePicture: user?.picture_url || null,
+				owner_id: data.owner_id,
 			},
 			error: null,
 		}
@@ -411,6 +413,20 @@ export async function createLocation({
 			)
 		}
 
+		// Check if the user is the owner of the map
+		const { data: mapData, error: mapError } = await supabase
+			.from("maps")
+			.select("owner_id")
+			.eq("id", mapId)
+			.single()
+
+		if (mapError) {
+			throw new Error(`Error checking map ownership: ${mapError.message}`)
+		}
+
+		// Auto-approve if the creator is the map owner
+		const isOwner = mapData.owner_id === creatorId
+
 		const { data, error } = await supabase
 			.from("locations")
 			.insert({
@@ -423,8 +439,8 @@ export async function createLocation({
 				note: description,
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
-				is_approved: false,
-				status: "pending",
+				is_approved: isOwner, // Auto-approve if the creator is the map owner
+				status: isOwner ? "approved" : "pending",
 			})
 			.select()
 			.single()

@@ -72,6 +72,7 @@ export interface MapResponse {
 	upvotes: number
 	username: string
 	userProfilePicture: string | null
+	owner_id?: string
 }
 
 export interface MapsResult {
@@ -104,6 +105,7 @@ export interface UserMap {
 	username: string
 	userProfilePicture: string | null
 	pendingCount: number
+	owner_id?: string
 }
 
 export interface LocationSuggestion {

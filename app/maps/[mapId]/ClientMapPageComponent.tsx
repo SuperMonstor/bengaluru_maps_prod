@@ -14,6 +14,7 @@ import { useUserInfo } from "@/lib/hooks/useUserInfo"
 import LocationInfoWindow from "@/components/map/LocationInfoWindow"
 import { UpvoteButton } from "@/components/custom-ui/UpvoteButton"
 import { useSearchParams } from "next/navigation"
+import { useAuth } from "@/lib/context/AuthContext"
 
 interface MapData {
 	id: string
@@ -26,6 +27,7 @@ interface MapData {
 	upvotes: number
 	username: string
 	userProfilePicture: string | null
+	owner_id?: string
 }
 
 interface ClientMapPageContentProps {
@@ -88,6 +90,7 @@ export default function ClientMapPageContent({
 	} = useGoogleMaps(map.locations)
 
 	const { userInfo, fetchUserInfo } = useUserInfo()
+	const { user } = useAuth()
 
 	const handleCollapse = () => setIsOpen(false)
 
@@ -281,7 +284,11 @@ export default function ClientMapPageContent({
 							}}
 						>
 							{map.locations
-								.filter((location) => location.is_approved) // Only show approved locations
+								.filter(
+									(location) =>
+										location.is_approved ||
+										(user && location.creator_id === user.id)
+								)
 								.map((location) => (
 									<CustomMarker
 										key={location.id}
@@ -334,13 +341,22 @@ export default function ClientMapPageContent({
 								clickableIcons: false,
 							}}
 						>
-							{map.locations.map((location) => (
-								<CustomMarker
-									key={location.id}
-									position={{ lat: location.latitude, lng: location.longitude }}
-									onClick={() => onMarkerClick(location)}
-								/>
-							))}
+							{map.locations
+								.filter(
+									(location) =>
+										location.is_approved ||
+										(user && location.creator_id === user.id)
+								)
+								.map((location) => (
+									<CustomMarker
+										key={location.id}
+										position={{
+											lat: location.latitude,
+											lng: location.longitude,
+										}}
+										onClick={() => onMarkerClick(location)}
+									/>
+								))}
 							{selectedLocation && userInfo && (
 								<InfoWindow
 									position={{
