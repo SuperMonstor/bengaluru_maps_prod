@@ -395,7 +395,7 @@ export default function ClientMapPageContent({
 						} max-h-[80vh] overflow-y-auto z-20 rounded-t-xl shadow-lg`}
 					>
 						<div className="sticky top-0 bg-white p-4 border-b border-gray-100">
-							<div className="flex items-center justify-between mb-2">
+							<div className="flex items-center justify-between">
 								<h1 className="text-xl font-bold tracking-tight truncate flex-1">
 									{map.title}
 								</h1>
@@ -408,11 +408,27 @@ export default function ClientMapPageContent({
 								</button>
 							</div>
 
-							<p className="text-muted-foreground text-sm mb-3">
-								{map.description}
-							</p>
+							<div className="flex items-center gap-3 mt-3">
+								<Avatar className="h-8 w-8">
+									{map.userProfilePicture ? (
+										<AvatarImage
+											src={map.userProfilePicture}
+											alt={map.username}
+										/>
+									) : (
+										<AvatarFallback>
+											{map.username.charAt(0).toUpperCase()}
+										</AvatarFallback>
+									)}
+								</Avatar>
+								<p className="text-sm">
+									Created by <span className="font-medium">{map.username}</span>
+								</p>
+							</div>
+						</div>
 
-							<div className="flex gap-4 text-sm text-muted-foreground pt-1 mb-3">
+						<div className="p-4 space-y-4">
+							<div className="flex gap-4 text-sm text-muted-foreground">
 								<UpvoteButton
 									mapId={map.id}
 									initialUpvotes={map.upvotes}
@@ -421,17 +437,17 @@ export default function ClientMapPageContent({
 								/>
 								<span className="flex items-center">
 									<MapPin className="mr-1 h-4 w-4" />
-									{map.locations.length}
+									{map.locations.length} locations
 								</span>
 								<span className="flex items-center">
 									<Users className="mr-1 h-4 w-4" />
-									{map.contributors}
+									{map.contributors} contributors
 								</span>
 							</div>
-						</div>
 
-						<div className="p-4 space-y-4">
-							<div className="flex items-center gap-2 mb-4">
+							<p className="text-muted-foreground">{map.description}</p>
+
+							<div className="flex items-center gap-2">
 								<Link href={`/maps/${map.id}/submit`} className="flex-1">
 									<Button variant="default" size="sm" className="w-full">
 										Add Location
@@ -440,47 +456,9 @@ export default function ClientMapPageContent({
 								<ShareButton mapId={map.id} />
 							</div>
 
-							<div className="space-y-4">
-								<p className="text-muted-foreground">{map.description}</p>
-
-								{/* Map creator info */}
-								<div className="flex items-center gap-3 py-2">
-									<Avatar className="h-10 w-10">
-										{map.userProfilePicture ? (
-											<AvatarImage
-												src={map.userProfilePicture}
-												alt={map.username}
-											/>
-										) : (
-											<AvatarFallback>
-												{map.username.charAt(0).toUpperCase()}
-											</AvatarFallback>
-										)}
-									</Avatar>
-									<div>
-										<p className="text-sm font-medium">
-											Created by {map.username}
-										</p>
-										<div className="flex gap-3 text-xs text-muted-foreground">
-											<UpvoteButton
-												mapId={map.id}
-												initialUpvotes={map.upvotes}
-												initialIsUpvoted={initialIsUpvoted}
-												variant="text"
-												className="text-xs"
-											/>
-											<span className="flex items-center">
-												<Users className="inline mr-1 h-3 w-3" />
-												{map.contributors}
-											</span>
-										</div>
-									</div>
-								</div>
-
-								{/* Map content */}
-								<div className="prose prose-sm max-w-none">
-									<Markdown content={map.body} />
-								</div>
+							{/* Map content */}
+							<div className="prose prose-sm max-w-none mt-4 pt-4 border-t border-gray-100">
+								<Markdown content={map.body} />
 							</div>
 						</div>
 					</div>
