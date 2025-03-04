@@ -47,7 +47,8 @@ export default function LocationInfoWindow({
 		>
 			<button
 				onClick={onClose}
-				className="absolute -top-3 -right-3 bg-white rounded-full p-1 shadow-md hover:bg-gray-100 z-10"
+				className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md hover:bg-gray-100 z-10"
+				style={{ transform: "scale(0.85)" }}
 			>
 				<svg
 					className="w-4 h-4 text-gray-600"
@@ -83,7 +84,12 @@ export default function LocationInfoWindow({
 					</Avatar>
 					<div className="flex flex-col">
 						<span className="text-xs text-muted-foreground">Added by</span>
-						<span className="text-sm font-medium">{userInfo.username}</span>
+						<div className="flex items-center gap-1">
+							<span className="text-sm font-medium">{userInfo.username}</span>
+							<span className="text-xs text-muted-foreground">
+								• {formatDate(location.created_at)}
+							</span>
+						</div>
 					</div>
 				</div>
 
@@ -98,11 +104,7 @@ export default function LocationInfoWindow({
 							priority
 						/>
 					</div>
-				) : (
-					<p className="text-xs text-muted-foreground italic mb-3">
-						No image available
-					</p>
-				)}
+				) : null}
 
 				{/* Status and Ratings Section */}
 				{placeDetails && (
@@ -160,14 +162,6 @@ export default function LocationInfoWindow({
 						</div>
 					</div>
 				)}
-
-				{/* Date added */}
-				<div className="flex items-center gap-1.5 mb-3">
-					<Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-					<span className="text-xs text-muted-foreground">
-						Added on {formatDate(location.created_at)}
-					</span>
-				</div>
 
 				<Link
 					href={
