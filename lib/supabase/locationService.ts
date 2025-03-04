@@ -47,7 +47,7 @@ export async function getLocationDetails(location: string): Promise<{
 							latitude = results[0].geometry.location.lat()
 							longitude = results[0].geometry.location.lng()
 							name = results[0].name || location
-							googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${results[0].place_id}`
+							googleMapsUrl = `https://maps.google.com/?cid=${results[0].place_id}`
 						}
 						resolve(null)
 					}
