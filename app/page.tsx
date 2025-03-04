@@ -4,6 +4,7 @@ import { getMaps } from "@/lib/supabase/mapsService"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
+import { getUserUpvoteStatus } from "@/lib/actions/voteActions"
 
 export const revalidate = 0 // Disable caching for fresh data
 
@@ -18,6 +19,10 @@ export default async function HomePage({ searchParams }: HomeProps) {
 
 	const { data: maps, total, error } = await getMaps(page, limit)
 	const totalPages = Math.ceil(total / limit)
+
+	// Get upvote status for all maps
+	const mapIds = maps.map((map) => map.id)
+	const upvoteStatus = await getUserUpvoteStatus(mapIds)
 
 	if (error) {
 		return (
@@ -55,6 +60,8 @@ export default async function HomePage({ searchParams }: HomeProps) {
 								upvotes={map.upvotes}
 								username={map.username}
 								userProfilePicture={map.userProfilePicture}
+								mapId={map.id}
+								initialIsUpvoted={upvoteStatus[map.id] || false}
 							/>
 						</Link>
 					))}
