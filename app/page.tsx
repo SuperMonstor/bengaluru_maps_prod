@@ -6,7 +6,8 @@ import Link from "next/link"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 import { getUserUpvoteStatus } from "@/lib/actions/voteActions"
 
-export const revalidate = 0 // Disable caching for fresh data
+// Set revalidate to 0 to ensure fresh data on each request
+export const revalidate = 0
 
 interface HomeProps {
 	searchParams: Promise<{ page?: string }> // Explicitly type as Promise
@@ -17,6 +18,7 @@ export default async function HomePage({ searchParams }: HomeProps) {
 	const page = parseInt(resolvedSearchParams.page || "1", 10)
 	const limit = 10
 
+	// Get fresh data on each request
 	const { data: maps, total, error } = await getMaps(page, limit)
 	const totalPages = Math.ceil(total / limit)
 

@@ -9,6 +9,7 @@ import {
 	CreateLocationResult,
 } from "@/lib/types/mapTypes"
 import { User } from "@/lib/types/userTypes"
+import { toggleUpvote } from "./votesService"
 
 const supabase = createClient()
 
@@ -93,6 +94,24 @@ export async function createMap({
 			.single()
 
 		if (error) throw new Error(`Failed to create map: ${error.message}`)
+
+		// Auto-upvote the map for the creator using the votesService
+		if (data) {
+			try {
+				// Use the existing toggleUpvote function from votesService
+				const upvoteResult = await toggleUpvote(data.id, ownerId)
+				if (!upvoteResult.success) {
+					console.error("Failed to auto-upvote map:", upvoteResult.error)
+				} else {
+					// Ensure the upvote is reflected in the database
+					await supabase.rpc("get_vote_counts", { map_ids: [data.id] })
+				}
+			} catch (upvoteError) {
+				console.error("Error auto-upvoting map:", upvoteError)
+				// Continue even if upvote fails
+			}
+		}
+
 		return { data, error: null }
 	} catch (error) {
 		console.error("Error in createMap:", error)
