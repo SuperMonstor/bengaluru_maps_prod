@@ -396,18 +396,41 @@ export async function createLocation({
 		}
 
 		// Check for duplicate locations in this map
-		const { data: existingLocations, error: checkError } = await supabase
-			.from("locations")
-			.select("id, name")
-			.eq("map_id", mapId)
-			.or(`name.eq.${name},google_maps_url.eq.${googleMapsUrl}`)
-			.limit(1)
+		// Using separate queries instead of OR with string interpolation to avoid SQL injection and parsing issues
+		const { data: existingLocationsByName, error: checkNameError } =
+			await supabase
+				.from("locations")
+				.select("id, name")
+				.eq("map_id", mapId)
+				.eq("name", name)
+				.limit(1)
 
-		if (checkError) {
-			throw new Error(`Error checking for duplicate: ${checkError.message}`)
+		if (checkNameError) {
+			throw new Error(
+				`Error checking for duplicate by name: ${checkNameError.message}`
+			)
 		}
 
-		if (existingLocations && existingLocations.length > 0) {
+		const { data: existingLocationsByUrl, error: checkUrlError } =
+			await supabase
+				.from("locations")
+				.select("id, name")
+				.eq("map_id", mapId)
+				.eq("google_maps_url", googleMapsUrl)
+				.limit(1)
+
+		if (checkUrlError) {
+			throw new Error(
+				`Error checking for duplicate by URL: ${checkUrlError.message}`
+			)
+		}
+
+		const existingLocations = [
+			...(existingLocationsByName || []),
+			...(existingLocationsByUrl || []),
+		]
+
+		if (existingLocations.length > 0) {
 			throw new Error(
 				`This location (${name}) has already been added to this map.`
 			)
