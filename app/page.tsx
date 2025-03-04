@@ -45,9 +45,8 @@ export default async function HomePage({ searchParams }: HomeProps) {
 
 				<div className="grid gap-6 max-w-5xl mx-auto">
 					{maps.map((map) => (
-						<Link href={`/maps/${map.id}`}>
+						<Link key={map.id} href={`/maps/${map.id}`}>
 							<CafeCard
-								key={map.id}
 								title={map.title}
 								description={map.description}
 								image={map.image}
