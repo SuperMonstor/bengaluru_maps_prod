@@ -12,14 +12,17 @@ export async function getUserUpvoteStatus(mapIds: string[]) {
 		process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 		{
 			cookies: {
-				get(name: string) {
-					return cookieStore.get(name)?.value
+				get: async (name: string) => {
+					const cookies = await cookieStore
+					return cookies.get(name)?.value
 				},
-				set(name: string, value: string, options: any) {
-					cookieStore.set({ name, value, ...options })
+				set: async (name: string, value: string, options: any) => {
+					const cookies = await cookieStore
+					cookies.set({ name, value, ...options })
 				},
-				remove(name: string, options: any) {
-					cookieStore.set({ name, value: "", ...options })
+				remove: async (name: string, options: any) => {
+					const cookies = await cookieStore
+					cookies.delete(name)
 				},
 			},
 		}
