@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Markdown } from "@/components/markdown/MarkdownRenderer"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { MapPin, Users, ThumbsUp, ChevronUp, ChevronDown } from "lucide-react"
+import { MapPin, Users, ChevronUp, ChevronDown } from "lucide-react"
 import Image from "next/image"
 import ShareButton from "@/components/sharebutton"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api"
 import { useGoogleMaps, Location } from "@/lib/hooks/useGoogleMaps"
 import { useUserInfo } from "@/lib/hooks/useUserInfo"
 import LocationInfoWindow from "@/components/map/LocationInfoWindow"
+import { UpvoteButton } from "@/components/custom-ui/UpvoteButton"
 
 interface MapData {
 	id: string
@@ -28,6 +29,7 @@ interface MapData {
 
 interface ClientMapPageContentProps {
 	map: MapData
+	initialIsUpvoted?: boolean
 }
 
 const popupStyles = `
@@ -67,6 +69,7 @@ const CustomMarker = ({ position, onClick }: any) => {
 
 export default function ClientMapPageContent({
 	map,
+	initialIsUpvoted = false,
 }: ClientMapPageContentProps) {
 	const [isOpen, setIsOpen] = useState(false)
 	const {
@@ -183,8 +186,8 @@ export default function ClientMapPageContent({
 				{/* Desktop Layout */}
 				<div className="hidden md:flex h-[calc(100vh-65px)]">
 					<div className="w-1/2 p-4 md:p-8 lg:p-12 space-y-6 overflow-y-auto">
-						<div className="flex items-center gap-4">
-							<h1 className="text-3xl font-bold tracking-tight text-foreground flex-1">
+						<div className="flex items-center gap-4 justify-between">
+							<h1 className="text-3xl font-bold tracking-tight text-foreground">
 								{map.title}
 							</h1>
 							<div className="flex items-center gap-2">
@@ -219,6 +222,12 @@ export default function ClientMapPageContent({
 							</span>
 						</div>
 						<div className="flex gap-4 text-sm text-muted-foreground">
+							<UpvoteButton
+								mapId={map.id}
+								initialUpvotes={map.upvotes}
+								initialIsUpvoted={initialIsUpvoted}
+								variant="pill"
+							/>
 							<span>
 								<MapPin className="inline mr-1 h-4 w-4" />
 								{map.locations.length} locations
@@ -226,10 +235,6 @@ export default function ClientMapPageContent({
 							<span>
 								<Users className="inline mr-1 h-4 w-4" />
 								{map.contributors} contributors
-							</span>
-							<span>
-								<ThumbsUp className="inline mr-1 h-4 w-4" />
-								{map.upvotes} upvotes
 							</span>
 						</div>
 						<div className="relative w-full h-[200px] mt-6">
@@ -366,6 +371,12 @@ export default function ClientMapPageContent({
 								{map.description}
 							</p>
 							<div className="flex gap-4 text-sm text-muted-foreground pt-1">
+								<UpvoteButton
+									mapId={map.id}
+									initialUpvotes={map.upvotes}
+									initialIsUpvoted={initialIsUpvoted}
+									variant="pill"
+								/>
 								<span className="flex items-center">
 									<MapPin className="mr-1 h-4 w-4" />
 									{map.locations.length}
@@ -373,10 +384,6 @@ export default function ClientMapPageContent({
 								<span className="flex items-center">
 									<Users className="mr-1 h-4 w-4" />
 									{map.contributors}
-								</span>
-								<span className="flex items-center">
-									<ThumbsUp className="mr-1 h-4 w-4" />
-									{map.upvotes}
 								</span>
 							</div>
 						</div>
@@ -387,17 +394,40 @@ export default function ClientMapPageContent({
 							isOpen ? "translate-y-0" : "translate-y-full"
 						} max-h-[80vh] overflow-y-auto z-20 rounded-t-xl shadow-lg`}
 					>
-						<div className="sticky top-0 bg-white p-4 border-b border-gray-100 flex items-center justify-between">
-							<h1 className="text-xl font-bold tracking-tight truncate flex-1">
-								{map.title}
-							</h1>
-							<button
-								onClick={handleCollapse}
-								className="p-2 rounded-full hover:bg-gray-100"
-								aria-label="Collapse panel"
-							>
-								<ChevronDown className="h-5 w-5" />
-							</button>
+						<div className="sticky top-0 bg-white p-4 border-b border-gray-100">
+							<div className="flex items-center justify-between mb-2">
+								<h1 className="text-xl font-bold tracking-tight truncate flex-1">
+									{map.title}
+								</h1>
+								<button
+									onClick={handleCollapse}
+									className="p-2 rounded-full hover:bg-gray-100"
+									aria-label="Collapse panel"
+								>
+									<ChevronDown className="h-5 w-5" />
+								</button>
+							</div>
+
+							<p className="text-muted-foreground text-sm mb-3">
+								{map.description}
+							</p>
+
+							<div className="flex gap-4 text-sm text-muted-foreground pt-1 mb-3">
+								<UpvoteButton
+									mapId={map.id}
+									initialUpvotes={map.upvotes}
+									initialIsUpvoted={initialIsUpvoted}
+									variant="pill"
+								/>
+								<span className="flex items-center">
+									<MapPin className="mr-1 h-4 w-4" />
+									{map.locations.length}
+								</span>
+								<span className="flex items-center">
+									<Users className="mr-1 h-4 w-4" />
+									{map.contributors}
+								</span>
+							</div>
 						</div>
 
 						<div className="p-4 space-y-4">
@@ -432,13 +462,16 @@ export default function ClientMapPageContent({
 											Created by {map.username}
 										</p>
 										<div className="flex gap-3 text-xs text-muted-foreground">
+											<UpvoteButton
+												mapId={map.id}
+												initialUpvotes={map.upvotes}
+												initialIsUpvoted={initialIsUpvoted}
+												variant="text"
+												className="text-xs"
+											/>
 											<span className="flex items-center">
 												<Users className="inline mr-1 h-3 w-3" />
 												{map.contributors}
-											</span>
-											<span className="flex items-center">
-												<ThumbsUp className="inline mr-1 h-3 w-3" />
-												{map.upvotes}
 											</span>
 										</div>
 									</div>
