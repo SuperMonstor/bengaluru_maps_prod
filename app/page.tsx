@@ -14,6 +14,69 @@ interface HomeProps {
 	searchParams: Promise<{ page?: string }>
 }
 
+// Separate component for data fetching that can be wrapped with Suspense
+async function MapsList({
+	page,
+	limit,
+	userId,
+}: {
+	page: number
+	limit: number
+	userId?: string
+}) {
+	const { data: maps, total, error } = await getMaps(page, limit, userId)
+	const totalPages = Math.ceil(total / limit)
+
+	if (error) {
+		return (
+			<div className="container mx-auto px-4 py-8">
+				<p className="text-red-500">Error loading maps: {error}</p>
+			</div>
+		)
+	}
+
+	return (
+		<>
+			<div className="grid gap-6 max-w-5xl mx-auto">
+				{maps.map((map) => (
+					<Link key={map.id} href={`/maps/${map.id}`}>
+						<CafeCard
+							mapId={map.id}
+							title={map.title}
+							description={map.description}
+							image={map.image}
+							locations={map.locations}
+							contributors={map.contributors}
+							upvotes={map.upvotes}
+							initialIsUpvoted={map.hasUpvoted}
+							username={map.username}
+							userProfilePicture={map.userProfilePicture}
+						/>
+					</Link>
+				))}
+			</div>
+
+			{totalPages > 1 && (
+				<div className="flex justify-center gap-4 mt-8">
+					<Button variant="outline" disabled={page === 1} asChild={page !== 1}>
+						<a href={`/?page=${page - 1}`}>Previous</a>
+					</Button>
+					<span className="self-center">
+						Page {page} of {totalPages}
+					</span>
+					<Button
+						variant="outline"
+						disabled={page === totalPages}
+						asChild={page !== totalPages}
+					>
+						<a href={`/?page=${page + 1}`}>Next</a>
+					</Button>
+				</div>
+			)}
+		</>
+	)
+}
+
 export default async function HomePage({ searchParams }: HomeProps) {
 	const supabase = await createClient()
 	const {
@@ -23,24 +86,6 @@ export default async function HomePage({ searchParams }: HomeProps) {
 	const resolvedSearchParams = await searchParams
 	const page = parseInt(resolvedSearchParams.page || "1", 10)
 	const limit = 10
-
-	// Only pass userId if user is authenticated
-	const {
-		data: maps,
-		total,
-		error,
-	} = await getMaps(page, limit, user?.id || undefined)
-	const totalPages = Math.ceil(total / limit)
-
-	if (error) {
-		return (
-			<main className="min-h-screen bg-gray-50/50">
-				<div className="container mx-auto px-4 py-8">
-					<p className="text-red-500">Error loading maps: {error}</p>
-				</div>
-			</main>
-		)
-	}
 
 	return (
 		<main className="min-h-screen bg-gray-50/50">
@@ -56,47 +101,12 @@ export default async function HomePage({ searchParams }: HomeProps) {
 					</p>
 				</div>
 
-				<Suspense fallback={<LoadingIndicator />}>
-					<div className="grid gap-6 max-w-5xl mx-auto">
-						{maps.map((map) => (
-							<Link key={map.id} href={`/maps/${map.id}`}>
-								<CafeCard
-									mapId={map.id}
-									title={map.title}
-									description={map.description}
-									image={map.image}
-									locations={map.locations}
-									contributors={map.contributors}
-									upvotes={map.upvotes}
-									initialIsUpvoted={map.hasUpvoted}
-									username={map.username}
-									userProfilePicture={map.userProfilePicture}
-								/>
-							</Link>
-						))}
-					</div>
-
-					{totalPages > 1 && (
-						<div className="flex justify-center gap-4 mt-8">
-							<Button
-								variant="outline"
-								disabled={page === 1}
-								asChild={page !== 1}
-							>
-								<a href={`/?page=${page - 1}`}>Previous</a>
-							</Button>
-							<span className="self-center">
-								Page {page} of {totalPages}
-							</span>
-							<Button
-								variant="outline"
-								disabled={page === totalPages}
-								asChild={page !== totalPages}
-							>
-								<a href={`/?page=${page + 1}`}>Next</a>
-							</Button>
-						</div>
-					)}
+				<Suspense
+					fallback={
+						<LoadingIndicator message="Loading maps from Bengaluru..." />
+					}
+				>
+					<MapsList page={page} limit={limit} userId={user?.id} />
 				</Suspense>
 			</div>
 		</main>

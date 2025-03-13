@@ -1,7 +1,11 @@
-export function LoadingIndicator() {
+export function LoadingIndicator({
+	message = "Loading content...",
+}: {
+	message?: string
+}) {
 	return (
-		<div className="min-h-[200px] rounded-md shadow-sm bg-white flex items-center justify-center">
-			<div className="relative h-10 w-10">
+		<div className="min-h-[200px] rounded-md shadow-sm bg-white flex flex-col items-center justify-center p-6 space-y-4">
+			<div className="relative h-12 w-12">
 				{/* Outer ring */}
 				<div className="absolute inset-0 rounded-full border-2 border-muted opacity-25"></div>
 				{/* Spinner */}
@@ -11,6 +15,7 @@ export function LoadingIndicator() {
 					<div className="h-2 w-2 rounded-full bg-primary"></div>
 				</div>
 			</div>
+			<p className="text-sm text-muted-foreground">{message}</p>
 		</div>
 	)
 }
