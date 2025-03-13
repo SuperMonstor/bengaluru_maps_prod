@@ -69,9 +69,9 @@ export default function CreateMapPage() {
 
 		if (isSubmitting) return // Prevent multiple submissions
 
-		try {
-			setIsSubmitting(true)
+		setIsSubmitting(true) // Disable the button immediately
 
+		try {
 			const { data: mapData, error } = await createMap({
 				title: data.title,
 				shortDescription: data.shortDescription,
@@ -111,9 +111,10 @@ export default function CreateMapPage() {
 				title: "Error",
 				description: "An unexpected error occurred. Please try again.",
 			})
-		} finally {
-			setIsSubmitting(false)
+			setIsSubmitting(false) // Re-enable the button only on error
 		}
+		// Don't set isSubmitting to false on success - keep the button disabled
+		// The page will redirect anyway, so there's no need to re-enable the button
 	}
 
 	if (isLoading) {
