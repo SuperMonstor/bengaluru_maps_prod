@@ -15,6 +15,7 @@ import LocationInfoWindow from "@/components/map/LocationInfoWindow"
 import { UpvoteButton } from "@/components/custom-ui/UpvoteButton"
 import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/context/AuthContext"
+import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 
 interface MapData {
 	id: string
@@ -188,7 +189,9 @@ export default function ClientMapPageContent({
 	if (!isLoaded) {
 		return (
 			<main className="bg-gray-50/50 flex flex-col min-h-screen">
-				<div className="container mx-auto px-4 py-8">Loading map...</div>
+				<div className="container mx-auto px-4 py-8">
+					<LoadingIndicator message="Loading map details..." />
+				</div>
 			</main>
 		)
 	}
@@ -280,7 +283,7 @@ export default function ClientMapPageContent({
 								maxZoom: 18,
 								minZoom: 3,
 								disableDefaultUI: false,
-								zoomControl: true,
+								zoomControl: false,
 								clickableIcons: false,
 							}}
 						>
@@ -334,7 +337,7 @@ export default function ClientMapPageContent({
 								maxZoom: 18,
 								minZoom: 3,
 								disableDefaultUI: false,
-								zoomControl: true,
+								zoomControl: false,
 								clickableIcons: false,
 							}}
 						>
