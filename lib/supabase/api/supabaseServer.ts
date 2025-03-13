@@ -2,23 +2,31 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
 export async function createClient() {
-	const cookieStore = cookies()
+	const cookieStore = await cookies()
 
 	return createServerClient(
 		process.env.NEXT_PUBLIC_SUPABASE_URL!,
 		process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 		{
 			cookies: {
-				getAll: () => {
-					return cookieStore.getAll().map((cookie) => ({
-						name: cookie.name,
-						value: cookie.value,
-					}))
+				get(name) {
+					const cookie = cookieStore.get(name)
+					return cookie?.value
 				},
-				setAll: (cookies) => {
-					cookies.forEach((cookie) => {
-						cookieStore.set(cookie.name, cookie.value, cookie.options)
-					})
+				set(name, value, options) {
+					try {
+						cookieStore.set(name, value, options)
+					} catch (error) {
+						// This can happen when attempting to set cookies in middleware
+						console.error(`Error setting cookie ${name}:`, error)
+					}
+				},
+				remove(name, options) {
+					try {
+						cookieStore.set(name, "", { ...options, maxAge: 0 })
+					} catch (error) {
+						console.error(`Error removing cookie ${name}:`, error)
+					}
 				},
 			},
 		}
