@@ -30,11 +30,14 @@ interface MapData {
 	userProfilePicture: string | null
 	owner_id?: string
 	hasUpvoted: boolean
+	slug?: string
 }
 
 interface ClientMapPageContentProps {
 	map: MapData
 	initialIsUpvoted?: boolean
+	user?: any
+	searchParams?: { [key: string]: string | string[] | undefined }
 }
 
 const popupStyles = `
@@ -75,9 +78,12 @@ const CustomMarker = ({ position, onClick }: any) => {
 export default function ClientMapPageContent({
 	map,
 	initialIsUpvoted = false,
+	user,
+	searchParams,
 }: ClientMapPageContentProps) {
-	const searchParams = useSearchParams()
-	const shouldExpand = searchParams.get("expand") === "true"
+	const searchParamsObj = useSearchParams()
+	const shouldExpand =
+		searchParams?.expand === "true" || searchParamsObj.get("expand") === "true"
 	const [isOpen, setIsOpen] = useState(shouldExpand)
 	const {
 		isLoaded,
@@ -92,7 +98,7 @@ export default function ClientMapPageContent({
 	} = useGoogleMaps(map.locations)
 
 	const { userInfo, fetchUserInfo } = useUserInfo()
-	const { user } = useAuth()
+	const { user: authUser } = useAuth()
 
 	const handleCollapse = () => setIsOpen(false)
 
@@ -208,12 +214,12 @@ export default function ClientMapPageContent({
 								{map.title}
 							</h1>
 							<div className="flex items-center gap-2">
-								<Link href={`/maps/${map.id}/submit`}>
+								<Link href={`/maps/${map.slug || "map"}/${map.id}/submit`}>
 									<Button variant="default" size="sm">
 										Contribute
 									</Button>
 								</Link>
-								<ShareButton mapId={map.id} />
+								<ShareButton mapId={map.id} slug={map.slug} />
 							</div>
 						</div>
 						<div className="space-y-2">
@@ -470,12 +476,15 @@ export default function ClientMapPageContent({
 							<p className="text-muted-foreground">{map.description}</p>
 
 							<div className="flex items-center gap-2">
-								<Link href={`/maps/${map.id}/submit`} className="flex-1">
+								<Link
+									href={`/maps/${map.slug || "map"}/${map.id}/submit`}
+									className="flex-1"
+								>
 									<Button variant="default" size="sm" className="w-full">
 										Add Location
 									</Button>
 								</Link>
-								<ShareButton mapId={map.id} />
+								<ShareButton mapId={map.id} slug={map.slug} />
 							</div>
 
 							{/* Map content */}

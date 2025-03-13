@@ -7,13 +7,14 @@ import { useToast } from "@/lib/hooks/use-toast"
 
 interface ShareButtonProps {
 	mapId: string
+	slug?: string
 }
 
-export default function ShareButton({ mapId }: ShareButtonProps) {
+export default function ShareButton({ mapId, slug }: ShareButtonProps) {
 	const { toast } = useToast()
 
 	const handleShare = async () => {
-		const url = `${window.location.origin}/maps/${mapId}`
+		const url = `${window.location.origin}/maps/${slug || "map"}/${mapId}`
 		try {
 			await navigator.clipboard.writeText(url)
 			toast({
@@ -24,7 +25,7 @@ export default function ShareButton({ mapId }: ShareButtonProps) {
 		} catch (err) {
 			toast({
 				title: "Failed to Copy",
-				description: "Couldn’t copy the URL. Please try again.",
+				description: "Couldn't copy the URL. Please try again.",
 				variant: "destructive",
 				duration: 3000,
 			})

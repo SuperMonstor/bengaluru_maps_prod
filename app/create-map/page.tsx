@@ -97,7 +97,9 @@ export default function CreateMapPage() {
 				setTimeout(() => {
 					// If we have the map data, redirect to the map page instead of home
 					if (mapData && mapData.id) {
-						router.push(`/maps/${mapData.id}?expand=true`)
+						router.push(
+							`/maps/${mapData.slug || "map"}/${mapData.id}?expand=true`
+						)
 					} else {
 						router.push("/")
 					}

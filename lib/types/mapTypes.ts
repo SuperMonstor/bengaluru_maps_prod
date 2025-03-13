@@ -61,6 +61,7 @@ export interface MapData {
 	locations: Location[]
 	votes: { id: string; user_id: string }[]
 	has_upvoted: { user_id: string }[]
+	slug?: string
 }
 
 export interface MapResponse {
@@ -75,6 +76,7 @@ export interface MapResponse {
 	username: string
 	userProfilePicture: string | null
 	owner_id?: string
+	slug?: string
 }
 
 export interface MapsResult {
@@ -108,6 +110,7 @@ export interface UserMap {
 	userProfilePicture: string | null
 	pendingCount: number
 	owner_id?: string
+	slug?: string
 }
 
 export interface LocationSuggestion {
@@ -125,5 +128,5 @@ export interface LocationSuggestion {
 }
 
 export interface SubmitLocationProps {
-	params: Promise<{ mapId: string }>
+	params: Promise<{ slug: string; id: string }>
 }

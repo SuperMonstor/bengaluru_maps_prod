@@ -39,7 +39,7 @@ async function MapsList({
 		<>
 			<div className="grid gap-6 max-w-5xl mx-auto">
 				{maps.map((map) => (
-					<Link key={map.id} href={`/maps/${map.id}`}>
+					<Link key={map.id} href={`/maps/${map.slug || "map"}/${map.id}`}>
 						<CafeCard
 							mapId={map.id}
 							title={map.title}

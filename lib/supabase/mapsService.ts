@@ -10,6 +10,7 @@ import {
 } from "@/lib/types/mapTypes"
 import { User } from "@/lib/types/userTypes"
 import { toggleUpvote } from "./votesService"
+import { slugify } from "@/lib/utils/slugify"
 
 const supabase = createClient()
 
@@ -78,6 +79,7 @@ export async function createMap({
 		}
 
 		const displayPictureUrl = await uploadImage(displayPicture)
+		const slug = slugify(title)
 
 		const { data, error } = await supabase
 			.from("maps")
@@ -89,6 +91,7 @@ export async function createMap({
 				owner_id: ownerId,
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
+				slug: slug,
 			})
 			.select()
 			.single()
@@ -207,28 +210,28 @@ export async function getMaps(
 			) || []
 		)
 
-		const maps: MapResponse[] = mapsData.map((map) => {
-			const user = map.users as unknown as User
-			const hasUpvoted = userId
-				? map.votes.some((vote) => vote.user_id === userId)
-				: false
+		const hasUpvoted = userId
+			? mapsData.map((map) => map.votes.some((vote) => vote.user_id === userId))
+			: Array(mapsData.length).fill(false)
 
-			return {
-				id: map.id,
-				title: map.name,
-				description: map.short_description,
-				image: map.display_picture || "/placeholder.svg",
-				locations: locationCounts.get(map.id) ?? 0,
-				contributors: contributorCounts.get(map.id) ?? 0,
-				upvotes: voteCounts.get(map.id) ?? 0,
-				hasUpvoted,
-				username: user
-					? `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim()
-					: "Unknown User",
-				userProfilePicture: user?.picture_url || null,
-				owner_id: map.owner_id,
-			}
-		})
+		const maps: MapResponse[] = mapsData.map((map) => ({
+			id: map.id,
+			title: map.name,
+			description: map.short_description,
+			image: map.display_picture || "/placeholder.svg",
+			locations: locationCounts.get(map.id) ?? 0,
+			contributors: contributorCounts.get(map.id) ?? 0,
+			upvotes: voteCounts.get(map.id) ?? 0,
+			hasUpvoted: hasUpvoted[mapsData.indexOf(map)],
+			username: (map.users as unknown as User)
+				? `${(map.users as unknown as User).first_name || "Unnamed"} ${
+						(map.users as unknown as User).last_name || "User"
+				  }`.trim()
+				: "Unknown User",
+			userProfilePicture: (map.users as unknown as User)?.picture_url || null,
+			owner_id: map.owner_id,
+			slug: slugify(map.name),
+		}))
 
 		return { data: maps, total: count || 0, page, limit, error: null }
 	} catch (error) {
@@ -313,6 +316,7 @@ export async function getMapById(mapId: string, userId?: string) {
 				userProfilePicture: user?.picture_url || null,
 				owner_id: data.owner_id,
 				hasUpvoted,
+				slug: slugify(data.name),
 			},
 			error: null,
 		}

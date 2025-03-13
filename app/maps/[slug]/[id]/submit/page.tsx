@@ -22,6 +22,7 @@ import { LocationSuggestion, SubmitLocationProps } from "@/lib/types/mapTypes"
 import { getMapById } from "@/lib/supabase/mapsService"
 import { createLocation } from "@/lib/supabase/mapsService"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
+import { slugify } from "@/lib/utils/slugify"
 
 // Make geometry and other fields optional in LocationSuggestion for initial suggestions
 type PartialLocationSuggestion = Partial<LocationSuggestion> & {
@@ -53,7 +54,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 	useEffect(() => {
 		async function resolveParams() {
 			const resolvedParams = await params
-			setMapId(resolvedParams.mapId)
+			setMapId(resolvedParams.id)
 		}
 		resolveParams()
 	}, [params])
@@ -250,7 +251,9 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 						? "Your location has been added to the map."
 						: "Your location has been submitted and is pending approval.",
 				})
-				router.push(`/maps/${mapId}`)
+
+				// Redirect to the new URL structure
+				router.push(`/maps/${map.slug || slugify(map.title)}/${mapId}`)
 				router.refresh()
 			}
 		} catch (err) {
