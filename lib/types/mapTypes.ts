@@ -59,7 +59,8 @@ export interface MapData {
 	created_at: string
 	users: import("./userTypes").User
 	locations: Location[]
-	votes: { id: string }[]
+	votes: { id: string; user_id: string }[]
+	has_upvoted: { user_id: string }[]
 }
 
 export interface MapResponse {
@@ -70,6 +71,7 @@ export interface MapResponse {
 	locations: number
 	contributors: number
 	upvotes: number
+	hasUpvoted: boolean
 	username: string
 	userProfilePicture: string | null
 	owner_id?: string

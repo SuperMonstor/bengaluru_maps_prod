@@ -1,19 +1,20 @@
 import { getMapById } from "@/lib/supabase/mapsService"
 import ClientMapPageContent from "./ClientMapPageComponent"
-import { getUserUpvoteStatus } from "@/lib/actions/voteActions"
+import { createClient } from "@/lib/supabase/api/supabaseServer"
 
 interface MapPageProps {
 	params: Promise<{ mapId: string }>
 }
 
 export default async function MapPage({ params }: MapPageProps) {
+	const supabase = await createClient()
+	const {
+		data: { user },
+	} = await supabase.auth.getUser()
+
 	const resolvedParams = await params
 	const mapId = resolvedParams.mapId
-	const { data: map, error } = await getMapById(mapId)
-
-	// Get the user's upvote status for this map
-	const upvoteStatus = await getUserUpvoteStatus([mapId])
-	const isUpvoted = upvoteStatus[mapId] || false
+	const { data: map, error } = await getMapById(mapId, user?.id)
 
 	if (error || !map) {
 		return (
@@ -27,6 +28,6 @@ export default async function MapPage({ params }: MapPageProps) {
 		)
 	}
 
-	// Pass the full locations array directly along with the upvote status
-	return <ClientMapPageContent map={map} initialIsUpvoted={isUpvoted} />
+	// Pass the map directly since it now includes hasUpvoted
+	return <ClientMapPageContent map={map} />
 }

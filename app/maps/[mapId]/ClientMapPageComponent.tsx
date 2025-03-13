@@ -28,6 +28,7 @@ interface MapData {
 	username: string
 	userProfilePicture: string | null
 	owner_id?: string
+	hasUpvoted: boolean
 }
 
 interface ClientMapPageContentProps {
@@ -238,7 +239,7 @@ export default function ClientMapPageContent({
 							<UpvoteButton
 								mapId={map.id}
 								initialUpvotes={map.upvotes}
-								initialIsUpvoted={initialIsUpvoted}
+								initialIsUpvoted={map.hasUpvoted}
 								variant="pill"
 							/>
 							<span>
@@ -400,7 +401,7 @@ export default function ClientMapPageContent({
 								<UpvoteButton
 									mapId={map.id}
 									initialUpvotes={map.upvotes}
-									initialIsUpvoted={initialIsUpvoted}
+									initialIsUpvoted={map.hasUpvoted}
 									variant="pill"
 								/>
 								<span className="flex items-center">
@@ -458,7 +459,7 @@ export default function ClientMapPageContent({
 								<UpvoteButton
 									mapId={map.id}
 									initialUpvotes={map.upvotes}
-									initialIsUpvoted={initialIsUpvoted}
+									initialIsUpvoted={map.hasUpvoted}
 									variant="pill"
 								/>
 								<span className="flex items-center">

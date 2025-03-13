@@ -31,22 +31,6 @@ export function UpvoteButton({
 	const router = useRouter()
 	const { toast } = useToast()
 
-	// Check if the user has already upvoted this map
-	useEffect(() => {
-		const checkUserUpvote = async () => {
-			if (user && mapId && initialIsUpvoted === undefined) {
-				try {
-					const hasUpvoted = await hasUserUpvoted(mapId, user.id)
-					setIsUpvoted(hasUpvoted)
-				} catch (error) {
-					console.error("Error checking if user has upvoted:", error)
-				}
-			}
-		}
-
-		checkUserUpvote()
-	}, [user, mapId, initialIsUpvoted])
-
 	const handleUpvote = async (e: React.MouseEvent) => {
 		e.preventDefault() // Prevent navigation if button is inside a link
 		e.stopPropagation() // Prevent event bubbling

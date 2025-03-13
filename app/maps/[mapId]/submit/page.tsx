@@ -269,7 +269,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 
 	if (!map || !mapId) {
 		// Added !mapId to handle unresolved state
-		return <div>Loading map data...</div>
+		return <LoadingIndicator />
 	}
 
 	return (

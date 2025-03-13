@@ -123,7 +123,11 @@ export async function createMap({
 	}
 }
 
-export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
+export async function getMaps(
+	page = 1,
+	limit = 10,
+	userId?: string
+): Promise<MapsResult> {
 	try {
 		const from = (page - 1) * limit
 		const to = from + limit - 1
@@ -149,19 +153,10 @@ export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
           picture_url
         ),
         locations (
-          id,
-          map_id,
-          creator_id,
-          name,
-          latitude,
-          longitude,
-          google_maps_url,
-          note,
-          created_at,
-          is_approved
+          id
         ),
         votes (
-          id
+          user_id
         )
       `,
 				{ count: "exact" }
@@ -214,6 +209,10 @@ export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
 
 		const maps: MapResponse[] = mapsData.map((map) => {
 			const user = map.users as unknown as User
+			const hasUpvoted = userId
+				? map.votes.some((vote) => vote.user_id === userId)
+				: false
+
 			return {
 				id: map.id,
 				title: map.name,
@@ -222,6 +221,7 @@ export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
 				locations: locationCounts.get(map.id) ?? 0,
 				contributors: contributorCounts.get(map.id) ?? 0,
 				upvotes: voteCounts.get(map.id) ?? 0,
+				hasUpvoted,
 				username: user
 					? `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim()
 					: "Unknown User",
@@ -236,7 +236,7 @@ export async function getMaps(page = 1, limit = 10): Promise<MapsResult> {
 	}
 }
 
-export async function getMapById(mapId: string) {
+export async function getMapById(mapId: string, userId?: string) {
 	try {
 		const { data, error } = await supabase
 			.from("maps")
@@ -268,7 +268,8 @@ export async function getMapById(mapId: string) {
           is_approved
         ),
         votes (
-          id
+          id,
+          user_id
         )
       `
 			)
@@ -292,6 +293,9 @@ export async function getMapById(mapId: string) {
 		)
 
 		const user = data.users as unknown as User
+		const hasUpvoted = userId
+			? data.votes.some((vote) => vote.user_id === userId)
+			: false
 
 		return {
 			data: {
@@ -308,6 +312,7 @@ export async function getMapById(mapId: string) {
 					: "Unknown User",
 				userProfilePicture: user?.picture_url || null,
 				owner_id: data.owner_id,
+				hasUpvoted,
 			},
 			error: null,
 		}
