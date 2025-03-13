@@ -438,7 +438,7 @@ export async function createLocation({
 		const { data: existingLocationsByName, error: checkNameError } =
 			await supabase
 				.from("locations")
-				.select("id, name, google_maps_url")
+				.select("id, name, google_maps_url, latitude, longitude")
 				.eq("map_id", mapId)
 				.eq("name", name)
 				.limit(1)
@@ -464,38 +464,19 @@ export async function createLocation({
 			)
 		}
 
-		// Check for duplicate based on coordinates (with a small tolerance)
-		// This allows different places in the same building
-		const { data: existingLocations, error: checkCoordsError } = await supabase
-			.from("locations")
-			.select("id, name, latitude, longitude")
-			.eq("map_id", mapId)
-			.gte("latitude", latitude - 0.00001) // ~1 meter tolerance
-			.lte("latitude", latitude + 0.00001)
-			.gte("longitude", longitude - 0.00001)
-			.lte("longitude", longitude + 0.00001)
-
-		if (checkCoordsError) {
-			throw new Error(
-				`Error checking for duplicate by coordinates: ${checkCoordsError.message}`
-			)
-		}
-
-		// Check if there's an exact match by name and coordinates
-		const exactMatch = existingLocations?.some(
-			(loc) =>
-				loc.name === name &&
-				Math.abs(loc.latitude - latitude) < 0.000001 &&
-				Math.abs(loc.longitude - longitude) < 0.000001
-		)
-
 		// Only consider it a duplicate if:
-		// 1. Same name and exact coordinates match, or
-		// 2. Same Google Maps URL
-		if (
-			(existingLocationsByName?.length > 0 && exactMatch) ||
-			existingLocationsByUrl?.length > 0
-		) {
+		// 1. Same Google Maps URL (exact same place), or
+		// 2. Same name AND coordinates are very close (within 1 meter)
+		const isDuplicate =
+			existingLocationsByUrl?.length > 0 ||
+			(existingLocationsByName?.length > 0 &&
+				existingLocationsByName.some(
+					(loc) =>
+						Math.abs(loc.latitude - latitude) < 0.00001 &&
+						Math.abs(loc.longitude - longitude) < 0.00001
+				))
+
+		if (isDuplicate) {
 			throw new Error(
 				`This exact location (${name}) has already been added to this map.`
 			)
