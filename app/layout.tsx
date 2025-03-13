@@ -5,6 +5,7 @@ import Header from "../components/custom-ui/Header"
 import { AuthProvider } from "@/lib/context/AuthContext"
 import { Toaster } from "@/components/ui/toaster"
 import { PendingCountProvider } from "@/lib/context/PendingCountContext"
+import FeedbackButton from "@/components/custom-ui/FeedbackButton"
 
 const geistSans = Geist({
 	subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({
 					<PendingCountProvider>
 						<Header />
 						{children}
+						<FeedbackButton />
 					</PendingCountProvider>
 				</AuthProvider>
 				<Toaster />
