@@ -285,11 +285,7 @@ export default function ClientMapPageContent({
 							}}
 						>
 							{map.locations
-								.filter(
-									(location) =>
-										location.is_approved ||
-										(user && location.creator_id === user.id)
-								)
+								.filter((location) => location.is_approved)
 								.map((location) => (
 									<CustomMarker
 										key={location.id}
@@ -343,11 +339,7 @@ export default function ClientMapPageContent({
 							}}
 						>
 							{map.locations
-								.filter(
-									(location) =>
-										location.is_approved ||
-										(user && location.creator_id === user.id)
-								)
+								.filter((location) => location.is_approved)
 								.map((location) => (
 									<CustomMarker
 										key={location.id}
