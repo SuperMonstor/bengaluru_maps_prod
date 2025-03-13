@@ -55,7 +55,7 @@ export async function fetchUserMaps(
 
 		// Filter out any null results from failed fetches
 		return {
-			data: mapsWithDetails.filter(Boolean) as UserMap[],
+			data: mapsWithDetails.filter(Boolean) as unknown as UserMap[],
 			error: null,
 		}
 	} catch (error) {
