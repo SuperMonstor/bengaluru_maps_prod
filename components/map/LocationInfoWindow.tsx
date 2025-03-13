@@ -42,37 +42,21 @@ export default function LocationInfoWindow({
 
 	return (
 		<div
-			className="relative w-72 bg-white bg-opacity-95 backdrop-blur-md rounded-xl shadow-lg popup-card border border-gray-100"
-			style={{ marginTop: "-10px" }}
+			className="w-full max-w-[280px] bg-white rounded-lg shadow-md popup-card border border-gray-100 overflow-hidden"
+			style={{ maxHeight: "calc(100vh - 100px)" }}
 		>
-			<button
-				onClick={onClose}
-				className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md hover:bg-gray-100 z-10"
-				style={{ transform: "scale(0.85)" }}
-			>
-				<svg
-					className="w-4 h-4 text-gray-600"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-					xmlns="http://www.w3.org/2000/svg"
-				>
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						strokeWidth="2"
-						d="M6 18L18 6M6 6l12 12"
-					/>
-				</svg>
-			</button>
-
-			<div className="p-4">
-				<h3 className="text-lg font-semibold text-foreground mb-2 truncate">
+			<div className="bg-white p-3 border-b border-gray-100">
+				<h3 className="text-base font-semibold text-foreground leading-tight">
 					{location.name}
 				</h3>
+			</div>
 
+			<div
+				className="p-3 overflow-y-auto"
+				style={{ maxHeight: "calc(100vh - 150px)" }}
+			>
 				<div className="flex items-center gap-2 mb-3">
-					<Avatar className="h-8 w-8 border border-border/50">
+					<Avatar className="h-7 w-7 border border-border/50">
 						<AvatarImage src={userInfo.profilePicture || "/placeholder.svg"} />
 						<AvatarFallback>
 							{userInfo.username
@@ -100,7 +84,7 @@ export default function LocationInfoWindow({
 							alt={location.name}
 							width={600}
 							height={400}
-							className="w-full h-36 object-cover rounded-md"
+							className="w-full h-32 object-cover rounded-md"
 							priority
 						/>
 					</div>
@@ -134,7 +118,9 @@ export default function LocationInfoWindow({
 						{placeDetails.todayHours && (
 							<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 								<Clock className="h-3 w-3 flex-shrink-0" />
-								<span>Today: {placeDetails.todayHours}</span>
+								<span className="break-words">
+									Today: {placeDetails.todayHours}
+								</span>
 							</div>
 						)}
 					</div>
@@ -150,7 +136,7 @@ export default function LocationInfoWindow({
 							</span>
 						</div>
 						<div className="text-sm text-foreground/90 bg-gray-50 p-2 rounded-md">
-							<p>{displayNote}</p>
+							<p className="break-words">{displayNote}</p>
 							{noteIsLong && (
 								<button
 									onClick={() => setShowFullNote(!showFullNote)}
