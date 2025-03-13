@@ -331,19 +331,46 @@ export async function createLocation({
 	creatorId,
 	location,
 	description,
+	place_id,
+	address,
+	geometry,
 }: {
 	mapId: string
 	creatorId: string
 	location: string
 	description: string
+	place_id?: string
+	address?: string | null
+	geometry?: google.maps.LatLngLiteral
 }): Promise<CreateLocationResult> {
 	try {
 		let latitude: number = 0
 		let longitude: number = 0
 		let googleMapsUrl: string = ""
 		let name: string = ""
+		// We'll still capture these values but won't store them until the schema is updated
+		let placeId: string | null = place_id || null
+		let locationAddress: string | null = address || null
 
-		if (location.startsWith("http")) {
+		// If we already have geometry from the selected location, use it
+		if (geometry) {
+			latitude = geometry.lat
+			longitude = geometry.lng
+			name = location
+
+			// If we have place_id, construct a Google Maps URL
+			if (placeId) {
+				googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+					name
+				)}&query_place_id=${placeId}`
+			} else {
+				googleMapsUrl = `https://www.google.com/maps/place/${encodeURIComponent(
+					name
+				)}/@${latitude},${longitude},17z`
+			}
+		}
+		// Otherwise, process the location string as before
+		else if (location.startsWith("http")) {
 			const url = new URL(location)
 			const pathParts = url.pathname.split("/")
 			if (pathParts.includes("place") && url.hash) {
@@ -367,7 +394,10 @@ export async function createLocation({
 			)
 			await new Promise((resolve) => {
 				placesService.findPlaceFromQuery(
-					{ query: location, fields: ["geometry", "name", "place_id"] },
+					{
+						query: location,
+						fields: ["geometry", "name", "place_id", "formatted_address"],
+					},
 					(results, status) => {
 						if (
 							status === google.maps.places.PlacesServiceStatus.OK &&
@@ -377,6 +407,9 @@ export async function createLocation({
 							latitude = results[0].geometry.location.lat()
 							longitude = results[0].geometry.location.lng()
 							name = results[0].name || location
+							placeId = placeId || results[0].place_id || null
+							locationAddress =
+								locationAddress || results[0].formatted_address || null
 							googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
 								name
 							)}&query_place_id=${results[0].place_id}`
@@ -400,12 +433,12 @@ export async function createLocation({
 			)
 		}
 
-		// Check for duplicate locations in this map
-		// Using separate queries instead of OR with string interpolation to avoid SQL injection and parsing issues
+		// Modified duplicate detection that works with existing schema
+		// Check for duplicate based on name and URL
 		const { data: existingLocationsByName, error: checkNameError } =
 			await supabase
 				.from("locations")
-				.select("id, name")
+				.select("id, name, google_maps_url")
 				.eq("map_id", mapId)
 				.eq("name", name)
 				.limit(1)
@@ -416,10 +449,11 @@ export async function createLocation({
 			)
 		}
 
+		// Check for duplicate based on URL
 		const { data: existingLocationsByUrl, error: checkUrlError } =
 			await supabase
 				.from("locations")
-				.select("id, name")
+				.select("id, name, google_maps_url")
 				.eq("map_id", mapId)
 				.eq("google_maps_url", googleMapsUrl)
 				.limit(1)
@@ -430,14 +464,40 @@ export async function createLocation({
 			)
 		}
 
-		const existingLocations = [
-			...(existingLocationsByName || []),
-			...(existingLocationsByUrl || []),
-		]
+		// Check for duplicate based on coordinates (with a small tolerance)
+		// This allows different places in the same building
+		const { data: existingLocations, error: checkCoordsError } = await supabase
+			.from("locations")
+			.select("id, name, latitude, longitude")
+			.eq("map_id", mapId)
+			.gte("latitude", latitude - 0.00001) // ~1 meter tolerance
+			.lte("latitude", latitude + 0.00001)
+			.gte("longitude", longitude - 0.00001)
+			.lte("longitude", longitude + 0.00001)
 
-		if (existingLocations.length > 0) {
+		if (checkCoordsError) {
 			throw new Error(
-				`This location (${name}) has already been added to this map.`
+				`Error checking for duplicate by coordinates: ${checkCoordsError.message}`
+			)
+		}
+
+		// Check if there's an exact match by name and coordinates
+		const exactMatch = existingLocations?.some(
+			(loc) =>
+				loc.name === name &&
+				Math.abs(loc.latitude - latitude) < 0.000001 &&
+				Math.abs(loc.longitude - longitude) < 0.000001
+		)
+
+		// Only consider it a duplicate if:
+		// 1. Same name and exact coordinates match, or
+		// 2. Same Google Maps URL
+		if (
+			(existingLocationsByName?.length > 0 && exactMatch) ||
+			existingLocationsByUrl?.length > 0
+		) {
+			throw new Error(
+				`This exact location (${name}) has already been added to this map.`
 			)
 		}
 
@@ -455,6 +515,7 @@ export async function createLocation({
 		// Auto-approve if the creator is the map owner
 		const isOwner = mapData.owner_id === creatorId
 
+		// Insert without place_id and address fields since they don't exist in the schema yet
 		const { data, error } = await supabase
 			.from("locations")
 			.insert({

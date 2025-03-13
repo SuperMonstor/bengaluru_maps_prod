@@ -151,7 +151,14 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 			placesService.getDetails(
 				{
 					placeId: selected.place_id,
-					fields: ["geometry", "name", "url", "photos", "formatted_address"],
+					fields: [
+						"geometry",
+						"name",
+						"url",
+						"photos",
+						"formatted_address",
+						"place_id",
+					],
 				},
 				(place, status) => {
 					if (status === google.maps.places.PlacesServiceStatus.OK && place) {
@@ -201,10 +208,20 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 		try {
 			setIsSubmitting(true)
 
+			// If we have a selected location from Google Places, use its data
+			const locationData = selectedLocation
+				? {
+						location: selectedLocation.name || data.location,
+						place_id: selectedLocation.place_id,
+						address: selectedLocation.address || null,
+						geometry: selectedLocation.geometry,
+				  }
+				: { location: data.location }
+
 			const result = await createLocation({
 				mapId,
 				creatorId: user.id,
-				location: data.location,
+				...locationData,
 				description: data.description,
 			})
 
