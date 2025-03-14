@@ -7,7 +7,8 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
-		"check-links": "node scripts/check-links.js"
+		"check-links": "node scripts/check-links.js",
+		"check-links:dev": "node scripts/check-links.js --dev"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^4.1.0",

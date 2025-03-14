@@ -13,6 +13,9 @@ const path = require("path")
 
 // Base URL of the site
 const BASE_URL = "https://www.bengalurumaps.com"
+// Fallback URL for development testing
+const DEV_URL =
+	"https://bengaluru-maps-opdojafeq-supermonstors-projects.vercel.app"
 
 // URLs to check (add more as needed)
 const urlsToCheck = [
@@ -102,8 +105,13 @@ async function checkAllUrls() {
 	console.log("Starting link checker for Bengaluru Maps")
 	console.log("======================================")
 
+	// Check if we should use the development URL
+	const useDev = process.argv.includes("--dev")
+	const baseUrl = useDev ? DEV_URL : BASE_URL
+	console.log(`Using base URL: ${baseUrl}`)
+
 	for (const path of urlsToCheck) {
-		const url = path.startsWith("http") ? path : `${BASE_URL}${path}`
+		const url = path.startsWith("http") ? path : `${baseUrl}${path}`
 		await checkUrl(url)
 	}
 
