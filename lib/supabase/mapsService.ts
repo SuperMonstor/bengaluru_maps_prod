@@ -135,58 +135,43 @@ export async function getMaps(
 		const from = (page - 1) * limit
 		const to = from + limit - 1
 
-		const {
-			data,
-			error: mapsError,
-			count,
-		} = await supabase
+		// First, get the total count of maps for pagination
+		const { count, error: countError } = await supabase
 			.from("maps")
-			.select(
-				`
-        id,
-        name,
-        short_description,
-        display_picture,
-        owner_id,
-        created_at,
-        users!maps_owner_id_fkey (
-          id,
-          first_name,
-          last_name,
-          picture_url
-        ),
-        locations (
-          id
-        ),
-        votes (
-          user_id
-        )
-      `,
-				{ count: "exact" }
-			)
-			.order("created_at", { ascending: false })
-			.range(from, to)
+			.select("*", { count: "exact", head: true })
+
+		if (countError) throw countError
+
+		// Use a more efficient approach with a subquery to get maps sorted by upvotes
+		// This SQL query will be executed on the database side
+		const { data, error: mapsError } = await supabase.rpc(
+			"get_maps_sorted_by_upvotes",
+			{
+				p_limit: limit,
+				p_offset: from,
+			}
+		)
 
 		if (mapsError) throw mapsError
 
-		const mapsData = (data as unknown as MapData[]) || []
-		if (!mapsData.length) {
+		if (!data || data.length === 0) {
 			return { data: [], total: count || 0, page, limit, error: null }
 		}
 
-		const mapIds = mapsData.map((map) => map.id)
+		// Extract map IDs for additional queries
+		const mapIds = data.map((map: any) => map.id)
+		const mapsData = data as unknown as MapData[]
 
-		const [locationCountsRes, voteCountsRes, contributorCountsRes] =
-			await Promise.all([
-				supabase.rpc("get_location_counts", { map_ids: mapIds }),
-				supabase.rpc("get_vote_counts", { map_ids: mapIds }),
-				supabase.rpc("get_contributor_counts", { map_ids: mapIds }),
-			])
+		// Get additional data needed for the response
+		const [locationCountsRes, contributorCountsRes] = await Promise.all([
+			supabase.rpc("get_location_counts", { map_ids: mapIds }),
+			supabase.rpc("get_contributor_counts", { map_ids: mapIds }),
+		])
 
 		if (locationCountsRes.error) throw locationCountsRes.error
-		if (voteCountsRes.error) throw voteCountsRes.error
 		if (contributorCountsRes.error) throw contributorCountsRes.error
 
+		// Create maps for efficient lookups
 		const locationCounts = new Map<string, number>(
 			locationCountsRes.data?.map(
 				(l: { map_id: string; location_count: number }) => [
@@ -194,12 +179,6 @@ export async function getMaps(
 					Number(l.location_count),
 				]
 			) || []
-		)
-		const voteCounts = new Map<string, number>(
-			voteCountsRes.data?.map((v: { map_id: string; vote_count: number }) => [
-				v.map_id,
-				Number(v.vote_count),
-			]) || []
 		)
 		const contributorCounts = new Map<string, number>(
 			contributorCountsRes.data?.map(
@@ -210,10 +189,25 @@ export async function getMaps(
 			) || []
 		)
 
-		const hasUpvoted = userId
-			? mapsData.map((map) => map.votes.some((vote) => vote.user_id === userId))
-			: Array(mapsData.length).fill(false)
+		// Check if the current user has upvoted each map
+		let hasUpvotedMap: Map<string, boolean> = new Map()
 
+		if (userId) {
+			const { data: userVotes, error: votesError } = await supabase
+				.from("votes")
+				.select("map_id")
+				.eq("user_id", userId)
+				.in("map_id", mapIds)
+
+			if (votesError) throw votesError
+
+			// Create a map of map_id to whether the user has upvoted it
+			hasUpvotedMap = new Map(
+				userVotes?.map((vote: { map_id: string }) => [vote.map_id, true]) || []
+			)
+		}
+
+		// Create the response maps array
 		const maps: MapResponse[] = mapsData.map((map) => ({
 			id: map.id,
 			title: map.name,
@@ -221,14 +215,10 @@ export async function getMaps(
 			image: map.display_picture || "/placeholder.svg",
 			locations: locationCounts.get(map.id) ?? 0,
 			contributors: contributorCounts.get(map.id) ?? 0,
-			upvotes: voteCounts.get(map.id) ?? 0,
-			hasUpvoted: hasUpvoted[mapsData.indexOf(map)],
-			username: (map.users as unknown as User)
-				? `${(map.users as unknown as User).first_name || "Unnamed"} ${
-						(map.users as unknown as User).last_name || "User"
-				  }`.trim()
-				: "Unknown User",
-			userProfilePicture: (map.users as unknown as User)?.picture_url || null,
+			upvotes: map.vote_count || 0, // Use the vote_count from the RPC function
+			hasUpvoted: hasUpvotedMap.get(map.id) || false,
+			username: map.username || "Unknown User",
+			userProfilePicture: map.user_picture || null,
 			owner_id: map.owner_id,
 			slug: slugify(map.name),
 		}))

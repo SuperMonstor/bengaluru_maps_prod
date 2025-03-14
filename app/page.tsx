@@ -154,6 +154,26 @@ export default async function Home({ searchParams }: HomeProps) {
 					</Link>
 				</div>
 
+				<div className="flex items-center justify-center mb-6">
+					<div className="flex items-center bg-gray-100 rounded-full px-4 py-1.5 text-sm text-gray-600">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							className="w-4 h-4 mr-2 text-gray-500"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth="2"
+								d="M5 15l7-7 7 7"
+							/>
+						</svg>
+						<span>Maps sorted by most upvoted</span>
+					</div>
+				</div>
+
 				<Suspense fallback={<LoadingIndicator />}>
 					<MapsList page={currentPage} limit={limit} userId={user?.id} />
 				</Suspense>

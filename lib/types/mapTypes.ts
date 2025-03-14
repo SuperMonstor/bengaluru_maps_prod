@@ -62,6 +62,9 @@ export interface MapData {
 	votes: { id: string; user_id: string }[]
 	has_upvoted: { user_id: string }[]
 	slug?: string
+	vote_count?: number
+	username?: string
+	user_picture?: string | null
 }
 
 export interface MapResponse {
