@@ -31,19 +31,19 @@ export default function Header() {
 	}
 
 	return (
-		<div className="flex justify-between items-center p-3 md:p-4 flex-wrap gap-y-2">
-			<div className="flex flex-col sm:flex-row sm:items-baseline w-full sm:w-auto z-10">
-				<Link
-					href="/"
-					className="text-lg md:text-2xl sm:text-xl font-semibold hover:opacity-80 py-1 inline-block"
-				>
-					Bengaluru Maps
+		<header className="flex flex-row items-center justify-between p-3 md:p-4 w-full flex-wrap gap-2">
+			{/* Left Section: Title and Byline */}
+			<div className="flex flex-col min-w-0">
+				<Link href="/" className="inline-block">
+					<span className="text-lg sm:text-xl md:text-2xl font-semibold hover:opacity-80">
+						Bengaluru Maps
+					</span>
 				</Link>
 				<Link
 					href="https://x.com/realsudarshansk"
 					target="_blank"
 					rel="noopener noreferrer"
-					className="text-xs text-gray-500 md:text-sm hover:text-blue-500 transition-colors flex items-center gap-1 mt-0.5 sm:mt-0 sm:ml-2 py-1"
+					className="text-xs text-gray-500 hover:text-blue-500 transition-colors flex items-center gap-1 mt-1"
 				>
 					<span>By Sudarshan S</span>
 					<svg
@@ -63,9 +63,10 @@ export default function Header() {
 				</Link>
 			</div>
 
-			<div className="flex items-center gap-2 md:gap-3 ml-auto sm:ml-0">
+			{/* Right Section: Buttons and User Menu */}
+			<div className="flex items-center gap-2 md:gap-3 flex-wrap">
 				{!authLoading && user && (
-					<Link href="/my-maps" className="relative mr-1">
+					<Link href="/my-maps" className="inline-block">
 						<Button
 							variant="ghost"
 							size="sm"
@@ -95,7 +96,7 @@ export default function Header() {
 					</Link>
 				)}
 
-				<Link href="/create-map">
+				<Link href="/create-map" className="inline-block">
 					<Button
 						variant="outline"
 						size="sm"
@@ -118,7 +119,7 @@ export default function Header() {
 						Create Map
 					</Button>
 				</Link>
-				<Link href="/create-map">
+				<Link href="/create-map" className="inline-block">
 					<Button
 						variant="outline"
 						size="icon"
@@ -148,28 +149,25 @@ export default function Header() {
 						<DropdownMenuTrigger asChild>
 							<Button
 								variant="ghost"
-								className="relative h-8 w-8 md:h-9 md:w-9 rounded-full p-0 overflow-visible border-2 border-transparent hover:border-primary/20 transition-colors"
+								className="relative h-8 w-8 md:h-9 md:w-9 rounded-full p-0 border-2 border-transparent hover:border-primary/20 transition-colors"
 							>
-								<div className="relative h-full w-full overflow-hidden rounded-full">
-									<Avatar className="h-full w-full">
-										<AvatarImage
-											src={
-												user.picture_url ??
-												`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
-											}
-											alt={`${user.first_name} ${user.last_name}`}
-										/>
-										<AvatarFallback className="bg-primary/10 text-primary font-medium">
-											{user.first_name?.[0]?.toUpperCase() ||
-												user.email?.[0]?.toUpperCase()}
-										</AvatarFallback>
-									</Avatar>
-								</div>
-
+								<Avatar className="h-full w-full">
+									<AvatarImage
+										src={
+											user.picture_url ??
+											`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
+										}
+										alt={`${user.first_name} ${user.last_name}`}
+									/>
+									<AvatarFallback className="bg-primary/10 text-primary font-medium">
+										{user.first_name?.[0]?.toUpperCase() ||
+											user.email?.[0]?.toUpperCase()}
+									</AvatarFallback>
+								</Avatar>
 								{pendingCount > 0 && (
-									<div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-medium rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-white shadow-sm md:hidden">
+									<span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-medium rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-white shadow-sm md:hidden">
 										{pendingCount > 99 ? "99+" : pendingCount}
-									</div>
+									</span>
 								)}
 							</Button>
 						</DropdownMenuTrigger>
@@ -204,7 +202,7 @@ export default function Header() {
 							</div>
 
 							<div className="py-1 md:hidden">
-								<Link href="/my-maps">
+								<Link href="/my-maps" className="block">
 									<DropdownMenuItem className="cursor-pointer flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
 										<div className="flex items-center gap-2">
 											<svg
@@ -231,7 +229,7 @@ export default function Header() {
 									</DropdownMenuItem>
 								</Link>
 
-								<Link href="/create-map">
+								<Link href="/create-map" className="block">
 									<DropdownMenuItem className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 md:hidden">
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
@@ -280,6 +278,6 @@ export default function Header() {
 					<GoogleSignInButton />
 				)}
 			</div>
-		</div>
+		</header>
 	)
 }

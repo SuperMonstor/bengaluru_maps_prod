@@ -124,7 +124,7 @@ export default function RootLayout({
 					<PendingCountProvider>
 						<Header />
 						{children}
-						<FeedbackButton />
+						{/* <FeedbackButton /> */}
 					</PendingCountProvider>
 				</AuthProvider>
 				<Toaster />
