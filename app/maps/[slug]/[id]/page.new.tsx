@@ -7,14 +7,15 @@ import { slugify } from "@/lib/utils/slugify"
 import ClientMapPageContent from "./ClientMapPageComponent"
 import type { Metadata, ResolvingMetadata } from "next"
 
-interface MapPageProps {
-	params: Promise<{ slug: string; id: string }>
-	searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+// Define the props type
+type Props = {
+	params: { slug: string; id: string }
+	searchParams: { [key: string]: string | string[] | undefined }
 }
 
 // Generate dynamic metadata for each map page
 export async function generateMetadata(
-	{ params }: { params: { slug: string; id: string } },
+	props: Props,
 	parent: ResolvingMetadata
 ): Promise<Metadata> {
 	// Get the map data
@@ -23,9 +24,8 @@ export async function generateMetadata(
 		data: { user },
 	} = await supabase.auth.getUser()
 
-	// Await params before using its properties
-	const resolvedParams = await params
-	const { data: map } = await getMapById(resolvedParams.id, user?.id)
+	const id = props.params.id
+	const { data: map } = await getMapById(id, user?.id)
 
 	// If no map is found, return default metadata
 	if (!map) {
@@ -68,6 +68,7 @@ export async function generateMetadata(
 	}
 }
 
+// Component to render the map content
 async function MapContent({
 	id,
 	searchParams,
@@ -108,16 +109,16 @@ async function MapContent({
 	}
 }
 
-export default async function MapPage({ params, searchParams }: MapPageProps) {
+// Main page component
+export default async function MapPage(props: Props) {
+	const { params, searchParams } = props
+	const id = params.id
+	const slug = params.slug
+
 	const supabase = await createClient()
 	const {
 		data: { user },
 	} = await supabase.auth.getUser()
-
-	const resolvedParams = await params
-	const { slug, id } = resolvedParams
-
-	const resolvedSearchParams = await searchParams
 
 	// Get the map to verify the slug
 	const { data: map, error } = await getMapById(id, user?.id)
@@ -139,7 +140,7 @@ export default async function MapPage({ params, searchParams }: MapPageProps) {
 	const correctSlug = map.slug || slugify(map.title)
 	if (slug !== correctSlug) {
 		// Check if expand parameter exists
-		const expand = resolvedSearchParams?.expand ? "?expand=true" : ""
+		const expand = searchParams?.expand ? "?expand=true" : ""
 		redirect(`/maps/${correctSlug}/${id}${expand}`)
 	}
 
@@ -178,6 +179,122 @@ export default async function MapPage({ params, searchParams }: MapPageProps) {
 			map.image || "https://www.bengalurumaps.com/images/og-image.jpg",
 	}
 
+	// Add CSS for map page layout
+	const mapPageStyles = `
+    html, body {
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+    
+    body {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* Reset any potential margins */
+    * {
+      box-sizing: border-box;
+    }
+    
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      z-index: 50;
+      height: 64px;
+      border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+    }
+    
+    .map-layout {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 100vh;
+      width: 100%;
+      overflow: hidden;
+    }
+    
+    .map-container {
+      position: absolute;
+      top: 64px; /* Exact header height */
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10;
+    }
+    
+    .bottom-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      background: white;
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+      box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+      border-top: 1px solid rgba(229, 231, 235, 1);
+    }
+    
+    .expanded-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 30;
+      background: white;
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+      box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+      border-top: 1px solid rgba(229, 231, 235, 1);
+    }
+    
+    /* Ensure 16:9 aspect ratio for map thumbnails */
+    .map-thumbnail {
+      aspect-ratio: 16/9;
+      width: 96px;
+      height: 54px;
+      border-radius: 0.375rem;
+      overflow: hidden;
+      border: 1px solid rgba(229, 231, 235, 1);
+      flex-shrink: 0;
+    }
+    
+    /* Improved spacing for expanded panel */
+    .expanded-panel .sticky {
+      padding: 16px;
+      border-bottom: 1px solid rgba(229, 231, 235, 1);
+    }
+    
+    .expanded-panel h1 {
+      font-size: 1.25rem;
+      line-height: 1.5;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .expanded-panel .creator-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    
+    @media (min-width: 768px) {
+      body {
+        overflow: auto;
+        position: static;
+      }
+    }
+  `
+
 	return (
 		<main className="min-h-screen bg-gray-50/50">
 			{/* Add JSON-LD structured data */}
@@ -185,8 +302,9 @@ export default async function MapPage({ params, searchParams }: MapPageProps) {
 				type="application/ld+json"
 				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
 			/>
+			<style dangerouslySetInnerHTML={{ __html: mapPageStyles }} />
 			<Suspense fallback={<LoadingIndicator />}>
-				<MapContent id={id} searchParams={resolvedSearchParams} />
+				<MapContent id={id} searchParams={searchParams} />
 			</Suspense>
 		</main>
 	)
