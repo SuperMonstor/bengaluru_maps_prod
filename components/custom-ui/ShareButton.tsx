@@ -93,12 +93,13 @@ export default function ShareButton({
 	}
 
 	const handleInstagramShare = async () => {
-		// If on mobile, try to use Instagram's direct story sharing
+		// For mobile devices, try to open Instagram stories directly
 		if (isMobile) {
 			try {
 				setIsGeneratingImage(true)
+				const shareUrl = getShareUrl()
 
-				// Create a simple image with the map details
+				// Create a high-quality image for Instagram stories
 				const canvas = document.createElement("canvas")
 				const ctx = canvas.getContext("2d")
 
@@ -110,19 +111,35 @@ export default function ShareButton({
 				canvas.width = 1080
 				canvas.height = 1920
 
-				// Draw gradient background
-				const gradient = ctx.createLinearGradient(
-					0,
-					0,
-					canvas.width,
-					canvas.height
-				)
-				gradient.addColorStop(0, "#f3f4f6") // Light gray
-				gradient.addColorStop(1, "#dbeafe") // Light blue
+				// Create a more visually appealing background with a gradient that matches the map theme
+				const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
+				gradient.addColorStop(0, "#3b82f6") // Blue at top
+				gradient.addColorStop(0.7, "#60a5fa") // Lighter blue
+				gradient.addColorStop(1, "#93c5fd") // Even lighter blue at bottom
 				ctx.fillStyle = gradient
 				ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-				// Load and draw map image as background (if available)
+				// Add a subtle pattern overlay for texture
+				ctx.fillStyle = "rgba(255, 255, 255, 0.05)"
+				for (let i = 0; i < canvas.height; i += 20) {
+					ctx.fillRect(0, i, canvas.width, 10)
+				}
+
+				// Add diagonal pattern for more visual interest
+				ctx.strokeStyle = "rgba(255, 255, 255, 0.03)"
+				ctx.lineWidth = 2
+				for (
+					let i = -canvas.height;
+					i < canvas.width + canvas.height;
+					i += 40
+				) {
+					ctx.beginPath()
+					ctx.moveTo(i, 0)
+					ctx.lineTo(i + canvas.height, canvas.height)
+					ctx.stroke()
+				}
+
+				// Load and draw map image prominently
 				if (image) {
 					try {
 						const img = new Image()
@@ -135,110 +152,265 @@ export default function ShareButton({
 							img.src = image
 						})
 
-						// Draw image with a blur effect
+						// Draw a decorative element at the top
+						ctx.fillStyle = "#1e3a8a" // Dark blue
+						ctx.beginPath()
+						ctx.arc(canvas.width / 2, 120, 80, 0, Math.PI * 2)
+						ctx.fill()
+
+						// Draw a map pin icon in the circle
+						ctx.strokeStyle = "white"
+						ctx.lineWidth = 6
+						ctx.beginPath()
+						ctx.arc(canvas.width / 2, 110, 20, 0, Math.PI * 2)
+						ctx.stroke()
+						ctx.beginPath()
+						ctx.moveTo(canvas.width / 2, 130)
+						ctx.lineTo(canvas.width / 2, 170)
+						ctx.stroke()
+						ctx.beginPath()
+						ctx.arc(canvas.width / 2, 170, 6, 0, Math.PI * 2)
+						ctx.stroke()
+
+						// Draw image in a frame at the top portion with a white border/frame
+						ctx.fillStyle = "white"
+						roundedRect(ctx, 90, 200, canvas.width - 180, 600, 20)
+
+						// Add a subtle shadow effect
+						ctx.shadowColor = "rgba(0, 0, 0, 0.2)"
+						ctx.shadowBlur = 15
+						ctx.shadowOffsetX = 0
+						ctx.shadowOffsetY = 5
+						roundedRect(ctx, 95, 205, canvas.width - 190, 590, 15)
+						ctx.shadowColor = "transparent"
+
+						// Draw the actual image inside the frame with rounded corners
 						ctx.save()
-						ctx.filter = "blur(10px) opacity(0.7)"
-						ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+						ctx.beginPath()
+						roundedRectPath(ctx, 100, 210, canvas.width - 200, 580, 15)
+						ctx.clip()
+						ctx.drawImage(img, 100, 210, canvas.width - 200, 580)
 						ctx.restore()
 
-						// Add semi-transparent overlay
-						ctx.fillStyle = "rgba(255, 255, 255, 0.3)"
-						ctx.fillRect(0, 0, canvas.width, canvas.height)
+						// Add a subtle overlay gradient at the bottom of the image for better text contrast
+						const imageOverlay = ctx.createLinearGradient(0, 210, 0, 790)
+						imageOverlay.addColorStop(0.7, "rgba(0, 0, 0, 0)")
+						imageOverlay.addColorStop(1, "rgba(0, 0, 0, 0.3)")
+						ctx.save()
+						ctx.beginPath()
+						roundedRectPath(ctx, 100, 210, canvas.width - 200, 580, 15)
+						ctx.clip()
+						ctx.fillStyle = imageOverlay
+						ctx.fillRect(100, 210, canvas.width - 200, 580)
+						ctx.restore()
 					} catch (error) {
-						console.warn(
-							"Could not load map image, using gradient background instead"
-						)
+						console.warn("Could not load map image, using text-only design")
 					}
 				}
 
-				// Draw title card
-				ctx.fillStyle = "rgba(255, 255, 255, 0.9)"
-				roundedRect(ctx, 100, 120, canvas.width - 200, 240, 20)
+				// Add a prominent title section
+				ctx.fillStyle = "white"
+				ctx.shadowColor = "rgba(0, 0, 0, 0.1)"
+				ctx.shadowBlur = 10
+				ctx.shadowOffsetX = 0
+				ctx.shadowOffsetY = 3
+				roundedRect(ctx, 90, 840, canvas.width - 180, 200, 20)
+				ctx.shadowColor = "transparent"
 
-				// Draw "Discover Bangalore" text
-				ctx.font = "bold 48px sans-serif"
-				ctx.fillStyle = "#6366f1" // Indigo color
-				ctx.fillText("Discover Bangalore", 140, 180)
-
-				// Draw title
-				ctx.font = "bold 60px sans-serif"
-				ctx.fillStyle = "#111827"
-				wrapText(ctx, title, 140, 250, canvas.width - 280, 70)
+				// Draw title with larger, more attractive font
+				ctx.font = "bold 70px sans-serif"
+				ctx.fillStyle = "#1e3a8a" // Dark blue
+				ctx.textAlign = "center"
+				wrapText(ctx, title, canvas.width / 2, 920, canvas.width - 240, 80)
 
 				// Draw description
+				ctx.font = "40px sans-serif"
+				ctx.fillStyle = "#1e40af" // Medium blue
+				ctx.textAlign = "center"
+				wrapText(
+					ctx,
+					description,
+					canvas.width / 2,
+					1020,
+					canvas.width - 240,
+					50
+				)
+
+				// Add a "Featured Locations" section
+				ctx.fillStyle = "white"
+				ctx.shadowColor = "rgba(0, 0, 0, 0.1)"
+				ctx.shadowBlur = 10
+				ctx.shadowOffsetX = 0
+				ctx.shadowOffsetY = 3
+				roundedRect(ctx, 90, 1080, canvas.width - 180, 300, 20)
+				ctx.shadowColor = "transparent"
+
+				// Section title
+				ctx.font = "bold 50px sans-serif"
+				ctx.fillStyle = "#1e3a8a"
+				ctx.textAlign = "center"
+				ctx.fillText("Discover Bangalore", canvas.width / 2, 1140)
+
+				// Add some enticing text about the map
 				ctx.font = "36px sans-serif"
-				ctx.fillStyle = "#4b5563"
-				wrapText(ctx, description, 140, 350, canvas.width - 280, 50)
+				ctx.fillStyle = "#1e40af"
+				ctx.textAlign = "center"
+				ctx.fillText(
+					"Local favorites • Hidden gems • Must-visit spots",
+					canvas.width / 2,
+					1200
+				)
+
+				// Add map icon
+				ctx.fillStyle = "#ef4444" // Red
+				ctx.beginPath()
+				ctx.arc(canvas.width / 2, 1280, 40, 0, Math.PI * 2)
+				ctx.fill()
+
+				// Map pin icon (simplified)
+				ctx.strokeStyle = "white"
+				ctx.lineWidth = 4
+				ctx.beginPath()
+				ctx.arc(canvas.width / 2, 1270, 12, 0, Math.PI * 2)
+				ctx.stroke()
+				ctx.beginPath()
+				ctx.moveTo(canvas.width / 2, 1282)
+				ctx.lineTo(canvas.width / 2, 1310)
+				ctx.stroke()
+
+				// Add a clear call-to-action for the URL
+				ctx.fillStyle = "rgba(0, 0, 0, 0.8)"
+				ctx.shadowColor = "rgba(0, 0, 0, 0.2)"
+				ctx.shadowBlur = 15
+				ctx.shadowOffsetX = 0
+				ctx.shadowOffsetY = 5
+				roundedRect(ctx, 90, 1420, canvas.width - 180, 180, 20)
+				ctx.shadowColor = "transparent"
+
+				// URL text
+				ctx.font = "bold 46px sans-serif"
+				ctx.fillStyle = "white"
+				ctx.textAlign = "center"
+				ctx.fillText("Swipe up to explore", canvas.width / 2, 1480)
+
+				// URL display
+				ctx.font = "36px sans-serif"
+				ctx.fillStyle = "#93c5fd" // Light blue
+				ctx.fillText(shareUrl, canvas.width / 2, 1550)
+
+				// Add arrow indicator
+				ctx.strokeStyle = "white"
+				ctx.lineWidth = 5
+				ctx.beginPath()
+				ctx.moveTo(canvas.width / 2, 1600)
+				ctx.lineTo(canvas.width / 2, 1640)
+				ctx.stroke()
+				ctx.beginPath()
+				ctx.moveTo(canvas.width / 2 - 15, 1625)
+				ctx.lineTo(canvas.width / 2, 1640)
+				ctx.lineTo(canvas.width / 2 + 15, 1625)
+				ctx.stroke()
+
+				// Add Bengaluru Maps branding at the bottom
+				ctx.fillStyle = "white"
+				ctx.font = "bold 36px sans-serif"
+				ctx.textAlign = "center"
+				ctx.fillText("Bengaluru Maps", canvas.width / 2, 1750)
+
+				// Add a small logo
+				ctx.fillStyle = "white"
+				ctx.beginPath()
+				ctx.arc(canvas.width / 2, 1700, 30, 0, Math.PI * 2)
+				ctx.fill()
+
+				ctx.fillStyle = "#3b82f6"
+				ctx.font = "bold 36px sans-serif"
+				ctx.textAlign = "center"
+				ctx.textBaseline = "middle"
+				ctx.fillText("B", canvas.width / 2, 1700)
+				ctx.textBaseline = "alphabetic"
+
+				// Add a decorative footer
+				ctx.fillStyle = "rgba(255, 255, 255, 0.1)"
+				ctx.fillRect(0, canvas.height - 50, canvas.width, 50)
 
 				// Convert canvas to blob
 				const dataUrl = canvas.toDataURL("image/png")
 				const blob = await (await fetch(dataUrl)).blob()
 
-				// Get the share URL
-				const shareUrl = getShareUrl()
+				// Different approaches for iOS and Android
+				const isIOS = /iphone|ipad|ipod/i.test(
+					navigator.userAgent.toLowerCase()
+				)
 
-				// Try using Instagram's direct story sharing with URL
-				// This is the key part that makes it similar to X's sharing
-				const instagramStoryUrl = `instagram-stories://share?source_application=bengalurumaps`
-
-				// Try to use the Web Share API first (most seamless experience)
-				if (
-					navigator.share &&
-					navigator.canShare &&
-					navigator.canShare({
-						files: [
-							new File([blob], "bengaluru-map.png", { type: "image/png" }),
-						],
-					})
-				) {
-					await navigator.share({
-						title: "Cool Places in Bangalore",
-						text: `Check out ${title} on Bengaluru Maps`,
-						url: shareUrl,
-						files: [
-							new File([blob], "bengaluru-map.png", { type: "image/png" }),
-						],
-					})
-
-					toast({
-						title: "Sharing to Instagram",
-						description:
-							"Select Instagram Stories from the share options to post.",
-						duration: 5000,
-					})
-				}
-				// If Web Share API isn't available, try direct Instagram URL scheme
-				else {
-					// Create a temporary data URL for the image
-					const formData = new FormData()
-					formData.append("image", blob, "bengaluru-map.png")
-
-					// Try to open Instagram stories directly
-					// Note: This approach has limitations as Instagram restricts direct story sharing
-					window.location.href = instagramStoryUrl
-
-					// After a short delay, provide instructions and copy URL to clipboard
-					setTimeout(() => {
-						navigator.clipboard.writeText(shareUrl).catch(() => {
-							// Silent catch - not critical if this fails
-						})
-
-						toast({
-							title: "Instagram Stories",
-							description:
-								"Add the downloaded image and paste the copied URL as a sticker.",
-							duration: 5000,
-						})
-
-						// Also download the image as fallback
+				if (isIOS) {
+					// iOS approach using the Instagram URL scheme
+					try {
+						// First, save the image to the device
 						const link = document.createElement("a")
 						link.href = dataUrl
 						link.download = "bengaluru-map.png"
 						link.click()
-					}, 1000)
+
+						// Copy URL to clipboard for the link sticker
+						await navigator.clipboard.writeText(shareUrl)
+
+						// Open Instagram Stories with the URL scheme
+						setTimeout(() => {
+							// Instagram URL scheme for stories
+							window.location.href = "instagram-stories://share"
+
+							toast({
+								title: "Opening Instagram Stories",
+								description:
+									"Select the downloaded image and add the copied URL as a link sticker",
+								duration: 5000,
+							})
+						}, 500)
+					} catch (error) {
+						console.error("Error sharing to Instagram on iOS:", error)
+						fallbackToWebShare(blob, shareUrl)
+					}
+				} else {
+					// Android approach
+					try {
+						// First, save the image to the device
+						const link = document.createElement("a")
+						link.href = dataUrl
+						link.download = "bengaluru-map.png"
+						link.click()
+
+						// Copy URL to clipboard for the link sticker
+						await navigator.clipboard.writeText(shareUrl)
+
+						// Open Instagram Stories with the URL scheme
+						setTimeout(() => {
+							// Instagram URL scheme for stories with parameters
+							window.location.href = `intent://instagram.com/stories/#Intent;scheme=https;package=com.instagram.android;S.source_application=bengalurumaps;S.url=${encodeURIComponent(
+								shareUrl
+							)};end`
+
+							toast({
+								title: "Opening Instagram Stories",
+								description:
+									"Select the downloaded image and add the copied URL as a link sticker",
+								duration: 5000,
+							})
+						}, 500)
+					} catch (error) {
+						console.error("Error sharing to Instagram on Android:", error)
+						fallbackToWebShare(blob, shareUrl)
+					}
 				}
 			} catch (error) {
 				console.error("Error sharing to Instagram:", error)
+				toast({
+					variant: "destructive",
+					title: "Sharing Failed",
+					description:
+						"Could not share to Instagram. Try downloading the image instead.",
+					duration: 3000,
+				})
 				// Fall back to the original image generation method
 				createInstagramStoryImage()
 			} finally {
@@ -248,6 +420,60 @@ export default function ShareButton({
 			// On desktop, use the image generation approach
 			createInstagramStoryImage()
 		}
+	}
+
+	// Helper function for fallback sharing
+	const fallbackToWebShare = async (blob: Blob, shareUrl: string) => {
+		// Try to use the Web Share API with files
+		if (
+			navigator.share &&
+			navigator.canShare &&
+			navigator.canShare({
+				files: [new File([blob], "bengaluru-map.png", { type: "image/png" })],
+			})
+		) {
+			try {
+				await navigator.share({
+					files: [new File([blob], "bengaluru-map.png", { type: "image/png" })],
+				})
+
+				// Copy URL to clipboard for easy pasting as a sticker
+				await navigator.clipboard.writeText(shareUrl)
+
+				toast({
+					title: "Image Shared",
+					description:
+						"Open Instagram Stories and add the copied URL as a link sticker",
+					duration: 5000,
+				})
+			} catch (error) {
+				console.error("Web Share API failed:", error)
+				downloadImageWithInstructions(blob, shareUrl)
+			}
+		} else {
+			downloadImageWithInstructions(blob, shareUrl)
+		}
+	}
+
+	// Helper function to download image with instructions
+	const downloadImageWithInstructions = (blob: Blob, shareUrl: string) => {
+		const url = URL.createObjectURL(blob)
+		const link = document.createElement("a")
+		link.href = url
+		link.download = "bengaluru-map.png"
+		link.click()
+
+		// Copy URL to clipboard
+		navigator.clipboard.writeText(shareUrl).catch(() => {
+			// Silent catch
+		})
+
+		toast({
+			title: "Image Downloaded",
+			description:
+				"Open Instagram, create a new story, add this image, and paste the copied URL as a link sticker",
+			duration: 8000,
+		})
 	}
 
 	const createInstagramStoryImage = async () => {
@@ -597,6 +823,28 @@ export default function ShareButton({
 		}
 
 		ctx.fillText(line, x, y + lineCount * lineHeight)
+	}
+
+	// Helper function to create a path for rounded rectangles (for clipping)
+	function roundedRectPath(
+		ctx: CanvasRenderingContext2D,
+		x: number,
+		y: number,
+		width: number,
+		height: number,
+		radius: number
+	) {
+		ctx.beginPath()
+		ctx.moveTo(x + radius, y)
+		ctx.lineTo(x + width - radius, y)
+		ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
+		ctx.lineTo(x + width, y + height - radius)
+		ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+		ctx.lineTo(x + radius, y + height)
+		ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
+		ctx.lineTo(x, y + radius)
+		ctx.quadraticCurveTo(x, y, x + radius, y)
+		ctx.closePath()
 	}
 
 	return (
