@@ -28,7 +28,28 @@ export default function ShareButton({
 }: ShareButtonProps) {
 	const { toast } = useToast()
 	const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+	const [isMobile, setIsMobile] = useState(false)
 	const canvasRef = useRef<HTMLCanvasElement>(null)
+
+	// Detect if user is on mobile device
+	useEffect(() => {
+		const checkMobile = () => {
+			const userAgent =
+				navigator.userAgent || navigator.vendor || (window as any).opera
+			const isMobileDevice =
+				/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+					userAgent.toLowerCase()
+				)
+			setIsMobile(isMobileDevice)
+		}
+
+		checkMobile()
+		window.addEventListener("resize", checkMobile)
+
+		return () => {
+			window.removeEventListener("resize", checkMobile)
+		}
+	}, [])
 
 	const getShareUrl = () => {
 		return `${window.location.origin}/maps/${slug || "map"}/${mapId}`
@@ -69,6 +90,164 @@ export default function ShareButton({
 			url
 		)}&hashtags=BengaluruMaps,Bangalore,CoolSpots`
 		window.open(xUrl, "_blank")
+	}
+
+	const handleInstagramShare = async () => {
+		// If on mobile, try to use Instagram's direct story sharing
+		if (isMobile) {
+			try {
+				setIsGeneratingImage(true)
+
+				// Create a simple image with the map details
+				const canvas = document.createElement("canvas")
+				const ctx = canvas.getContext("2d")
+
+				if (!ctx) {
+					throw new Error("Could not get canvas context")
+				}
+
+				// Set dimensions for Instagram story (1080x1920 is ideal)
+				canvas.width = 1080
+				canvas.height = 1920
+
+				// Draw gradient background
+				const gradient = ctx.createLinearGradient(
+					0,
+					0,
+					canvas.width,
+					canvas.height
+				)
+				gradient.addColorStop(0, "#f3f4f6") // Light gray
+				gradient.addColorStop(1, "#dbeafe") // Light blue
+				ctx.fillStyle = gradient
+				ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+				// Load and draw map image as background (if available)
+				if (image) {
+					try {
+						const img = new Image()
+						img.crossOrigin = "anonymous"
+
+						// Wait for image to load
+						await new Promise((resolve, reject) => {
+							img.onload = resolve
+							img.onerror = reject
+							img.src = image
+						})
+
+						// Draw image with a blur effect
+						ctx.save()
+						ctx.filter = "blur(10px) opacity(0.7)"
+						ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+						ctx.restore()
+
+						// Add semi-transparent overlay
+						ctx.fillStyle = "rgba(255, 255, 255, 0.3)"
+						ctx.fillRect(0, 0, canvas.width, canvas.height)
+					} catch (error) {
+						console.warn(
+							"Could not load map image, using gradient background instead"
+						)
+					}
+				}
+
+				// Draw title card
+				ctx.fillStyle = "rgba(255, 255, 255, 0.9)"
+				roundedRect(ctx, 100, 120, canvas.width - 200, 240, 20)
+
+				// Draw "Discover Bangalore" text
+				ctx.font = "bold 48px sans-serif"
+				ctx.fillStyle = "#6366f1" // Indigo color
+				ctx.fillText("Discover Bangalore", 140, 180)
+
+				// Draw title
+				ctx.font = "bold 60px sans-serif"
+				ctx.fillStyle = "#111827"
+				wrapText(ctx, title, 140, 250, canvas.width - 280, 70)
+
+				// Draw description
+				ctx.font = "36px sans-serif"
+				ctx.fillStyle = "#4b5563"
+				wrapText(ctx, description, 140, 350, canvas.width - 280, 50)
+
+				// Convert canvas to blob
+				const dataUrl = canvas.toDataURL("image/png")
+				const blob = await (await fetch(dataUrl)).blob()
+
+				// Get the share URL
+				const shareUrl = getShareUrl()
+
+				// Try using Instagram's direct story sharing with URL
+				// This is the key part that makes it similar to X's sharing
+				const instagramStoryUrl = `instagram-stories://share?source_application=bengalurumaps`
+
+				// Try to use the Web Share API first (most seamless experience)
+				if (
+					navigator.share &&
+					navigator.canShare &&
+					navigator.canShare({
+						files: [
+							new File([blob], "bengaluru-map.png", { type: "image/png" }),
+						],
+					})
+				) {
+					await navigator.share({
+						title: "Cool Places in Bangalore",
+						text: `Check out ${title} on Bengaluru Maps`,
+						url: shareUrl,
+						files: [
+							new File([blob], "bengaluru-map.png", { type: "image/png" }),
+						],
+					})
+
+					toast({
+						title: "Sharing to Instagram",
+						description:
+							"Select Instagram Stories from the share options to post.",
+						duration: 5000,
+					})
+				}
+				// If Web Share API isn't available, try direct Instagram URL scheme
+				else {
+					// Create a temporary data URL for the image
+					const formData = new FormData()
+					formData.append("image", blob, "bengaluru-map.png")
+
+					// Try to open Instagram stories directly
+					// Note: This approach has limitations as Instagram restricts direct story sharing
+					window.location.href = instagramStoryUrl
+
+					// After a short delay, provide instructions and copy URL to clipboard
+					setTimeout(() => {
+						navigator.clipboard.writeText(shareUrl).catch(() => {
+							// Silent catch - not critical if this fails
+						})
+
+						toast({
+							title: "Instagram Stories",
+							description:
+								"Add the downloaded image and paste the copied URL as a sticker.",
+							duration: 5000,
+						})
+
+						// Also download the image as fallback
+						const link = document.createElement("a")
+						link.href = dataUrl
+						link.download = "bengaluru-map.png"
+						link.click()
+					}, 1000)
+				}
+			} catch (error) {
+				console.error("Error sharing to Instagram:", error)
+				// Fall back to the original image generation method
+				createInstagramStoryImage()
+			} finally {
+				setIsGeneratingImage(false)
+			}
+		} else {
+			// On desktop, use the image generation approach
+			createInstagramStoryImage()
+		}
 	}
 
 	const createInstagramStoryImage = async () => {
@@ -285,27 +464,55 @@ export default function ShareButton({
 			const dataUrl = canvas.toDataURL("image/png")
 			const blob = await (await fetch(dataUrl)).blob()
 
-			// Check if the Web Share API supports sharing files
-			if (
-				navigator.share &&
-				navigator.canShare &&
-				navigator.canShare({
-					files: [new File([blob], "bengaluru-map.png", { type: "image/png" })],
-				})
-			) {
-				await navigator.share({
-					title: "Cool Places in Bangalore",
-					text: `Here's a collection of cool places in Bangalore: ${title}`,
-					url: getShareUrl(),
-					files: [new File([blob], "bengaluru-map.png", { type: "image/png" })],
-				})
-				toast({
-					title: "Ready for Instagram!",
-					description: "Image prepared for your Instagram story.",
-					duration: 3000,
-				})
+			// For mobile devices, try to use the Web Share API with files
+			if (isMobile) {
+				// Try to use the Web Share API with files
+				if (
+					navigator.share &&
+					navigator.canShare &&
+					navigator.canShare({
+						files: [
+							new File([blob], "bengaluru-map.png", { type: "image/png" }),
+						],
+					})
+				) {
+					await navigator.share({
+						title: "Cool Places in Bangalore",
+						text: `Here's a collection of cool places in Bangalore: ${title}`,
+						url: getShareUrl(),
+						files: [
+							new File([blob], "bengaluru-map.png", { type: "image/png" }),
+						],
+					})
+
+					toast({
+						title: "Ready for Instagram!",
+						description:
+							"Image shared. You can now post it to your Instagram story.",
+						duration: 3000,
+					})
+				} else {
+					// If Web Share API with files is not supported, try to download the image
+					// and provide instructions for manual sharing
+					const link = document.createElement("a")
+					link.href = dataUrl
+					link.download = "bengaluru-map.png"
+					link.click()
+
+					// Copy the URL to clipboard for easy pasting
+					navigator.clipboard.writeText(getShareUrl()).catch(() => {
+						// Silent catch - not critical if this fails
+					})
+
+					toast({
+						title: "Image Downloaded",
+						description:
+							"Open Instagram, create a new story, and add this image. Then add a URL sticker with the copied link.",
+						duration: 5000,
+					})
+				}
 			} else {
-				// Fallback for browsers that don't support file sharing
+				// For desktop, just download the image
 				const link = document.createElement("a")
 				link.href = dataUrl
 				link.download = "bengaluru-map.png"
@@ -441,7 +648,7 @@ export default function ShareButton({
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={createInstagramStoryImage}
+							onClick={handleInstagramShare}
 							disabled={isGeneratingImage}
 							className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-purple-300"
 						>
