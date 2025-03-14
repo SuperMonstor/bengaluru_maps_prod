@@ -37,6 +37,7 @@ export default function CreateMapPage() {
 	const [markdownValue, setMarkdownValue] = useState<string>("")
 	const [imagePreview, setImagePreview] = useState<string>("")
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+	const [charCount, setCharCount] = useState<number>(0)
 
 	const {
 		register,
@@ -46,8 +47,18 @@ export default function CreateMapPage() {
 		watch,
 	} = useForm<CreateMapForm>()
 
-	// Watch for file changes
+	// Watch for file changes and short description
 	const displayPicture = watch("displayPicture")
+	const shortDescription = watch("shortDescription")
+
+	// Update character count when short description changes
+	useEffect(() => {
+		if (shortDescription) {
+			setCharCount(shortDescription.length)
+		} else {
+			setCharCount(0)
+		}
+	}, [shortDescription])
 
 	// Update image preview when file changes
 	useEffect(() => {
@@ -133,7 +144,39 @@ export default function CreateMapPage() {
 			<section className="max-w-2xl mx-auto space-y-8">
 				<header>
 					<h1 className="text-2xl font-bold text-gray-900">Create Your Map</h1>
+					<p className="text-gray-600 mt-2">
+						Share your favorite places in Bengaluru with the community.
+					</p>
 				</header>
+
+				<div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+					<h2 className="font-semibold text-blue-800 mb-2">Map Ideas</h2>
+					<p className="text-sm text-blue-700 mb-2">
+						Not sure what to create? Here are some popular map ideas:
+					</p>
+					<ul className="text-sm text-blue-700 list-disc pl-5 space-y-1">
+						<li>
+							Pet-Friendly Spots – Cafes, parks, and restaurants that welcome
+							pets
+						</li>
+						<li>
+							Startup & Co-Working Spaces – Work-friendly cafes and coworking
+							spaces with strong Wi-Fi
+						</li>
+						<li>
+							First Date Spots – Places perfect for a first date, categorized by
+							vibe
+						</li>
+						<li>
+							Book Lovers' Map – The best bookstores, reading cafés, and quiet
+							nooks
+						</li>
+						<li>
+							Gaming & Esports Hubs – Gaming cafes, VR arcades, and esports
+							lounges
+						</li>
+					</ul>
+				</div>
 
 				<form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 					<div className="space-y-2">
@@ -146,7 +189,7 @@ export default function CreateMapPage() {
 						<Input
 							{...register("title", { required: "Title is required" })}
 							id="title"
-							placeholder="e.g., Fantasy World Map"
+							placeholder="e.g., Best Biriyani Spots in Bengaluru"
 							className="w-full border border-gray-300 rounded-md shadow-sm text-gray-700 placeholder-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
 							defaultValue=""
 						/>
@@ -156,20 +199,38 @@ export default function CreateMapPage() {
 					</div>
 
 					<div className="space-y-2">
-						<label
-							htmlFor="shortDescription"
-							className="text-sm font-medium text-gray-700"
-						>
-							Short Description
-						</label>
+						<div className="flex justify-between">
+							<label
+								htmlFor="shortDescription"
+								className="text-sm font-medium text-gray-700"
+							>
+								Short Description *
+							</label>
+							<span
+								className={`text-xs ${
+									charCount > 60 ? "text-red-500" : "text-gray-500"
+								}`}
+							>
+								{charCount}/60 characters
+							</span>
+						</div>
+						<p className="text-xs text-gray-500">
+							A one-liner about the map that will appear in search results and
+							previews.
+						</p>
 						<Textarea
 							{...register("shortDescription", {
 								required: "Short description is required",
+								maxLength: {
+									value: 60,
+									message: "Short description must be 60 characters or less",
+								},
 							})}
 							id="shortDescription"
-							placeholder="Brief description of your map..."
+							placeholder="Brief description of your map (max 60 characters)"
 							className="w-full border border-gray-300 rounded-md shadow-sm text-gray-700 placeholder-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500 h-24"
 							defaultValue=""
+							maxLength={60}
 						/>
 						{errors.shortDescription && (
 							<p className="text-sm text-red-500">
@@ -207,6 +268,24 @@ export default function CreateMapPage() {
 						<label htmlFor="body" className="text-sm font-medium text-gray-700">
 							Body (Describe what this map is about in detail)
 						</label>
+						<div className="text-sm text-gray-500 space-y-2 mb-3">
+							<p>Need help? Copy this prompt for ChatGPT:</p>
+							<div className="bg-gray-50 p-2 rounded border border-gray-200 text-xs">
+								<p className="font-medium">
+									Write a description for my Bengaluru map about [YOUR MAP
+									TOPIC] in markdown. Include:
+								</p>
+								<ol className="list-decimal pl-5 mt-1">
+									<li>Brief introduction explaining the purpose of this map</li>
+									<li>What makes a good location for this collection</li>
+									<li>Submission guidelines (photos, details required)</li>
+									<li>Criteria for approving submissions</li>
+								</ol>
+							</div>
+							<p className="text-xs mt-1">
+								Format with: # for headers, * for lists, **bold** for emphasis
+							</p>
+						</div>
 						<MarkdownEditor
 							value={markdownValue}
 							onChange={(markdown) => {
@@ -219,15 +298,31 @@ export default function CreateMapPage() {
 						{errors.body && (
 							<p className="text-sm text-red-500">{errors.body.message}</p>
 						)}
-						<p className="text-sm text-gray-500">
-							Use # for headers, * for italic, ** for bold, * for lists.
+					</div>
+
+					<div className="bg-amber-50 p-4 rounded-lg border border-amber-100 my-6">
+						<h2 className="font-semibold text-amber-800 mb-2">Map Ownership</h2>
+						<p className="text-sm text-amber-700">
+							You get some pretty sweet priviliges as a map creator:
+						</p>
+						<ul className="text-sm text-amber-700 list-disc pl-5 space-y-1 mt-2">
+							<li>Locations will only be added on your approval</li>
+							<li>
+								You get to determine the quality and relevance of locations on
+								your map
+							</li>
+							<li>You set guidelines for what should be included</li>
+						</ul>
+						<p className="text-sm text-amber-700 mt-2">
+							By submitting this form, you agree to take on these
+							responsibilities.
 						</p>
 					</div>
 
 					<Button
 						type="submit"
 						className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-md py-2"
-						disabled={isSubmitting || isLoading}
+						disabled={isSubmitting || isLoading || charCount > 60}
 					>
 						{isSubmitting ? (
 							<div className="flex items-center justify-center">
