@@ -9,22 +9,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		{
 			url: "https://www.bengalurumaps.com",
 			lastModified: new Date(),
-			changeFrequency: "daily",
+			changeFrequency: "daily" as const,
 			priority: 1,
 		},
 		{
 			url: "https://www.bengalurumaps.com/create-map",
 			lastModified: new Date(),
-			changeFrequency: "weekly",
+			changeFrequency: "weekly" as const,
 			priority: 0.8,
 		},
 		{
 			url: "https://www.bengalurumaps.com/my-maps",
 			lastModified: new Date(),
-			changeFrequency: "weekly",
+			changeFrequency: "weekly" as const,
 			priority: 0.7,
 		},
-	] as MetadataRoute.Sitemap
+	]
 
 	try {
 		// Get all public maps
@@ -38,14 +38,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 				return {
 					url: `https://www.bengalurumaps.com/maps/${slug}/${map.id}`,
 					lastModified: new Date(),
-					changeFrequency: "weekly",
+					changeFrequency: "weekly" as const,
 					priority: 0.9,
 				}
 			}) || []
 
-		return [...baseUrls, ...mapUrls]
+		return [...baseUrls, ...mapUrls] as MetadataRoute.Sitemap
 	} catch (error) {
 		console.error("Error generating sitemap:", error)
-		return baseUrls
+		return baseUrls as MetadataRoute.Sitemap
 	}
 }
