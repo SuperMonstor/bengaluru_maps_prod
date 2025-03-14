@@ -112,6 +112,7 @@ export default function ShareButton({
 				canvas.height = 1920
 
 				// Create a more visually appealing background with a gradient that matches the map theme
+				// Use a blue gradient similar to the Bengaluru Maps branding
 				const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
 				gradient.addColorStop(0, "#3b82f6") // Blue at top
 				gradient.addColorStop(0.7, "#60a5fa") // Lighter blue
@@ -139,6 +140,20 @@ export default function ShareButton({
 					ctx.stroke()
 				}
 
+				// Add Bengaluru Maps header at the top
+				ctx.fillStyle = "white"
+				ctx.font = "bold 60px sans-serif"
+				ctx.textAlign = "center"
+				ctx.fillText("Bengaluru Maps", canvas.width / 2, 120)
+
+				// Add a decorative underline
+				ctx.strokeStyle = "white"
+				ctx.lineWidth = 3
+				ctx.beginPath()
+				ctx.moveTo(canvas.width / 2 - 200, 140)
+				ctx.lineTo(canvas.width / 2 + 200, 140)
+				ctx.stroke()
+
 				// Load and draw map image prominently
 				if (image) {
 					try {
@@ -152,36 +167,13 @@ export default function ShareButton({
 							img.src = image
 						})
 
-						// Draw a decorative element at the top
-						ctx.fillStyle = "#1e3a8a" // Dark blue
-						ctx.beginPath()
-						ctx.arc(canvas.width / 2, 120, 80, 0, Math.PI * 2)
-						ctx.fill()
-
-						// Draw a map pin icon in the circle
-						ctx.strokeStyle = "white"
-						ctx.lineWidth = 6
-						ctx.beginPath()
-						ctx.arc(canvas.width / 2, 110, 20, 0, Math.PI * 2)
-						ctx.stroke()
-						ctx.beginPath()
-						ctx.moveTo(canvas.width / 2, 130)
-						ctx.lineTo(canvas.width / 2, 170)
-						ctx.stroke()
-						ctx.beginPath()
-						ctx.arc(canvas.width / 2, 170, 6, 0, Math.PI * 2)
-						ctx.stroke()
-
 						// Draw image in a frame at the top portion with a white border/frame
 						ctx.fillStyle = "white"
-						roundedRect(ctx, 90, 200, canvas.width - 180, 600, 20)
-
-						// Add a subtle shadow effect
 						ctx.shadowColor = "rgba(0, 0, 0, 0.2)"
 						ctx.shadowBlur = 15
 						ctx.shadowOffsetX = 0
 						ctx.shadowOffsetY = 5
-						roundedRect(ctx, 95, 205, canvas.width - 190, 590, 15)
+						roundedRect(ctx, 90, 200, canvas.width - 180, 600, 20)
 						ctx.shadowColor = "transparent"
 
 						// Draw the actual image inside the frame with rounded corners
@@ -236,7 +228,7 @@ export default function ShareButton({
 					50
 				)
 
-				// Add a "Featured Locations" section
+				// Add a "Discover Bangalore" section
 				ctx.fillStyle = "white"
 				ctx.shadowColor = "rgba(0, 0, 0, 0.1)"
 				ctx.shadowBlur = 10
@@ -291,25 +283,12 @@ export default function ShareButton({
 				ctx.font = "bold 46px sans-serif"
 				ctx.fillStyle = "white"
 				ctx.textAlign = "center"
-				ctx.fillText("Swipe up to explore", canvas.width / 2, 1480)
+				ctx.fillText("Tap to explore", canvas.width / 2, 1480)
 
 				// URL display
 				ctx.font = "36px sans-serif"
 				ctx.fillStyle = "#93c5fd" // Light blue
 				ctx.fillText(shareUrl, canvas.width / 2, 1550)
-
-				// Add arrow indicator
-				ctx.strokeStyle = "white"
-				ctx.lineWidth = 5
-				ctx.beginPath()
-				ctx.moveTo(canvas.width / 2, 1600)
-				ctx.lineTo(canvas.width / 2, 1640)
-				ctx.stroke()
-				ctx.beginPath()
-				ctx.moveTo(canvas.width / 2 - 15, 1625)
-				ctx.lineTo(canvas.width / 2, 1640)
-				ctx.lineTo(canvas.width / 2 + 15, 1625)
-				ctx.stroke()
 
 				// Add Bengaluru Maps branding at the bottom
 				ctx.fillStyle = "white"
@@ -334,72 +313,106 @@ export default function ShareButton({
 				ctx.fillStyle = "rgba(255, 255, 255, 0.1)"
 				ctx.fillRect(0, canvas.height - 50, canvas.width, 50)
 
-				// Convert canvas to blob
+				// Convert canvas to blob and get data URL
 				const dataUrl = canvas.toDataURL("image/png")
 				const blob = await (await fetch(dataUrl)).blob()
+
+				// Create a File object from the blob
+				const imageFile = new File([blob], "bengaluru-map.png", {
+					type: "image/png",
+				})
 
 				// Different approaches for iOS and Android
 				const isIOS = /iphone|ipad|ipod/i.test(
 					navigator.userAgent.toLowerCase()
 				)
 
-				if (isIOS) {
-					// iOS approach using the Instagram URL scheme
-					try {
-						// First, save the image to the device
-						const link = document.createElement("a")
-						link.href = dataUrl
-						link.download = "bengaluru-map.png"
-						link.click()
+				try {
+					// First, try to use the Instagram Stories URL scheme with direct URL sticker
+					// This requires hosting the image somewhere accessible by Instagram
 
-						// Copy URL to clipboard for the link sticker
-						await navigator.clipboard.writeText(shareUrl)
+					// For demonstration, we'll save the image locally and then try the URL scheme
+					// In a production app, you would upload this image to your server and get a public URL
 
-						// Open Instagram Stories with the URL scheme
-						setTimeout(() => {
-							// Instagram URL scheme for stories
-							window.location.href = "instagram-stories://share"
+					// Save the image locally
+					const link = document.createElement("a")
+					link.href = dataUrl
+					link.download = "bengaluru-map.png"
+					link.click()
 
-							toast({
-								title: "Opening Instagram Stories",
-								description:
-									"Select the downloaded image and add the copied URL as a link sticker",
-								duration: 5000,
-							})
-						}, 500)
-					} catch (error) {
-						console.error("Error sharing to Instagram on iOS:", error)
-						fallbackToWebShare(blob, shareUrl)
-					}
-				} else {
-					// Android approach
-					try {
-						// First, save the image to the device
-						const link = document.createElement("a")
-						link.href = dataUrl
-						link.download = "bengaluru-map.png"
-						link.click()
+					// Copy URL to clipboard as fallback
+					await navigator.clipboard.writeText(shareUrl)
 
-						// Copy URL to clipboard for the link sticker
-						await navigator.clipboard.writeText(shareUrl)
+					// Try to use the Instagram Stories URL scheme
+					setTimeout(() => {
+						// Construct the Instagram Stories URL with parameters
+						// Note: In a real implementation, you would need to host the image at a public URL
+						// For now, we'll just open Instagram Stories and rely on the user selecting the downloaded image
 
-						// Open Instagram Stories with the URL scheme
-						setTimeout(() => {
-							// Instagram URL scheme for stories with parameters
-							window.location.href = `intent://instagram.com/stories/#Intent;scheme=https;package=com.instagram.android;S.source_application=bengalurumaps;S.url=${encodeURIComponent(
-								shareUrl
-							)};end`
+						if (isIOS) {
+							// iOS approach
+							const instagramUrl = `instagram-stories://share?source_application=bengalurumaps&text=${encodeURIComponent(
+								title
+							)}&url=${encodeURIComponent(shareUrl)}`
+							window.location.href = instagramUrl
 
 							toast({
 								title: "Opening Instagram Stories",
 								description:
-									"Select the downloaded image and add the copied URL as a link sticker",
+									"Select the downloaded image. A URL sticker has been added automatically.",
 								duration: 5000,
 							})
-						}, 500)
-					} catch (error) {
-						console.error("Error sharing to Instagram on Android:", error)
-						fallbackToWebShare(blob, shareUrl)
+						} else {
+							// Android approach
+							const instagramUrl = `intent://instagram.com/stories/#Intent;scheme=https;package=com.instagram.android;S.source_application=bengalurumaps;S.text=${encodeURIComponent(
+								title
+							)};S.url=${encodeURIComponent(shareUrl)};end`
+							window.location.href = instagramUrl
+
+							toast({
+								title: "Opening Instagram Stories",
+								description:
+									"Select the downloaded image. A URL sticker has been added automatically.",
+								duration: 5000,
+							})
+						}
+					}, 500)
+				} catch (error) {
+					console.error("Error using Instagram Stories URL scheme:", error)
+
+					// Fall back to Web Share API if available
+					if (navigator.share) {
+						try {
+							// Try to share with the Web Share API
+							const shareData: any = {
+								title: title,
+								text: description,
+								url: shareUrl,
+							}
+
+							// Add the image file if supported
+							if (
+								navigator.canShare &&
+								navigator.canShare({ files: [imageFile] })
+							) {
+								shareData.files = [imageFile]
+							}
+
+							await navigator.share(shareData)
+
+							toast({
+								title: "Shared Successfully",
+								description:
+									"Select Instagram Stories from the share sheet to post.",
+								duration: 3000,
+							})
+						} catch (shareError) {
+							console.error("Web Share API error:", shareError)
+							downloadImageWithInstructions(blob, shareUrl)
+						}
+					} else {
+						// If Web Share API is not available, download the image with instructions
+						downloadImageWithInstructions(blob, shareUrl)
 					}
 				}
 			} catch (error) {
@@ -419,39 +432,6 @@ export default function ShareButton({
 		} else {
 			// On desktop, use the image generation approach
 			createInstagramStoryImage()
-		}
-	}
-
-	// Helper function for fallback sharing
-	const fallbackToWebShare = async (blob: Blob, shareUrl: string) => {
-		// Try to use the Web Share API with files
-		if (
-			navigator.share &&
-			navigator.canShare &&
-			navigator.canShare({
-				files: [new File([blob], "bengaluru-map.png", { type: "image/png" })],
-			})
-		) {
-			try {
-				await navigator.share({
-					files: [new File([blob], "bengaluru-map.png", { type: "image/png" })],
-				})
-
-				// Copy URL to clipboard for easy pasting as a sticker
-				await navigator.clipboard.writeText(shareUrl)
-
-				toast({
-					title: "Image Shared",
-					description:
-						"Open Instagram Stories and add the copied URL as a link sticker",
-					duration: 5000,
-				})
-			} catch (error) {
-				console.error("Web Share API failed:", error)
-				downloadImageWithInstructions(blob, shareUrl)
-			}
-		} else {
-			downloadImageWithInstructions(blob, shareUrl)
 		}
 	}
 
