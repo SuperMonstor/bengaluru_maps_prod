@@ -32,10 +32,10 @@ export default function Header() {
 
 	return (
 		<div className="flex justify-between items-center p-3 md:p-4 flex-wrap gap-y-2">
-			<div className="flex flex-col sm:flex-row sm:items-baseline">
+			<div className="flex flex-col sm:flex-row sm:items-baseline w-full sm:w-auto z-10">
 				<Link
 					href="/"
-					className="text-lg md:text-2xl sm:text-xl font-semibold hover:opacity-80"
+					className="text-lg md:text-2xl sm:text-xl font-semibold hover:opacity-80 py-1 inline-block"
 				>
 					Bengaluru Maps
 				</Link>
@@ -43,7 +43,7 @@ export default function Header() {
 					href="https://x.com/realsudarshansk"
 					target="_blank"
 					rel="noopener noreferrer"
-					className="text-xs text-gray-500 md:text-sm hover:text-blue-500 transition-colors flex items-center gap-1 mt-0.5 sm:mt-0 sm:ml-2"
+					className="text-xs text-gray-500 md:text-sm hover:text-blue-500 transition-colors flex items-center gap-1 mt-0.5 sm:mt-0 sm:ml-2 py-1"
 				>
 					<span>By Sudarshan S</span>
 					<svg
@@ -63,7 +63,7 @@ export default function Header() {
 				</Link>
 			</div>
 
-			<div className="flex items-center gap-2 md:gap-3">
+			<div className="flex items-center gap-2 md:gap-3 ml-auto sm:ml-0">
 				{!authLoading && user && (
 					<Link href="/my-maps" className="relative mr-1">
 						<Button
@@ -117,6 +117,8 @@ export default function Header() {
 						</svg>
 						Create Map
 					</Button>
+				</Link>
+				<Link href="/create-map">
 					<Button
 						variant="outline"
 						size="icon"
