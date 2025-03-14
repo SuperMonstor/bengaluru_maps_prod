@@ -192,6 +192,11 @@ export default function ClientMapPageContent({
 		}
 	}, [isLoaded, map.locations])
 
+	// Use the filtered locations count to match server-side logic
+	const approvedLocationsCount = map.locations.filter(
+		(location) => location.is_approved
+	).length
+
 	if (!isLoaded) {
 		return (
 			<main className="bg-gray-50/50 flex flex-col min-h-screen">
@@ -259,7 +264,7 @@ export default function ClientMapPageContent({
 							/>
 							<span>
 								<MapPin className="inline mr-1 h-4 w-4" />
-								{map.locations.length} locations
+								{approvedLocationsCount} locations
 							</span>
 							<span>
 								<Users className="inline mr-1 h-4 w-4" />
@@ -413,7 +418,7 @@ export default function ClientMapPageContent({
 								/>
 								<span className="flex items-center">
 									<MapPin className="mr-1 h-4 w-4" />
-									{map.locations.length}
+									{approvedLocationsCount}
 								</span>
 								<span className="flex items-center">
 									<Users className="mr-1 h-4 w-4" />
@@ -471,7 +476,7 @@ export default function ClientMapPageContent({
 								/>
 								<span className="flex items-center">
 									<MapPin className="mr-1 h-4 w-4" />
-									{map.locations.length} locations
+									{approvedLocationsCount} locations
 								</span>
 								<span className="flex items-center">
 									<Users className="mr-1 h-4 w-4" />
