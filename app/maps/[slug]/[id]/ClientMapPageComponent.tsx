@@ -212,7 +212,7 @@ export default function ClientMapPageContent({
 			<style>{popupStyles}</style>
 			<main className="bg-gray-50/50 flex flex-col">
 				{/* Desktop Layout */}
-				<div className="hidden md:flex h-[calc(100vh-65px)]">
+				<div className="hidden md:flex h-[calc(100vh-64px)]">
 					<div className="w-1/2 p-4 md:p-8 lg:p-12 space-y-6 overflow-y-auto">
 						<div className="flex items-center gap-4 justify-between">
 							<h1 className="text-3xl font-bold tracking-tight text-foreground">
@@ -337,8 +337,9 @@ export default function ClientMapPageContent({
 				</div>
 
 				{/* Mobile Layout */}
-				<div className="md:hidden relative h-[calc(100vh-65px)]">
-					<div className="absolute inset-0">
+				<div className="md:hidden map-layout">
+					{/* Map container */}
+					<div className="map-container">
 						<GoogleMap
 							mapContainerStyle={{ width: "100%", height: "100%" }}
 							center={initialSettings.center}
@@ -390,7 +391,7 @@ export default function ClientMapPageContent({
 					</div>
 
 					<div
-						className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 cursor-pointer z-10 shadow-lg rounded-t-xl"
+						className="bottom-panel p-4 cursor-pointer"
 						onClick={() => setIsOpen(!isOpen)}
 					>
 						<div className="flex flex-col gap-2">
@@ -429,9 +430,9 @@ export default function ClientMapPageContent({
 					</div>
 
 					<div
-						className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 transition-transform duration-300 ease-in-out transform ${
+						className={`expanded-panel transition-transform duration-300 ease-in-out transform ${
 							isOpen ? "translate-y-0" : "translate-y-full"
-						} max-h-[80vh] overflow-y-auto z-20 rounded-t-xl shadow-lg`}
+						} max-h-[80vh] overflow-y-auto`}
 					>
 						<div className="sticky top-0 bg-white p-4 border-b border-gray-100">
 							<div className="flex items-center justify-between">
