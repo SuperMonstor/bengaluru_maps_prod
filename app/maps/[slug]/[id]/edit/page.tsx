@@ -122,7 +122,7 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 
 			const result = await updateMapAction(formDataObj)
 
-			if (result.success) {
+			if (result.success && result.data) {
 				toast({
 					title: "Success!",
 					description: "Map updated successfully",
