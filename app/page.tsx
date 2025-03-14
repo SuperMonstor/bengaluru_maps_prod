@@ -6,9 +6,29 @@ import Link from "next/link"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 import { createClient } from "@/lib/supabase/api/supabaseServer"
 import { Suspense } from "react"
+import type { Metadata } from "next"
 
 // Set revalidate to 0 to ensure fresh data on each request
 export const revalidate = 0
+
+// Add specific metadata for the home page
+export const metadata: Metadata = {
+	title: "Bengaluru Maps | Discover the Best Places in Bengaluru",
+	description:
+		"Explore community-driven maps of Bengaluru's best cafes, restaurants, and hangout spots. Create your own maps and share your favorite places with the community.",
+	alternates: {
+		canonical: "/",
+	},
+	openGraph: {
+		title: "Bengaluru Maps | Discover the Best Places in Bengaluru",
+		description:
+			"Explore community-driven maps of Bengaluru's best cafes, restaurants, and hangout spots.",
+		url: "https://www.bengalurumaps.com/",
+		siteName: "Bengaluru Maps",
+		locale: "en_IN",
+		type: "website",
+	},
+}
 
 interface HomeProps {
 	searchParams: Promise<{ page?: string }>
@@ -77,36 +97,65 @@ async function MapsList({
 	)
 }
 
-export default async function HomePage({ searchParams }: HomeProps) {
+export default async function Home({ searchParams }: HomeProps) {
 	const supabase = await createClient()
 	const {
 		data: { user },
 	} = await supabase.auth.getUser()
 
 	const resolvedSearchParams = await searchParams
-	const page = parseInt(resolvedSearchParams.page || "1", 10)
+	const currentPage = resolvedSearchParams?.page
+		? parseInt(resolvedSearchParams.page)
+		: 1
 	const limit = 10
+
+	// JSON-LD structured data for better SEO
+	const jsonLd = {
+		"@context": "https://schema.org",
+		"@type": "WebSite",
+		name: "Bengaluru Maps",
+		url: "https://www.bengalurumaps.com/",
+		potentialAction: {
+			"@type": "SearchAction",
+			target: "https://www.bengalurumaps.com/?search={search_term_string}",
+			"query-input": "required name=search_term_string",
+		},
+		description:
+			"Discover the best cafes, restaurants, and hangout spots in Bengaluru through community-driven maps.",
+		publisher: {
+			"@type": "Organization",
+			name: "Bengaluru Maps",
+			logo: {
+				"@type": "ImageObject",
+				url: "https://www.bengalurumaps.com/logo.png",
+			},
+		},
+	}
 
 	return (
 		<main className="min-h-screen bg-gray-50/50">
-			<div className="container mx-auto px-4 py-8 md:py-12 lg:py-16">
-				<div className="text-center mb-12">
-					<h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
-						A community-driven project to aggregate
-						<span className="text-primary"> cool places in Bengaluru</span>
+			{/* Add JSON-LD structured data */}
+			<script
+				type="application/ld+json"
+				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+			/>
+
+			<div className="container mx-auto px-4 py-8">
+				<div className="flex flex-col items-center justify-center mb-12">
+					<h1 className="text-4xl font-bold text-center mb-4">
+						Discover Bengaluru&apos;s Best Places
 					</h1>
-					<p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-						Discover and share the best spots in Bangalore - from cafes and
-						restaurants to entertainment venues.
+					<p className="text-xl text-center text-gray-600 max-w-2xl mb-8">
+						Explore community-driven maps of Bengaluru&apos;s best cafes,
+						restaurants, and hangout spots.
 					</p>
+					<Link href="/create-map">
+						<Button size="lg">Create Your Own Map</Button>
+					</Link>
 				</div>
 
-				<Suspense
-					fallback={
-						<LoadingIndicator message="Loading maps from Bengaluru..." />
-					}
-				>
-					<MapsList page={page} limit={limit} userId={user?.id} />
+				<Suspense fallback={<LoadingIndicator />}>
+					<MapsList page={currentPage} limit={limit} userId={user?.id} />
 				</Suspense>
 			</div>
 		</main>
