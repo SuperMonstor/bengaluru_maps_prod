@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Markdown } from "@/components/markdown/MarkdownRenderer"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { MapPin, Users, ChevronUp, ChevronDown } from "lucide-react"
+import { MapPin, Users, ChevronUp, ChevronDown, Edit } from "lucide-react"
 import Image from "next/image"
 import ShareButton from "@/components/custom-ui/ShareButton"
 import { Button } from "@/components/ui/button"
@@ -224,6 +224,18 @@ export default function ClientMapPageContent({
 								{map.title}
 							</h1>
 							<div className="flex items-center gap-2">
+								{user && user.id === map.owner_id && (
+									<Link href={`/maps/${map.slug || "map"}/${map.id}/edit`}>
+										<Button
+											variant="outline"
+											size="sm"
+											className="flex items-center gap-1"
+										>
+											<Edit className="h-4 w-4" />
+											Edit
+										</Button>
+									</Link>
+								)}
 								<Link href={`/maps/${map.slug || "map"}/${map.id}/submit`}>
 									<Button variant="default" size="sm">
 										Contribute
@@ -410,12 +422,28 @@ export default function ClientMapPageContent({
 								<h2 className="text-lg font-semibold truncate flex-1">
 									{map.title}
 								</h2>
-								<div className="bg-gray-100 rounded-full p-1">
-									<ChevronUp
-										className={`h-5 w-5 transition-transform ${
-											isOpen ? "rotate-180" : ""
-										}`}
-									/>
+								<div className="flex items-center gap-2">
+									{user && user.id === map.owner_id && (
+										<Link
+											href={`/maps/${map.slug || "map"}/${map.id}/edit`}
+											onClick={(e) => e.stopPropagation()}
+										>
+											<Button
+												variant="outline"
+												size="sm"
+												className="flex items-center gap-1 p-1"
+											>
+												<Edit className="h-4 w-4" />
+											</Button>
+										</Link>
+									)}
+									<div className="bg-gray-100 rounded-full p-1">
+										<ChevronUp
+											className={`h-5 w-5 transition-transform ${
+												isOpen ? "rotate-180" : ""
+											}`}
+										/>
+									</div>
 								</div>
 							</div>
 							<p className="text-muted-foreground text-sm truncate">
@@ -450,13 +478,29 @@ export default function ClientMapPageContent({
 								<h1 className="text-xl font-bold tracking-tight truncate flex-1">
 									{map.title}
 								</h1>
-								<button
-									onClick={handleCollapse}
-									className="p-2 rounded-full hover:bg-gray-100"
-									aria-label="Collapse panel"
-								>
-									<ChevronDown className="h-5 w-5" />
-								</button>
+								<div className="flex items-center gap-2">
+									{user && user.id === map.owner_id && (
+										<Link
+											href={`/maps/${map.slug || "map"}/${map.id}/edit`}
+											onClick={(e) => e.stopPropagation()}
+										>
+											<Button
+												variant="outline"
+												size="sm"
+												className="flex items-center gap-1 p-1"
+											>
+												<Edit className="h-4 w-4" />
+											</Button>
+										</Link>
+									)}
+									<button
+										onClick={handleCollapse}
+										className="p-2 rounded-full hover:bg-gray-100"
+										aria-label="Collapse panel"
+									>
+										<ChevronDown className="h-5 w-5" />
+									</button>
+								</div>
 							</div>
 
 							<div className="flex items-center gap-3 mt-3">

@@ -586,3 +586,75 @@ export async function deleteLocation(
 		}
 	}
 }
+
+export async function updateMap({
+	mapId,
+	title,
+	shortDescription,
+	body,
+	displayPicture,
+	userId,
+}: {
+	mapId: string
+	title: string
+	shortDescription: string
+	body: string
+	displayPicture?: File | null
+	userId: string
+}): Promise<CreateMapResult> {
+	try {
+		if (!mapId || !title || !shortDescription || !body || !userId) {
+			throw new Error("Required fields are missing")
+		}
+
+		// Check if the user is the owner of the map
+		const { data: mapData, error: mapError } = await supabase
+			.from("maps")
+			.select("owner_id")
+			.eq("id", mapId)
+			.single()
+
+		if (mapError) {
+			throw new Error(`Error checking map ownership: ${mapError.message}`)
+		}
+
+		// Only allow update if user is the map owner
+		if (mapData.owner_id !== userId) {
+			throw new Error("You don't have permission to edit this map")
+		}
+
+		// Prepare update data
+		const updateData: any = {
+			name: title,
+			short_description: shortDescription,
+			body,
+			updated_at: new Date().toISOString(),
+			slug: slugify(title),
+		}
+
+		// If a new image is provided, upload it
+		if (displayPicture) {
+			const displayPictureUrl = await uploadImage(displayPicture)
+			updateData.display_picture = displayPictureUrl
+		}
+
+		// Update the map
+		const { data, error } = await supabase
+			.from("maps")
+			.update(updateData)
+			.eq("id", mapId)
+			.select()
+			.single()
+
+		if (error) throw new Error(`Failed to update map: ${error.message}`)
+
+		return { data, error: null }
+	} catch (error) {
+		console.error("Error in updateMap:", error)
+		return {
+			data: null,
+			error:
+				error instanceof Error ? error.message : "An unexpected error occurred",
+		}
+	}
+}

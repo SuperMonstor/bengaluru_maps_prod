@@ -23,6 +23,7 @@ import { getMapById } from "@/lib/supabase/mapsService"
 import { createLocation } from "@/lib/supabase/mapsService"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 import { slugify } from "@/lib/utils/slugify"
+import { use } from "react"
 
 // Make geometry and other fields optional in LocationSuggestion for initial suggestions
 type PartialLocationSuggestion = Partial<LocationSuggestion> & {
@@ -32,7 +33,10 @@ type PartialLocationSuggestion = Partial<LocationSuggestion> & {
 }
 
 export default function SubmitLocationPage({ params }: SubmitLocationProps) {
-	const [mapId, setMapId] = useState<string | null>(null) // State to hold resolved mapId
+	// Unwrap the params Promise
+	const resolvedParams = use(params)
+	const mapId = resolvedParams.id
+
 	const { toast } = useToast()
 	const { user, isLoading: authLoading } = useAuth()
 	const router = useRouter()
@@ -49,15 +53,6 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 		address: string | null
 	} | null>(null)
 	const [isSubmitting, setIsSubmitting] = useState(false)
-
-	// Resolve params Promise to get mapId
-	useEffect(() => {
-		async function resolveParams() {
-			const resolvedParams = await params
-			setMapId(resolvedParams.id)
-		}
-		resolveParams()
-	}, [params])
 
 	const { isLoaded } = useLoadScript({
 		googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -81,11 +76,9 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 	const location = watch("location")
 
 	useEffect(() => {
-		if (!mapId) return // Wait until mapId is resolved
-
 		async function fetchMap() {
 			try {
-				const result = await getMapById(mapId!)
+				const result = await getMapById(mapId)
 				if (result.error || !result.data) {
 					setError(result.error || "Map not found")
 				} else {
