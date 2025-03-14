@@ -219,7 +219,13 @@ export default function ClientMapPageContent({
 										Contribute
 									</Button>
 								</Link>
-								<ShareButton mapId={map.id} slug={map.slug} />
+								<ShareButton
+									mapId={map.id}
+									slug={map.slug}
+									title={map.title}
+									description={map.description}
+									image={map.image}
+								/>
 							</div>
 						</div>
 						<div className="space-y-2">
@@ -484,7 +490,13 @@ export default function ClientMapPageContent({
 										Add Location
 									</Button>
 								</Link>
-								<ShareButton mapId={map.id} slug={map.slug} />
+								<ShareButton
+									mapId={map.id}
+									slug={map.slug}
+									title={map.title}
+									description={map.description}
+									image={map.image}
+								/>
 							</div>
 
 							{/* Map content */}

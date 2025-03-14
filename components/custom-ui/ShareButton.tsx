@@ -1,20 +1,41 @@
 // components/ShareButton.tsx
 "use client"
 
-import { Share2 } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { Share2, X as XIcon, Instagram } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/lib/hooks/use-toast"
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface ShareButtonProps {
 	mapId: string
 	slug?: string
+	title?: string
+	description?: string
+	image?: string
 }
 
-export default function ShareButton({ mapId, slug }: ShareButtonProps) {
+export default function ShareButton({
+	mapId,
+	slug,
+	title = "Check out this map on Bengaluru Maps",
+	description = "Discover cool places in Bengaluru",
+	image,
+}: ShareButtonProps) {
 	const { toast } = useToast()
+	const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+	const canvasRef = useRef<HTMLCanvasElement>(null)
 
-	const handleShare = async () => {
-		const url = `${window.location.origin}/maps/${slug || "map"}/${mapId}`
+	const getShareUrl = () => {
+		return `${window.location.origin}/maps/${slug || "map"}/${mapId}`
+	}
+
+	const handleCopyLink = async () => {
+		const url = getShareUrl()
 		try {
 			await navigator.clipboard.writeText(url)
 			toast({
@@ -32,10 +53,410 @@ export default function ShareButton({ mapId, slug }: ShareButtonProps) {
 		}
 	}
 
+	const handleWhatsAppShare = () => {
+		const url = getShareUrl()
+		const message = `Here's a collection of cool places in Bangalore: ${title}\n\n${description}\n\n${url}\n\nDiscover the best local spots in the city!`
+		const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
+		window.open(whatsappUrl, "_blank")
+	}
+
+	const handleXShare = () => {
+		const url = getShareUrl()
+		const message = `Here's a collection of cool places in Bangalore: ${title}\n\n${description}`
+		const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+			message
+		)}&url=${encodeURIComponent(
+			url
+		)}&hashtags=BengaluruMaps,Bangalore,CoolSpots`
+		window.open(xUrl, "_blank")
+	}
+
+	const createInstagramStoryImage = async () => {
+		setIsGeneratingImage(true)
+
+		try {
+			// Create a canvas element
+			const canvas = document.createElement("canvas")
+			const ctx = canvas.getContext("2d")
+
+			if (!ctx) {
+				throw new Error("Could not get canvas context")
+			}
+
+			// Set Instagram story dimensions (1080x1920)
+			canvas.width = 1080
+			canvas.height = 1920
+
+			// Draw gradient background
+			const gradient = ctx.createLinearGradient(
+				0,
+				0,
+				canvas.width,
+				canvas.height
+			)
+			gradient.addColorStop(0, "#f3f4f6") // Light gray
+			gradient.addColorStop(1, "#dbeafe") // Light blue
+			ctx.fillStyle = gradient
+			ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+			// Load and draw map image as background (if available)
+			if (image) {
+				try {
+					const img = new Image()
+					img.crossOrigin = "anonymous"
+
+					// Wait for image to load
+					await new Promise((resolve, reject) => {
+						img.onload = resolve
+						img.onerror = reject
+						img.src = image
+					})
+
+					// Draw blurred background image
+					ctx.save()
+					ctx.filter = "blur(10px) opacity(0.7)"
+					ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+					ctx.restore()
+
+					// Add semi-transparent overlay for better text readability
+					ctx.fillStyle = "rgba(255, 255, 255, 0.3)"
+					ctx.fillRect(0, 0, canvas.width, canvas.height)
+				} catch (error) {
+					console.warn(
+						"Could not load map image, using gradient background instead"
+					)
+				}
+			}
+
+			// Draw header section with title and description
+			ctx.fillStyle = "rgba(255, 255, 255, 0.9)"
+			roundedRect(ctx, 100, 120, canvas.width - 200, 240, 20)
+
+			// Draw "Discover Bangalore" text
+			ctx.font = "bold 48px sans-serif"
+			ctx.fillStyle = "#6366f1" // Indigo color
+			ctx.fillText("Discover Bangalore", 140, 180)
+
+			// Draw title
+			ctx.font = "bold 60px sans-serif"
+			ctx.fillStyle = "#111827"
+			wrapText(ctx, title, 140, 250, canvas.width - 280, 70)
+
+			// Draw description
+			ctx.font = "36px sans-serif"
+			ctx.fillStyle = "#4b5563"
+			wrapText(ctx, description, 140, 350, canvas.width - 280, 50)
+
+			// Draw map details section
+			ctx.fillStyle = "rgba(255, 255, 255, 0.9)"
+			roundedRect(ctx, 100, canvas.height - 600, canvas.width - 200, 300, 20)
+
+			// Draw Bengaluru Maps logo/icon
+			ctx.fillStyle = "#3b82f6" // Primary blue color
+			ctx.beginPath()
+			ctx.arc(180, canvas.height - 520, 60, 0, Math.PI * 2)
+			ctx.fill()
+
+			// Draw "B" in the circle
+			ctx.font = "bold 70px sans-serif"
+			ctx.fillStyle = "white"
+			ctx.textAlign = "center"
+			ctx.textBaseline = "middle"
+			ctx.fillText("B", 180, canvas.height - 520)
+			ctx.textAlign = "left"
+			ctx.textBaseline = "alphabetic"
+
+			// Draw app name
+			ctx.font = "bold 40px sans-serif"
+			ctx.fillStyle = "#111827"
+			ctx.fillText("Bengaluru Maps", 260, canvas.height - 535)
+
+			// Draw tagline
+			ctx.font = "30px sans-serif"
+			ctx.fillStyle = "#4b5563"
+			ctx.fillText("Cool places in the city", 260, canvas.height - 485)
+
+			// Draw feature icons and text
+			// Location icon
+			ctx.fillStyle = "#ef4444" // Red
+			ctx.beginPath()
+			ctx.arc(180, canvas.height - 380, 30, 0, Math.PI * 2)
+			ctx.fill()
+
+			// Location icon (simplified)
+			ctx.strokeStyle = "white"
+			ctx.lineWidth = 3
+			ctx.beginPath()
+			ctx.arc(180, canvas.height - 385, 10, 0, Math.PI * 2)
+			ctx.stroke()
+			ctx.beginPath()
+			ctx.moveTo(180, canvas.height - 375)
+			ctx.lineTo(180, canvas.height - 355)
+			ctx.stroke()
+
+			// Location text
+			ctx.font = "36px sans-serif"
+			ctx.fillStyle = "#111827"
+			ctx.fillText("Local landmarks", 230, canvas.height - 370)
+
+			// Community icon
+			ctx.fillStyle = "#3b82f6" // Blue
+			ctx.beginPath()
+			ctx.arc(540, canvas.height - 380, 30, 0, Math.PI * 2)
+			ctx.fill()
+
+			// Community icon (simplified)
+			ctx.strokeStyle = "white"
+			ctx.lineWidth = 3
+			ctx.beginPath()
+			ctx.arc(540, canvas.height - 385, 10, 0, Math.PI * 2)
+			ctx.stroke()
+			ctx.beginPath()
+			ctx.arc(530, canvas.height - 370, 6, 0, Math.PI * 2)
+			ctx.stroke()
+			ctx.beginPath()
+			ctx.arc(550, canvas.height - 370, 6, 0, Math.PI * 2)
+			ctx.stroke()
+
+			// Community text
+			ctx.font = "36px sans-serif"
+			ctx.fillStyle = "#111827"
+			ctx.fillText("Foodie favorites", 590, canvas.height - 370)
+
+			// Draw swipe up indicator
+			ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
+			roundedRect(ctx, canvas.width / 2 - 250, canvas.height - 250, 500, 80, 40)
+
+			// Swipe up text
+			ctx.font = "36px sans-serif"
+			ctx.fillStyle = "white"
+			ctx.textAlign = "center"
+			ctx.fillText(
+				"Swipe up to explore Bengaluru",
+				canvas.width / 2,
+				canvas.height - 200
+			)
+
+			// Draw arrow
+			ctx.strokeStyle = "white"
+			ctx.lineWidth = 4
+			ctx.beginPath()
+			ctx.moveTo(canvas.width / 2, canvas.height - 180)
+			ctx.lineTo(canvas.width / 2, canvas.height - 160)
+			ctx.stroke()
+			ctx.beginPath()
+			ctx.moveTo(canvas.width / 2 - 10, canvas.height - 170)
+			ctx.lineTo(canvas.width / 2, canvas.height - 160)
+			ctx.lineTo(canvas.width / 2 + 10, canvas.height - 170)
+			ctx.stroke()
+
+			// Draw URL
+			ctx.font = "32px sans-serif"
+			ctx.fillStyle = "white"
+			ctx.textAlign = "center"
+			ctx.fillText(getShareUrl(), canvas.width / 2, canvas.height - 120)
+			ctx.textAlign = "left"
+
+			// Draw watermark
+			ctx.fillStyle = "rgba(255, 255, 255, 0.9)"
+			roundedRect(ctx, canvas.width - 350, canvas.height - 100, 250, 60, 10)
+
+			// Draw watermark logo
+			ctx.fillStyle = "#3b82f6" // Primary blue color
+			ctx.beginPath()
+			ctx.arc(canvas.width - 310, canvas.height - 70, 20, 0, Math.PI * 2)
+			ctx.fill()
+
+			// Draw "B" in the circle
+			ctx.font = "bold 24px sans-serif"
+			ctx.fillStyle = "white"
+			ctx.textAlign = "center"
+			ctx.textBaseline = "middle"
+			ctx.fillText("B", canvas.width - 310, canvas.height - 70)
+			ctx.textAlign = "left"
+			ctx.textBaseline = "alphabetic"
+
+			// Draw watermark text
+			ctx.font = "bold 24px sans-serif"
+			ctx.fillStyle = "#111827"
+			ctx.fillText("Bengaluru Maps", canvas.width - 280, canvas.height - 60)
+
+			// Convert canvas to blob and share
+			const dataUrl = canvas.toDataURL("image/png")
+			const blob = await (await fetch(dataUrl)).blob()
+
+			// Check if the Web Share API supports sharing files
+			if (
+				navigator.share &&
+				navigator.canShare &&
+				navigator.canShare({
+					files: [new File([blob], "bengaluru-map.png", { type: "image/png" })],
+				})
+			) {
+				await navigator.share({
+					title: "Cool Places in Bangalore",
+					text: `Here's a collection of cool places in Bangalore: ${title}`,
+					url: getShareUrl(),
+					files: [new File([blob], "bengaluru-map.png", { type: "image/png" })],
+				})
+				toast({
+					title: "Ready for Instagram!",
+					description: "Image prepared for your Instagram story.",
+					duration: 3000,
+				})
+			} else {
+				// Fallback for browsers that don't support file sharing
+				const link = document.createElement("a")
+				link.href = dataUrl
+				link.download = "bengaluru-map.png"
+				link.click()
+
+				toast({
+					title: "Image Downloaded",
+					description:
+						"Share this image on Instagram Stories and add the URL sticker.",
+					duration: 5000,
+				})
+			}
+		} catch (error) {
+			console.error("Error generating image:", error)
+			toast({
+				title: "Image Generation Failed",
+				description:
+					"Could not create image for Instagram. Try again or use another sharing method.",
+				variant: "destructive",
+				duration: 3000,
+			})
+		} finally {
+			setIsGeneratingImage(false)
+		}
+	}
+
+	// Helper function to draw rounded rectangles
+	function roundedRect(
+		ctx: CanvasRenderingContext2D,
+		x: number,
+		y: number,
+		width: number,
+		height: number,
+		radius: number
+	) {
+		ctx.beginPath()
+		ctx.moveTo(x + radius, y)
+		ctx.lineTo(x + width - radius, y)
+		ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
+		ctx.lineTo(x + width, y + height - radius)
+		ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+		ctx.lineTo(x + radius, y + height)
+		ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
+		ctx.lineTo(x, y + radius)
+		ctx.quadraticCurveTo(x, y, x + radius, y)
+		ctx.closePath()
+		ctx.fill()
+	}
+
+	// Helper function to wrap text
+	function wrapText(
+		ctx: CanvasRenderingContext2D,
+		text: string,
+		x: number,
+		y: number,
+		maxWidth: number,
+		lineHeight: number
+	) {
+		const words = text.split(" ")
+		let line = ""
+		let testLine = ""
+		let lineCount = 0
+
+		for (let n = 0; n < words.length; n++) {
+			testLine = line + words[n] + " "
+			const metrics = ctx.measureText(testLine)
+			const testWidth = metrics.width
+
+			if (testWidth > maxWidth && n > 0) {
+				ctx.fillText(line, x, y + lineCount * lineHeight)
+				line = words[n] + " "
+				lineCount++
+
+				// Limit to 3 lines
+				if (lineCount >= 3) {
+					if (n < words.length - 1) line = line.slice(0, -1) + "..."
+					break
+				}
+			} else {
+				line = testLine
+			}
+		}
+
+		ctx.fillText(line, x, y + lineCount * lineHeight)
+	}
+
 	return (
-		<Button variant="outline" size="sm" onClick={handleShare}>
-			<Share2 className="h-4 w-4 mr-2" />
-			Share
-		</Button>
+		<Popover>
+			<PopoverTrigger asChild>
+				<Button variant="outline" size="sm">
+					<Share2 className="h-4 w-4 mr-2" />
+					Share
+				</Button>
+			</PopoverTrigger>
+			<PopoverContent className="w-72 p-3" align="end">
+				<div className="space-y-2">
+					<h3 className="font-medium text-sm mb-2">Share this map</h3>
+					<div className="grid grid-cols-2 gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleCopyLink}
+							className="flex items-center justify-center gap-2"
+						>
+							<Share2 className="h-4 w-4" />
+							Copy Link
+						</Button>
+
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleWhatsAppShare}
+							className="flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-600 border-green-200"
+						>
+							<svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+							</svg>
+							WhatsApp
+						</Button>
+
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleXShare}
+							className="flex items-center justify-center gap-2 bg-black hover:bg-black/90 text-white border-gray-800"
+						>
+							<svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M13.6823 10.6218L20.2391 3H18.6854L12.9921 9.61788L8.44486 3H3.2002L10.0765 13.0074L3.2002 21H4.75404L10.7663 14.0113L15.5685 21H20.8131L13.6819 10.6218H13.6823ZM11.5541 13.0956L10.8574 12.0991L5.31391 4.16971H7.70053L12.1742 10.5689L12.8709 11.5655L18.6861 19.8835H16.2995L11.5541 13.096V13.0956Z" />
+							</svg>
+							X
+						</Button>
+
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={createInstagramStoryImage}
+							disabled={isGeneratingImage}
+							className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-purple-300"
+						>
+							<Instagram className="h-4 w-4" />
+							{isGeneratingImage ? "Creating..." : "Instagram"}
+						</Button>
+					</div>
+
+					{isGeneratingImage && (
+						<div className="mt-2 text-xs text-center text-gray-500">
+							Creating Instagram story image...
+						</div>
+					)}
+				</div>
+			</PopoverContent>
+		</Popover>
 	)
 }
