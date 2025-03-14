@@ -1,18 +1,23 @@
 "use client"
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Map, Clock, Star, Calendar, User } from "lucide-react"
+import { Map, Clock, Star, Calendar, User, Trash2 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { UserInfo } from "@/lib/hooks/useUserInfo"
 import { Location, PlaceDetails } from "@/lib/hooks/useGoogleMaps"
 import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import DeleteLocationDialog from "./DeleteLocationDialog"
 
 interface LocationInfoWindowProps {
 	location: Location
 	userInfo: UserInfo
 	placeDetails: PlaceDetails | null
 	onClose: () => void
+	currentUser: any // The logged-in user
+	mapOwnerId: string // The owner ID of the map
+	onLocationDeleted: () => void // Callback when location is deleted
 }
 
 // Define animation styles as a separate constant
@@ -60,9 +65,19 @@ export default function LocationInfoWindow({
 	userInfo,
 	placeDetails,
 	onClose,
+	currentUser,
+	mapOwnerId,
+	onLocationDeleted,
 }: LocationInfoWindowProps) {
 	const [showFullNote, setShowFullNote] = useState(false)
 	const [isVisible, setIsVisible] = useState(false)
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+	// Check if current user can delete this location
+	const canDelete =
+		currentUser &&
+		(currentUser.id === mapOwnerId || // Map owner
+			currentUser.id === location.creator_id) // Location creator
 
 	// Format the date
 	const formatDate = (dateString: string) => {
@@ -85,6 +100,19 @@ export default function LocationInfoWindow({
 	useEffect(() => {
 		setIsVisible(true)
 	}, [])
+
+	const handleDeleteClick = () => {
+		setShowDeleteDialog(true)
+	}
+
+	const handleDeleteCancel = () => {
+		setShowDeleteDialog(false)
+	}
+
+	const handleLocationDeleted = () => {
+		setShowDeleteDialog(false)
+		onLocationDeleted()
+	}
 
 	return (
 		<>
@@ -199,31 +227,55 @@ export default function LocationInfoWindow({
 						</div>
 					)}
 
-					<Link
-						href={
-							location.google_maps_url.includes("place/?q=place_id:")
-								? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-										location.name
-								  )}&query_place_id=${
-										location.google_maps_url.split("place_id:")[1]
-								  }`
-								: location.google_maps_url.includes("maps.google.com/?cid=")
-								? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-										location.name
-								  )}&query_place_id=${
-										location.google_maps_url.split("cid=")[1]
-								  }`
-								: location.google_maps_url
-						}
-						target="_blank"
-						rel="noopener noreferrer"
-						className="inline-flex items-center justify-center w-full bg-[#E53935] text-white py-2 rounded-md text-sm font-medium hover:bg-[#D32F2F] transition-colors info-section-delayed"
-					>
-						<Map className="w-4 h-4 mr-2" />
-						Open in Google Maps
-					</Link>
+					<div className="flex flex-col gap-2">
+						<Link
+							href={
+								location.google_maps_url.includes("place/?q=place_id:")
+									? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+											location.name
+									  )}&query_place_id=${
+											location.google_maps_url.split("place_id:")[1]
+									  }`
+									: location.google_maps_url.includes("maps.google.com/?cid=")
+									? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+											location.name
+									  )}&query_place_id=${
+											location.google_maps_url.split("cid=")[1]
+									  }`
+									: location.google_maps_url
+							}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="inline-flex items-center justify-center w-full bg-[#E53935] text-white py-2 rounded-md text-sm font-medium hover:bg-[#D32F2F] transition-colors info-section-delayed"
+						>
+							<Map className="w-4 h-4 mr-2" />
+							Open in Google Maps
+						</Link>
+
+						{/* Delete button - only shown if user can delete */}
+						{canDelete && (
+							<Button
+								variant="outline"
+								className="w-full mt-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 info-section-delayed"
+								onClick={handleDeleteClick}
+							>
+								<Trash2 className="w-4 h-4 mr-2" />
+								Delete Location
+							</Button>
+						)}
+					</div>
 				</div>
 			</div>
+
+			{/* Delete confirmation dialog */}
+			{showDeleteDialog && (
+				<DeleteLocationDialog
+					locationId={location.id}
+					locationName={location.name}
+					onDeleted={handleLocationDeleted}
+					onCancel={handleDeleteCancel}
+				/>
+			)}
 		</>
 	)
 }

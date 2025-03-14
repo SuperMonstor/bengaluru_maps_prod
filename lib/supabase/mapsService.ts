@@ -530,3 +530,59 @@ export async function createLocation({
 		}
 	}
 }
+
+export async function deleteLocation(
+	locationId: string,
+	userId: string
+): Promise<{ success: boolean; error: string | null }> {
+	try {
+		const supabase = createClient()
+
+		// First, check if the user is authorized to delete this location
+		// Get the location and its associated map
+		const { data: location, error: locationError } = await supabase
+			.from("locations")
+			.select("id, map_id, creator_id")
+			.eq("id", locationId)
+			.single()
+
+		if (locationError) {
+			throw new Error(`Failed to find location: ${locationError.message}`)
+		}
+
+		// Get the map to check ownership
+		const { data: map, error: mapError } = await supabase
+			.from("maps")
+			.select("owner_id")
+			.eq("id", location.map_id)
+			.single()
+
+		if (mapError) {
+			throw new Error(`Failed to find map: ${mapError.message}`)
+		}
+
+		// Only allow deletion if user is the map owner or the location creator
+		if (map.owner_id !== userId && location.creator_id !== userId) {
+			throw new Error("You don't have permission to delete this location")
+		}
+
+		// Delete the location
+		const { error: deleteError } = await supabase
+			.from("locations")
+			.delete()
+			.eq("id", locationId)
+
+		if (deleteError) {
+			throw new Error(`Failed to delete location: ${deleteError.message}`)
+		}
+
+		return { success: true, error: null }
+	} catch (error) {
+		console.error("Error in deleteLocation:", error)
+		return {
+			success: false,
+			error:
+				error instanceof Error ? error.message : "An unexpected error occurred",
+		}
+	}
+}

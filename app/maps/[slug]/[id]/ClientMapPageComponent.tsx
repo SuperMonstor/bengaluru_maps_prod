@@ -150,6 +150,11 @@ export default function ClientMapPageContent({
 		if (isOpen) setIsOpen(false)
 	}
 
+	const handleLocationDeleted = () => {
+		setSelectedLocation(null)
+		window.location.reload()
+	}
+
 	// Effect to ensure slider stays expanded when expand parameter is present
 	useEffect(() => {
 		if (shouldExpand) {
@@ -329,6 +334,9 @@ export default function ClientMapPageContent({
 										userInfo={userInfo}
 										placeDetails={placeDetails}
 										onClose={handleInfoWindowClose}
+										currentUser={user}
+										mapOwnerId={map.owner_id || ""}
+										onLocationDeleted={handleLocationDeleted}
 									/>
 								</InfoWindow>
 							)}
@@ -384,6 +392,9 @@ export default function ClientMapPageContent({
 										userInfo={userInfo}
 										placeDetails={placeDetails}
 										onClose={handleInfoWindowClose}
+										currentUser={user}
+										mapOwnerId={map.owner_id || ""}
+										onLocationDeleted={handleLocationDeleted}
 									/>
 								</InfoWindow>
 							)}
