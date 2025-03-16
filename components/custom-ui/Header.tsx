@@ -8,7 +8,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { useContext, useState, useEffect } from "react"
+import { useContext } from "react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { AuthContext } from "@/lib/context/AuthContext"
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton"
@@ -31,7 +31,7 @@ export default function Header() {
 	}
 
 	return (
-		<header className="flex flex-row items-center justify-between p-3 md:p-4 w-full flex-wrap gap-2">
+		<header className="flex items-center justify-between p-3 md:p-4 w-full bg-white">
 			{/* Left Section: Title and Byline */}
 			<div className="flex flex-col min-w-0">
 				<Link href="/" className="inline-block">
@@ -64,13 +64,13 @@ export default function Header() {
 			</div>
 
 			{/* Right Section: Buttons and User Menu */}
-			<div className="flex items-center gap-2 md:gap-3 flex-wrap">
+			<div className="flex items-center gap-2 md:gap-3">
 				{!authLoading && user && (
-					<Link href="/my-maps" className="inline-block">
+					<Link href="/my-maps" className="hidden md:inline-block">
 						<Button
 							variant="ghost"
 							size="sm"
-							className="text-gray-700 hover:text-gray-900 hidden md:flex items-center gap-2"
+							className="text-gray-700 hover:text-gray-900 flex items-center gap-2"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -96,11 +96,11 @@ export default function Header() {
 					</Link>
 				)}
 
-				<Link href="/create-map" className="inline-block">
+				<Link href="/create-map" className="hidden sm:inline-block">
 					<Button
 						variant="outline"
 						size="sm"
-						className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 hidden sm:flex items-center gap-2"
+						className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-2"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -119,11 +119,11 @@ export default function Header() {
 						Create Map
 					</Button>
 				</Link>
-				<Link href="/create-map" className="inline-block">
+				<Link href="/create-map" className="sm:hidden inline-block">
 					<Button
 						variant="outline"
 						size="icon"
-						className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 sm:hidden w-8 h-8"
+						className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 w-8 h-8"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -230,7 +230,7 @@ export default function Header() {
 								</Link>
 
 								<Link href="/create-map" className="block">
-									<DropdownMenuItem className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 md:hidden">
+									<DropdownMenuItem className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
 											viewBox="0 0 24 24"
