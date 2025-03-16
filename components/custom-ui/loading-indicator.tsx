@@ -4,10 +4,8 @@ export function LoadingIndicator({
 	message?: string
 }) {
 	return (
-		<div className="min-h-[200px] rounded-md shadow-sm bg-white flex flex-col items-center justify-center p-6 space-y-4">
+		<div className="min-h-[200px] rounded-md bg-white flex flex-col items-center justify-center p-6 space-y-4">
 			<div className="relative h-12 w-12">
-				{/* Outer ring */}
-				<div className="absolute inset-0 rounded-full border-2 border-muted opacity-25"></div>
 				{/* Spinner */}
 				<div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin"></div>
 				{/* Inner dot */}

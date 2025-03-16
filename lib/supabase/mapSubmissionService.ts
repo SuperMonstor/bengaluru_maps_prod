@@ -40,15 +40,51 @@ export async function approveLocation(locationId: string) {
 	const supabase = createClient()
 
 	try {
-		const { error } = await supabase
+		const { data, error } = await supabase
 			.from("locations")
 			.update({
 				is_approved: true,
 				status: "approved",
 			})
 			.eq("id", locationId)
+			.select("*, maps(title, slug, id)")
+			.single()
 
 		if (error) throw error
+
+		// Send email notification to the submitter
+		try {
+			// Import the email service dynamically to avoid server/client mismatch issues
+			const { sendApprovalNotification } = await import(
+				"../services/emailService"
+			)
+
+			// Get submitter email
+			const { data: submitterData } = await supabase
+				.from("users")
+				.select("email")
+				.eq("id", data.creator_id)
+				.single()
+
+			if (submitterData && data.maps) {
+				const submitterEmail = submitterData.email
+				const mapTitle = data.maps.title
+				const locationName = data.name
+				const mapSlug = data.maps.slug || "map"
+				const mapUrl = `${process.env.NEXT_PUBLIC_APP_URL}/maps/${mapSlug}/${data.maps.id}`
+
+				// Send email notification
+				await sendApprovalNotification(
+					submitterEmail,
+					mapTitle,
+					locationName,
+					mapUrl
+				)
+			}
+		} catch (emailError) {
+			// Log the error but don't fail the location approval
+			console.error("Error sending approval notification email:", emailError)
+		}
 
 		return { success: true, error: null }
 	} catch (error) {
@@ -71,9 +107,37 @@ export async function rejectLocation(locationId: string) {
 				status: "rejected",
 			})
 			.eq("id", locationId)
-			.select()
+			.select("*, maps(title, slug, id)")
+			.single()
 
 		if (error) throw error
+
+		// Send email notification to the submitter
+		try {
+			// Import the email service dynamically to avoid server/client mismatch issues
+			const { sendRejectionNotification } = await import(
+				"../services/emailService"
+			)
+
+			// Get submitter email
+			const { data: submitterData } = await supabase
+				.from("users")
+				.select("email")
+				.eq("id", data.creator_id)
+				.single()
+
+			if (submitterData && data.maps) {
+				const submitterEmail = submitterData.email
+				const mapTitle = data.maps.title
+				const locationName = data.name
+
+				// Send email notification
+				await sendRejectionNotification(submitterEmail, mapTitle, locationName)
+			}
+		} catch (emailError) {
+			// Log the error but don't fail the location rejection
+			console.error("Error sending rejection notification email:", emailError)
+		}
 
 		return { success: true, data, error: null }
 	} catch (error) {

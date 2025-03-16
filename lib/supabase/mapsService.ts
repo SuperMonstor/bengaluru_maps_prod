@@ -510,6 +510,60 @@ export async function createLocation({
 			.single()
 
 		if (error) throw new Error(`Failed to create location: ${error.message}`)
+
+		// If the creator is not the owner, send a notification email to the map owner
+		if (!isOwner) {
+			try {
+				// Import the email service dynamically to avoid server/client mismatch issues
+				const { sendSubmissionNotification } = await import(
+					"../services/emailService"
+				)
+
+				// Get map details
+				const { data: mapData } = await supabase
+					.from("maps")
+					.select("title, owner_id")
+					.eq("id", mapId)
+					.single()
+
+				// Get map owner details
+				const { data: ownerData } = await supabase
+					.from("users")
+					.select("email, first_name, last_name")
+					.eq("id", mapData?.owner_id)
+					.single()
+
+				// Get submitter details
+				const { data: submitterData } = await supabase
+					.from("users")
+					.select("first_name, last_name")
+					.eq("id", creatorId)
+					.single()
+
+				if (mapData && ownerData && submitterData) {
+					const ownerEmail = ownerData.email
+					const mapTitle = mapData.title
+					const submitterName = `${submitterData.first_name} ${submitterData.last_name}`
+					const mapUrl = `${process.env.NEXT_PUBLIC_APP_URL}/my-maps/${mapId}`
+
+					// Send email notification
+					await sendSubmissionNotification(
+						ownerEmail,
+						mapTitle,
+						name,
+						submitterName,
+						mapUrl
+					)
+				}
+			} catch (emailError) {
+				// Log the error but don't fail the location creation
+				console.error(
+					"Error sending submission notification email:",
+					emailError
+				)
+			}
+		}
+
 		return { data, error: null }
 	} catch (error) {
 		console.error("Error in createLocation:", error)
