@@ -277,87 +277,285 @@ export default function ClientMapPageContent({
 			<div className="flex flex-col h-[calc(100vh-64px)] w-full">
 				{/* Desktop Layout */}
 				<div className="hidden md:flex h-full w-full">
-					<div className="w-2/5 max-w-[500px] p-4 md:p-8 lg:p-12 space-y-6 overflow-y-auto bg-white">
-						<div className="flex items-center gap-4 justify-between">
-							<h1 className="text-3xl font-bold tracking-tight text-foreground">
-								{map.title}
-							</h1>
-							<div className="flex items-center gap-2 flex-shrink-0">
-								{user && user.id === map.owner_id && (
-									<Link href={`/maps/${map.slug || "map"}/${map.id}/edit`}>
-										<Button
-											variant="outline"
-											size="sm"
-											className="flex items-center gap-1"
-										>
-											<Edit className="h-4 w-4" />
-											Edit
+					<div
+						className={`w-2/5 max-w-[500px] p-4 md:p-8 lg:p-12 space-y-6 overflow-y-auto bg-white ${
+							selectedLocation ? "border-r-4 border-r-blue-500/20" : ""
+						}`}
+					>
+						{!selectedLocation ? (
+							<>
+								<div className="flex items-center justify-between">
+									<div className="flex-shrink-0">
+										{user && user.id === map.owner_id && (
+											<Link href={`/maps/${map.slug || "map"}/${map.id}/edit`}>
+												<Button
+													variant="outline"
+													size="sm"
+													className="flex items-center gap-1"
+												>
+													<Edit className="h-4 w-4" />
+													Edit
+												</Button>
+											</Link>
+										)}
+									</div>
+								</div>
+
+								<h1 className="text-3xl font-bold tracking-tight text-foreground mt-4 mb-4">
+									{map.title}
+								</h1>
+
+								<div className="flex items-center gap-2 mb-4">
+									<Link href={`/maps/${map.slug || "map"}/${map.id}/submit`}>
+										<Button variant="default" size="sm">
+											Contribute
 										</Button>
 									</Link>
+									<ShareButton
+										mapId={map.id}
+										slug={map.slug}
+										title={map.title}
+										description={map.description}
+										image={map.image}
+									/>
+								</div>
+
+								<div className="space-y-2">
+									<p className="text-muted-foreground text-sm line-clamp-2">
+										{map.description}
+									</p>
+								</div>
+								<div className="flex items-center gap-2 text-sm text-muted-foreground">
+									<Avatar className="h-8 w-8 border border-border/50">
+										<AvatarImage
+											src={map.userProfilePicture || "/placeholder.svg"}
+										/>
+										<AvatarFallback>
+											{map.username
+												.split(" ")
+												.map((n) => n[0])
+												.join("")
+												.toUpperCase()}
+										</AvatarFallback>
+									</Avatar>
+									<span>
+										Started by{" "}
+										<span className="font-medium">{map.username}</span>
+									</span>
+								</div>
+								<div className="flex gap-4 text-sm text-muted-foreground">
+									<UpvoteButton
+										mapId={map.id}
+										initialUpvotes={map.upvotes}
+										initialIsUpvoted={map.hasUpvoted}
+										variant="pill"
+									/>
+									<span>
+										<MapPin className="inline mr-1 h-4 w-4" />
+										{approvedLocationsCount} locations
+									</span>
+									<span>
+										<Users className="inline mr-1 h-4 w-4" />
+										{map.contributors} contributors
+									</span>
+								</div>
+								<div className="relative w-full h-[200px] mt-6">
+									<Image
+										src={map.image}
+										alt={map.title}
+										fill
+										className="object-cover rounded-md"
+									/>
+								</div>
+								<div className="mt-4 pb-24">
+									<Markdown content={map.body} />
+								</div>
+							</>
+						) : userInfo ? (
+							<>
+								{/* Location details for desktop */}
+								<div className="flex items-center justify-between">
+									<button
+										onClick={() => setSelectedLocation(null)}
+										className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+									>
+										<ChevronDown className="h-4 w-4 rotate-90" />
+										Back to map
+									</button>
+
+									<div className="flex items-center gap-2">
+										<ShareButton
+											mapId={map.id}
+											slug={map.slug}
+											title={selectedLocation.name}
+											description={selectedLocation.note || ""}
+											image={placeDetails?.imageUrl || map.image}
+										/>
+									</div>
+								</div>
+
+								<h1 className="text-2xl font-bold tracking-tight text-foreground mt-4 mb-4">
+									{selectedLocation.name}
+								</h1>
+
+								<div className="flex items-center gap-2 text-sm text-muted-foreground">
+									<Avatar className="h-8 w-8 border border-border/50">
+										<AvatarImage
+											src={userInfo.profilePicture || "/placeholder.svg"}
+										/>
+										<AvatarFallback>
+											{userInfo.username
+												.split(" ")
+												.map((n) => n[0])
+												.join("")
+												.toUpperCase()}
+										</AvatarFallback>
+									</Avatar>
+									<span>
+										Added by{" "}
+										<span className="font-medium">{userInfo.username}</span>
+										<span className="text-xs text-muted-foreground ml-1">
+											• {formatDate(selectedLocation.created_at)}
+										</span>
+									</span>
+								</div>
+
+								{/* Location image */}
+								{placeDetails?.imageUrl && (
+									<div className="relative w-full h-[200px] mt-4">
+										<Image
+											src={placeDetails.imageUrl}
+											alt={selectedLocation.name}
+											fill
+											className="object-cover rounded-md"
+											priority
+										/>
+									</div>
 								)}
-								<Link href={`/maps/${map.slug || "map"}/${map.id}/submit`}>
-									<Button variant="default" size="sm">
-										Contribute
-									</Button>
-								</Link>
-								<ShareButton
-									mapId={map.id}
-									slug={map.slug}
-									title={map.title}
-									description={map.description}
-									image={map.image}
-								/>
+
+								{/* Status and Ratings Section */}
+								{placeDetails && (
+									<div className="p-4 bg-gray-50 rounded-md">
+										<div className="flex justify-between items-center mb-2">
+											{placeDetails.isOpenNow !== null && (
+												<span
+													className={`text-sm font-medium ${
+														placeDetails.isOpenNow
+															? "text-green-600"
+															: "text-red-600"
+													}`}
+												>
+													{placeDetails.isOpenNow ? "Open Now" : "Closed Now"}
+												</span>
+											)}
+
+											{placeDetails.rating && (
+												<div className="flex items-center gap-1">
+													<Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+													<span className="text-sm font-medium">
+														{placeDetails.rating.toFixed(1)}/5
+													</span>
+												</div>
+											)}
+										</div>
+
+										{/* Today's hours */}
+										{placeDetails.todayHours && (
+											<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+												<Clock className="h-3 w-3 flex-shrink-0" />
+												<span className="break-words">
+													Today: {placeDetails.todayHours}
+												</span>
+											</div>
+										)}
+									</div>
+								)}
+
+								{/* Note Section */}
+								{displayNote && (
+									<div>
+										<div className="flex items-center gap-1.5 mb-1">
+											<User className="h-3.5 w-3.5 text-muted-foreground" />
+											<span className="text-xs font-medium text-muted-foreground">
+												Note from contributor:
+											</span>
+										</div>
+										<div className="text-sm text-foreground/90 bg-gray-50 p-4 rounded-md">
+											<p className="break-words">{displayNote}</p>
+											{noteIsLong && (
+												<button
+													onClick={() => setShowFullNote(!showFullNote)}
+													className="text-xs text-primary mt-1 hover:underline"
+												>
+													{showFullNote ? "Show less" : "Read more"}
+												</button>
+											)}
+										</div>
+									</div>
+								)}
+
+								{/* Action buttons */}
+								<div className="flex flex-col gap-3">
+									<Link
+										href={
+											selectedLocation.google_maps_url.includes(
+												"place/?q=place_id:"
+											)
+												? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+														selectedLocation.name
+												  )}&query_place_id=${
+														selectedLocation.google_maps_url.split(
+															"place_id:"
+														)[1]
+												  }`
+												: selectedLocation.google_maps_url.includes(
+														"maps.google.com/?cid="
+												  )
+												? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+														selectedLocation.name
+												  )}&query_place_id=${
+														selectedLocation.google_maps_url.split("cid=")[1]
+												  }`
+												: selectedLocation.google_maps_url
+										}
+										target="_blank"
+										rel="noopener noreferrer"
+									>
+										<Button
+											variant="default"
+											className="w-full bg-[#E53935] hover:bg-[#D32F2F]"
+										>
+											<ExternalLink className="h-4 w-4 mr-2" />
+											View on Google Maps
+										</Button>
+									</Link>
+
+									{canDelete && (
+										<Button
+											variant="outline"
+											className="flex items-center justify-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 w-full"
+											onClick={() => setShowDeleteDialog(true)}
+										>
+											<Trash2 className="h-4 w-4" />
+											Delete Location
+										</Button>
+									)}
+
+									<Link
+										href={`/maps/${map.slug || "map"}/${map.id}/submit`}
+										className="w-full"
+									>
+										<Button variant="outline" className="w-full">
+											Add New Location
+										</Button>
+									</Link>
+								</div>
+							</>
+						) : (
+							<div className="flex items-center justify-center h-full">
+								<LoadingIndicator message="Loading location details..." />
 							</div>
-						</div>
-						<div className="space-y-2">
-							<p className="text-muted-foreground text-sm line-clamp-2">
-								{map.description}
-							</p>
-						</div>
-						<div className="flex items-center gap-2 text-sm text-muted-foreground">
-							<Avatar className="h-8 w-8 border border-border/50">
-								<AvatarImage
-									src={map.userProfilePicture || "/placeholder.svg"}
-								/>
-								<AvatarFallback>
-									{map.username
-										.split(" ")
-										.map((n) => n[0])
-										.join("")
-										.toUpperCase()}
-								</AvatarFallback>
-							</Avatar>
-							<span>
-								Started by <span className="font-medium">{map.username}</span>
-							</span>
-						</div>
-						<div className="flex gap-4 text-sm text-muted-foreground">
-							<UpvoteButton
-								mapId={map.id}
-								initialUpvotes={map.upvotes}
-								initialIsUpvoted={map.hasUpvoted}
-								variant="pill"
-							/>
-							<span>
-								<MapPin className="inline mr-1 h-4 w-4" />
-								{approvedLocationsCount} locations
-							</span>
-							<span>
-								<Users className="inline mr-1 h-4 w-4" />
-								{map.contributors} contributors
-							</span>
-						</div>
-						<div className="relative w-full h-[200px] mt-6">
-							<Image
-								src={map.image}
-								alt={map.title}
-								fill
-								className="object-cover rounded-md"
-							/>
-						</div>
-						<div className="mt-4 pb-24">
-							<Markdown content={map.body} />
-						</div>
+						)}
 					</div>
 
 					<div className="flex-1 h-full">
@@ -612,7 +810,7 @@ export default function ClientMapPageContent({
 												className="flex-1"
 											>
 												<Button variant="default" size="sm" className="w-full">
-													Add Location
+													Contribute
 												</Button>
 											</Link>
 											<ShareButton
@@ -831,17 +1029,17 @@ export default function ClientMapPageContent({
 							</div>
 						</div>
 					)}
-
-					{/* Delete Location Dialog */}
-					{showDeleteDialog && selectedLocation && (
-						<DeleteLocationDialog
-							locationId={selectedLocation.id}
-							locationName={selectedLocation.name}
-							onDeleted={handleLocationDeleted}
-							onCancel={() => setShowDeleteDialog(false)}
-						/>
-					)}
 				</div>
+
+				{/* Delete Location Dialog - works for both mobile and desktop */}
+				{showDeleteDialog && selectedLocation && (
+					<DeleteLocationDialog
+						locationId={selectedLocation.id}
+						locationName={selectedLocation.name}
+						onDeleted={handleLocationDeleted}
+						onCancel={() => setShowDeleteDialog(false)}
+					/>
+				)}
 			</div>
 		</>
 	)
