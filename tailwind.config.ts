@@ -123,6 +123,14 @@ export default {
 				"spin-slow": {
 					to: { transform: "rotate(-360deg)" },
 				},
+				"slide-up": {
+					from: { transform: "translateY(100%)" },
+					to: { transform: "translateY(0)" },
+				},
+				"slide-down": {
+					from: { transform: "translateY(0)" },
+					to: { transform: "translateY(100%)" },
+				},
 			},
 			animation: {
 				"accordion-down": "accordion-down 0.2s ease-out",
@@ -130,6 +138,8 @@ export default {
 				"fade-in": "fade-in 0.2s ease-out",
 				"fade-out": "fade-out 0.2s ease-out",
 				"spin-slow": "spin-slow 3s linear infinite",
+				"slide-up": "slide-up 0.3s ease-out",
+				"slide-down": "slide-down 0.3s ease-out",
 			},
 
 			// Font families (for your Geist fonts)

@@ -85,6 +85,7 @@ export default function ClientMapPageContent({
 	const shouldExpand =
 		searchParams?.expand === "true" || searchParamsObj.get("expand") === "true"
 	const [isOpen, setIsOpen] = useState(shouldExpand)
+	const [isExiting, setIsExiting] = useState(false)
 	const {
 		isLoaded,
 		mapRef,
@@ -100,7 +101,13 @@ export default function ClientMapPageContent({
 	const { userInfo, fetchUserInfo } = useUserInfo()
 	const { user: authUser } = useAuth()
 
-	const handleCollapse = () => setIsOpen(false)
+	const handleCollapse = () => {
+		setIsExiting(true)
+		setTimeout(() => {
+			setIsOpen(false)
+			setIsExiting(false)
+		}, 300) // Match the animation duration
+	}
 
 	const mapStateRef = useRef({
 		center: null as google.maps.LatLng | null | undefined,
@@ -204,26 +211,24 @@ export default function ClientMapPageContent({
 
 	if (!isLoaded) {
 		return (
-			<main className="bg-gray-50/50 flex flex-col min-h-screen">
-				<div className="container mx-auto px-4 py-8">
-					<LoadingIndicator message="Loading map details..." />
-				</div>
-			</main>
+			<div className="flex items-center justify-center h-[calc(100vh-64px)] w-full">
+				<LoadingIndicator message="Loading map details..." />
+			</div>
 		)
 	}
 
 	return (
 		<>
 			<style>{popupStyles}</style>
-			<main className="bg-gray-50/50 flex flex-col">
+			<div className="flex flex-col h-[calc(100vh-64px)] w-full">
 				{/* Desktop Layout */}
-				<div className="hidden md:flex h-[calc(100vh-64px)]">
-					<div className="w-1/2 p-4 md:p-8 lg:p-12 space-y-6 overflow-y-auto">
+				<div className="hidden md:flex h-full w-full">
+					<div className="w-2/5 max-w-[500px] p-4 md:p-8 lg:p-12 space-y-6 overflow-y-auto bg-white">
 						<div className="flex items-center gap-4 justify-between">
 							<h1 className="text-3xl font-bold tracking-tight text-foreground">
 								{map.title}
 							</h1>
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-2 flex-shrink-0">
 								{user && user.id === map.owner_id && (
 									<Link href={`/maps/${map.slug || "map"}/${map.id}/edit`}>
 										<Button
@@ -296,12 +301,12 @@ export default function ClientMapPageContent({
 								className="object-cover rounded-md"
 							/>
 						</div>
-						<div className="mt-4">
+						<div className="mt-4 pb-24">
 							<Markdown content={map.body} />
 						</div>
 					</div>
 
-					<div className="w-1/2">
+					<div className="flex-1 h-full">
 						<GoogleMap
 							mapContainerStyle={{ width: "100%", height: "100%" }}
 							center={initialSettings.center}
@@ -357,9 +362,9 @@ export default function ClientMapPageContent({
 				</div>
 
 				{/* Mobile Layout */}
-				<div className="md:hidden map-layout">
+				<div className="md:hidden h-full w-full relative">
 					{/* Map container */}
-					<div className="map-container">
+					<div className="absolute inset-0">
 						<GoogleMap
 							mapContainerStyle={{ width: "100%", height: "100%" }}
 							center={initialSettings.center}
@@ -413,161 +418,164 @@ export default function ClientMapPageContent({
 						</GoogleMap>
 					</div>
 
-					<div
-						className="bottom-panel p-4 cursor-pointer"
-						onClick={() => setIsOpen(!isOpen)}
-					>
-						<div className="flex flex-col gap-2">
-							<div className="flex items-center justify-between">
-								<h2 className="text-lg font-semibold truncate flex-1">
-									{map.title}
-								</h2>
-								<div className="flex items-center gap-2">
-									{user && user.id === map.owner_id && (
-										<Link
-											href={`/maps/${map.slug || "map"}/${map.id}/edit`}
-											onClick={(e) => e.stopPropagation()}
-										>
-											<Button
-												variant="outline"
-												size="sm"
-												className="flex items-center gap-1 p-1"
+					{/* Bottom panel - only shown when not expanded */}
+					{!isOpen && (
+						<div
+							className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg p-4 cursor-pointer z-50 animate-slide-up"
+							onClick={() => setIsOpen(true)}
+						>
+							<div className="flex flex-col gap-2">
+								<div className="flex items-center justify-between">
+									<h2 className="text-lg font-semibold truncate flex-1">
+										{map.title}
+									</h2>
+									<div className="flex items-center gap-2">
+										{user && user.id === map.owner_id && (
+											<Link
+												href={`/maps/${map.slug || "map"}/${map.id}/edit`}
+												onClick={(e) => e.stopPropagation()}
 											>
-												<Edit className="h-4 w-4" />
-											</Button>
-										</Link>
-									)}
-									<div className="bg-gray-100 rounded-full p-1">
-										<ChevronUp
-											className={`h-5 w-5 transition-transform ${
-												isOpen ? "rotate-180" : ""
-											}`}
-										/>
+												<Button
+													variant="outline"
+													size="sm"
+													className="flex items-center gap-1 p-1"
+												>
+													<Edit className="h-4 w-4" />
+												</Button>
+											</Link>
+										)}
+										<div className="bg-gray-100 rounded-full p-1">
+											<ChevronUp className="h-5 w-5" />
+										</div>
 									</div>
 								</div>
-							</div>
-							<p className="text-muted-foreground text-sm truncate">
-								{map.description}
-							</p>
-							<div className="flex gap-4 text-sm text-muted-foreground pt-1">
-								<UpvoteButton
-									mapId={map.id}
-									initialUpvotes={map.upvotes}
-									initialIsUpvoted={map.hasUpvoted}
-									variant="pill"
-								/>
-								<span className="flex items-center">
-									<MapPin className="mr-1 h-4 w-4" />
-									{approvedLocationsCount}
-								</span>
-								<span className="flex items-center">
-									<Users className="mr-1 h-4 w-4" />
-									{map.contributors}
-								</span>
+								<p className="text-muted-foreground text-sm truncate">
+									{map.description}
+								</p>
+								<div className="flex gap-4 text-sm text-muted-foreground pt-1">
+									<UpvoteButton
+										mapId={map.id}
+										initialUpvotes={map.upvotes}
+										initialIsUpvoted={map.hasUpvoted}
+										variant="pill"
+									/>
+									<span className="flex items-center">
+										<MapPin className="mr-1 h-4 w-4" />
+										{approvedLocationsCount}
+									</span>
+									<span className="flex items-center">
+										<Users className="mr-1 h-4 w-4" />
+										{map.contributors}
+									</span>
+								</div>
 							</div>
 						</div>
-					</div>
+					)}
 
-					<div
-						className={`expanded-panel transition-transform duration-300 ease-in-out transform ${
-							isOpen ? "translate-y-0" : "translate-y-full"
-						} max-h-[80vh] overflow-y-auto`}
-					>
-						<div className="sticky top-0 bg-white p-4 border-b border-gray-100">
-							<div className="flex items-center justify-between">
-								<h1 className="text-xl font-bold tracking-tight truncate flex-1">
-									{map.title}
-								</h1>
-								<div className="flex items-center gap-2">
-									{user && user.id === map.owner_id && (
-										<Link
-											href={`/maps/${map.slug || "map"}/${map.id}/edit`}
-											onClick={(e) => e.stopPropagation()}
-										>
-											<Button
-												variant="outline"
-												size="sm"
-												className="flex items-center gap-1 p-1"
+					{/* Expanded panel - only shown when expanded */}
+					{isOpen && (
+						<div
+							className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg z-50 h-[75vh] overflow-y-auto ${
+								isExiting ? "animate-slide-down" : "animate-slide-up"
+							}`}
+						>
+							<div className="sticky top-0 bg-white p-4 border-b border-gray-100">
+								<div className="flex items-center justify-between">
+									<h1 className="text-xl font-bold tracking-tight truncate flex-1">
+										{map.title}
+									</h1>
+									<div className="flex items-center gap-2">
+										{user && user.id === map.owner_id && (
+											<Link
+												href={`/maps/${map.slug || "map"}/${map.id}/edit`}
+												onClick={(e) => e.stopPropagation()}
 											>
-												<Edit className="h-4 w-4" />
-											</Button>
-										</Link>
-									)}
-									<button
-										onClick={handleCollapse}
-										className="p-2 rounded-full hover:bg-gray-100"
-										aria-label="Collapse panel"
-									>
-										<ChevronDown className="h-5 w-5" />
-									</button>
+												<Button
+													variant="outline"
+													size="sm"
+													className="flex items-center gap-1 p-1"
+												>
+													<Edit className="h-4 w-4" />
+												</Button>
+											</Link>
+										)}
+										<button
+											onClick={handleCollapse}
+											className="p-2 rounded-full hover:bg-gray-100"
+											aria-label="Collapse panel"
+										>
+											<ChevronDown className="h-5 w-5" />
+										</button>
+									</div>
+								</div>
+
+								<div className="flex items-center gap-3 mt-3">
+									<Avatar className="h-8 w-8">
+										{map.userProfilePicture ? (
+											<AvatarImage
+												src={map.userProfilePicture}
+												alt={map.username}
+											/>
+										) : (
+											<AvatarFallback>
+												{map.username.charAt(0).toUpperCase()}
+											</AvatarFallback>
+										)}
+									</Avatar>
+									<p className="text-sm">
+										Created by{" "}
+										<span className="font-medium">{map.username}</span>
+									</p>
 								</div>
 							</div>
 
-							<div className="flex items-center gap-3 mt-3">
-								<Avatar className="h-8 w-8">
-									{map.userProfilePicture ? (
-										<AvatarImage
-											src={map.userProfilePicture}
-											alt={map.username}
-										/>
-									) : (
-										<AvatarFallback>
-											{map.username.charAt(0).toUpperCase()}
-										</AvatarFallback>
-									)}
-								</Avatar>
-								<p className="text-sm">
-									Created by <span className="font-medium">{map.username}</span>
-								</p>
+							<div className="p-4 space-y-4 pb-safe">
+								<div className="flex gap-4 text-sm text-muted-foreground">
+									<UpvoteButton
+										mapId={map.id}
+										initialUpvotes={map.upvotes}
+										initialIsUpvoted={map.hasUpvoted}
+										variant="pill"
+									/>
+									<span className="flex items-center">
+										<MapPin className="mr-1 h-4 w-4" />
+										{approvedLocationsCount} locations
+									</span>
+									<span className="flex items-center">
+										<Users className="mr-1 h-4 w-4" />
+										{map.contributors} contributors
+									</span>
+								</div>
+
+								<p className="text-muted-foreground">{map.description}</p>
+
+								<div className="flex items-center gap-2">
+									<Link
+										href={`/maps/${map.slug || "map"}/${map.id}/submit`}
+										className="flex-1"
+									>
+										<Button variant="default" size="sm" className="w-full">
+											Add Location
+										</Button>
+									</Link>
+									<ShareButton
+										mapId={map.id}
+										slug={map.slug}
+										title={map.title}
+										description={map.description}
+										image={map.image}
+									/>
+								</div>
+
+								{/* Map content */}
+								<div className="prose prose-sm max-w-none mt-4 pt-4 border-t border-gray-100">
+									<Markdown content={map.body} />
+								</div>
 							</div>
 						</div>
-
-						<div className="p-4 space-y-4">
-							<div className="flex gap-4 text-sm text-muted-foreground">
-								<UpvoteButton
-									mapId={map.id}
-									initialUpvotes={map.upvotes}
-									initialIsUpvoted={map.hasUpvoted}
-									variant="pill"
-								/>
-								<span className="flex items-center">
-									<MapPin className="mr-1 h-4 w-4" />
-									{approvedLocationsCount} locations
-								</span>
-								<span className="flex items-center">
-									<Users className="mr-1 h-4 w-4" />
-									{map.contributors} contributors
-								</span>
-							</div>
-
-							<p className="text-muted-foreground">{map.description}</p>
-
-							<div className="flex items-center gap-2">
-								<Link
-									href={`/maps/${map.slug || "map"}/${map.id}/submit`}
-									className="flex-1"
-								>
-									<Button variant="default" size="sm" className="w-full">
-										Add Location
-									</Button>
-								</Link>
-								<ShareButton
-									mapId={map.id}
-									slug={map.slug}
-									title={map.title}
-									description={map.description}
-									image={map.image}
-								/>
-							</div>
-
-							{/* Map content */}
-							<div className="prose prose-sm max-w-none mt-4 pt-4 border-t border-gray-100">
-								<Markdown content={map.body} />
-							</div>
-						</div>
-					</div>
+					)}
 				</div>
-			</main>
+			</div>
 		</>
 	)
 }
