@@ -3,19 +3,30 @@
 import { useState, useEffect, useRef } from "react"
 import { Markdown } from "@/components/markdown/MarkdownRenderer"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { MapPin, Users, ChevronUp, ChevronDown, Edit } from "lucide-react"
+import {
+	MapPin,
+	Users,
+	ChevronUp,
+	ChevronDown,
+	Edit,
+	Clock,
+	Star,
+	User,
+	ExternalLink,
+	Trash2,
+} from "lucide-react"
 import Image from "next/image"
 import ShareButton from "@/components/custom-ui/ShareButton"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api"
+import { GoogleMap, Marker } from "@react-google-maps/api"
 import { useGoogleMaps, Location } from "@/lib/hooks/useGoogleMaps"
 import { useUserInfo } from "@/lib/hooks/useUserInfo"
-import LocationInfoWindow from "@/components/map/LocationInfoWindow"
 import { UpvoteButton } from "@/components/custom-ui/UpvoteButton"
 import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/context/AuthContext"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
+import DeleteLocationDialog from "@/components/map/DeleteLocationDialog"
 
 interface MapData {
 	id: string
@@ -57,18 +68,19 @@ const popupStyles = `
 	}
 `
 
-const CustomMarker = ({ position, onClick }: any) => {
+// Custom marker with different colors for selected/unselected state
+const CustomMarker = ({ position, onClick, isSelected }: any) => {
 	return (
 		<Marker
 			position={position}
 			onClick={onClick}
 			icon={{
 				path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z",
-				fillColor: "#E53935",
+				fillColor: isSelected ? "#2563EB" : "#E53935", // Blue when selected, red when not
 				fillOpacity: 1,
 				strokeWeight: 2,
 				strokeColor: "#FFFFFF",
-				scale: 1.5,
+				scale: isSelected ? 1.8 : 1.5, // Slightly larger when selected
 				anchor: new google.maps.Point(12, 22),
 			}}
 		/>
@@ -86,6 +98,9 @@ export default function ClientMapPageContent({
 		searchParams?.expand === "true" || searchParamsObj.get("expand") === "true"
 	const [isOpen, setIsOpen] = useState(shouldExpand)
 	const [isExiting, setIsExiting] = useState(false)
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+	const [showFullNote, setShowFullNote] = useState(false)
+
 	const {
 		isLoaded,
 		mapRef,
@@ -135,9 +150,18 @@ export default function ClientMapPageContent({
 	}
 
 	const onMarkerClick = (location: Location) => {
+		// If clicking the same marker, deselect it
+		if (selectedLocation && selectedLocation.id === location.id) {
+			setSelectedLocation(null)
+			return
+		}
+
 		setSelectedLocation(location)
 		fetchUserInfo(location.creator_id)
 		fetchPlaceDetails(location.google_maps_url)
+
+		// Always open the bottom panel when a location is selected
+		setIsOpen(true)
 	}
 
 	const handleInfoWindowClose = () => {
@@ -152,14 +176,29 @@ export default function ClientMapPageContent({
 		setSelectedLocation(null)
 	}
 
-	const handleMapClick = () => {
+	const handleMapClick = (e: google.maps.MapMouseEvent) => {
+		// Only deselect if it's a direct map click, not a marker click
+		if ((e as any).placeId) return
+
 		setSelectedLocation(null)
-		if (isOpen) setIsOpen(false)
+		// Don't close the panel on map click, just deselect the location
 	}
 
 	const handleLocationDeleted = () => {
 		setSelectedLocation(null)
+		setShowDeleteDialog(false)
 		window.location.reload()
+	}
+
+	// Format the date
+	const formatDate = (dateString: string) => {
+		if (!dateString) return ""
+		const date = new Date(dateString)
+		return new Intl.DateTimeFormat("en-US", {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+		}).format(date)
 	}
 
 	// Effect to ensure slider stays expanded when expand parameter is present
@@ -208,6 +247,21 @@ export default function ClientMapPageContent({
 	const approvedLocationsCount = map.locations.filter(
 		(location) => location.is_approved
 	).length
+
+	// Check if current user can delete the selected location
+	const canDelete =
+		selectedLocation &&
+		user &&
+		(user.id === map.owner_id || user.id === selectedLocation.creator_id)
+
+	// Truncate note if it's too long
+	const noteIsLong =
+		selectedLocation?.note && selectedLocation.note.length > 120
+	const displayNote =
+		selectedLocation?.note &&
+		(noteIsLong && !showFullNote
+			? `${selectedLocation.note.substring(0, 120)}...`
+			: selectedLocation.note)
 
 	if (!isLoaded) {
 		return (
@@ -336,27 +390,9 @@ export default function ClientMapPageContent({
 											lng: location.longitude,
 										}}
 										onClick={() => onMarkerClick(location)}
+										isSelected={selectedLocation?.id === location.id}
 									/>
 								))}
-							{selectedLocation && userInfo && (
-								<InfoWindow
-									position={{
-										lat: selectedLocation.latitude,
-										lng: selectedLocation.longitude,
-									}}
-									onCloseClick={handleInfoWindowClose}
-								>
-									<LocationInfoWindow
-										location={selectedLocation}
-										userInfo={userInfo}
-										placeDetails={placeDetails}
-										onClose={handleInfoWindowClose}
-										currentUser={user}
-										mapOwnerId={map.owner_id || ""}
-										onLocationDeleted={handleLocationDeleted}
-									/>
-								</InfoWindow>
-							)}
 						</GoogleMap>
 					</div>
 				</div>
@@ -394,27 +430,9 @@ export default function ClientMapPageContent({
 											lng: location.longitude,
 										}}
 										onClick={() => onMarkerClick(location)}
+										isSelected={selectedLocation?.id === location.id}
 									/>
 								))}
-							{selectedLocation && userInfo && (
-								<InfoWindow
-									position={{
-										lat: selectedLocation.latitude,
-										lng: selectedLocation.longitude,
-									}}
-									onCloseClick={handleInfoWindowClose}
-								>
-									<LocationInfoWindow
-										location={selectedLocation}
-										userInfo={userInfo}
-										placeDetails={placeDetails}
-										onClose={handleInfoWindowClose}
-										currentUser={user}
-										mapOwnerId={map.owner_id || ""}
-										onLocationDeleted={handleLocationDeleted}
-									/>
-								</InfoWindow>
-							)}
 						</GoogleMap>
 					</div>
 
@@ -427,7 +445,7 @@ export default function ClientMapPageContent({
 							<div className="flex flex-col gap-2">
 								<div className="flex items-center justify-between">
 									<h2 className="text-lg font-semibold truncate flex-1">
-										{map.title}
+										{selectedLocation ? selectedLocation.name : map.title}
 									</h2>
 									<div className="flex items-center gap-2">
 										{user && user.id === map.owner_id && (
@@ -450,23 +468,81 @@ export default function ClientMapPageContent({
 									</div>
 								</div>
 								<p className="text-muted-foreground text-sm truncate">
-									{map.description}
+									{selectedLocation
+										? selectedLocation.note || "Tap to see details"
+										: map.description}
 								</p>
+
+								{selectedLocation && (
+									<div className="flex gap-2 mt-1">
+										<Link
+											href={selectedLocation.google_maps_url}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="flex-1"
+											onClick={(e: React.MouseEvent) => e.stopPropagation()}
+										>
+											<Button
+												variant="default"
+												size="sm"
+												className="w-full bg-[#E53935] hover:bg-[#D32F2F] text-xs h-8"
+											>
+												<ExternalLink className="h-3 w-3 mr-1" />
+												View on Maps
+											</Button>
+										</Link>
+										<div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+											<ShareButton
+												mapId={map.id}
+												slug={map.slug}
+												title={selectedLocation.name}
+												description={selectedLocation.note || ""}
+												image={placeDetails?.imageUrl || map.image}
+											/>
+										</div>
+									</div>
+								)}
+
 								<div className="flex gap-4 text-sm text-muted-foreground pt-1">
-									<UpvoteButton
-										mapId={map.id}
-										initialUpvotes={map.upvotes}
-										initialIsUpvoted={map.hasUpvoted}
-										variant="pill"
-									/>
-									<span className="flex items-center">
-										<MapPin className="mr-1 h-4 w-4" />
-										{approvedLocationsCount}
-									</span>
-									<span className="flex items-center">
-										<Users className="mr-1 h-4 w-4" />
-										{map.contributors}
-									</span>
+									{!selectedLocation ? (
+										<>
+											<UpvoteButton
+												mapId={map.id}
+												initialUpvotes={map.upvotes}
+												initialIsUpvoted={map.hasUpvoted}
+												variant="pill"
+											/>
+											<span className="flex items-center">
+												<MapPin className="mr-1 h-4 w-4" />
+												{approvedLocationsCount}
+											</span>
+											<span className="flex items-center">
+												<Users className="mr-1 h-4 w-4" />
+												{map.contributors}
+											</span>
+										</>
+									) : (
+										<>
+											{placeDetails?.isOpenNow !== null && (
+												<span
+													className={`flex items-center ${
+														placeDetails?.isOpenNow
+															? "text-green-600"
+															: "text-red-600"
+													}`}
+												>
+													<Clock className="mr-1 h-4 w-4" />
+													{placeDetails?.isOpenNow ? "Open" : "Closed"}
+												</span>
+											)}
+											{placeDetails?.rating && (
+												<span className="flex items-center">
+													<Star className="mr-1 h-4 w-4 text-yellow-500" />
+													{placeDetails.rating.toFixed(1)}
+												</span>
+											)}
+										</>
+									)}
 								</div>
 							</div>
 						</div>
@@ -475,14 +551,14 @@ export default function ClientMapPageContent({
 					{/* Expanded panel - only shown when expanded */}
 					{isOpen && (
 						<div
-							className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg z-50 h-[75vh] overflow-y-auto ${
+							className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg z-50 max-h-[85vh] h-auto overflow-y-auto ${
 								isExiting ? "animate-slide-down" : "animate-slide-up"
 							}`}
 						>
 							<div className="sticky top-0 bg-white p-4 border-b border-gray-100">
 								<div className="flex items-center justify-between">
 									<h1 className="text-xl font-bold tracking-tight truncate flex-1">
-										{map.title}
+										{selectedLocation ? selectedLocation.name : map.title}
 									</h1>
 									<div className="flex items-center gap-2">
 										{user && user.id === map.owner_id && (
@@ -509,70 +585,261 @@ export default function ClientMapPageContent({
 									</div>
 								</div>
 
-								<div className="flex items-center gap-3 mt-3">
-									<Avatar className="h-8 w-8">
-										{map.userProfilePicture ? (
-											<AvatarImage
-												src={map.userProfilePicture}
-												alt={map.username}
+								{!selectedLocation ? (
+									<>
+										<div className="flex items-center gap-3 mt-3">
+											<Avatar className="h-8 w-8">
+												{map.userProfilePicture ? (
+													<AvatarImage
+														src={map.userProfilePicture}
+														alt={map.username}
+													/>
+												) : (
+													<AvatarFallback>
+														{map.username.charAt(0).toUpperCase()}
+													</AvatarFallback>
+												)}
+											</Avatar>
+											<p className="text-sm">
+												Created by{" "}
+												<span className="font-medium">{map.username}</span>
+											</p>
+										</div>
+
+										<div className="flex items-center gap-2 mt-3">
+											<Link
+												href={`/maps/${map.slug || "map"}/${map.id}/submit`}
+												className="flex-1"
+											>
+												<Button variant="default" size="sm" className="w-full">
+													Add Location
+												</Button>
+											</Link>
+											<ShareButton
+												mapId={map.id}
+												slug={map.slug}
+												title={map.title}
+												description={map.description}
+												image={map.image}
 											/>
-										) : (
-											<AvatarFallback>
-												{map.username.charAt(0).toUpperCase()}
-											</AvatarFallback>
-										)}
-									</Avatar>
-									<p className="text-sm">
-										Created by{" "}
-										<span className="font-medium">{map.username}</span>
-									</p>
-								</div>
+										</div>
+									</>
+								) : userInfo ? (
+									<>
+										<div className="flex items-center gap-3 mt-3">
+											<Avatar className="h-8 w-8">
+												{userInfo.profilePicture ? (
+													<AvatarImage
+														src={userInfo.profilePicture}
+														alt={userInfo.username}
+													/>
+												) : (
+													<AvatarFallback>
+														{userInfo.username.charAt(0).toUpperCase()}
+													</AvatarFallback>
+												)}
+											</Avatar>
+											<p className="text-sm">
+												Added by{" "}
+												<span className="font-medium">{userInfo.username}</span>
+												<span className="text-xs text-muted-foreground ml-1">
+													• {formatDate(selectedLocation.created_at)}
+												</span>
+											</p>
+										</div>
+
+										<div className="flex items-center gap-2 mt-3">
+											<Link
+												href={
+													selectedLocation.google_maps_url.includes(
+														"place/?q=place_id:"
+													)
+														? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+																selectedLocation.name
+														  )}&query_place_id=${
+																selectedLocation.google_maps_url.split(
+																	"place_id:"
+																)[1]
+														  }`
+														: selectedLocation.google_maps_url.includes(
+																"maps.google.com/?cid="
+														  )
+														? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+																selectedLocation.name
+														  )}&query_place_id=${
+																selectedLocation.google_maps_url.split(
+																	"cid="
+																)[1]
+														  }`
+														: selectedLocation.google_maps_url
+												}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="flex-1"
+											>
+												<Button
+													variant="default"
+													size="sm"
+													className="w-full bg-[#E53935] hover:bg-[#D32F2F]"
+												>
+													<ExternalLink className="h-4 w-4 mr-2" />
+													View on Maps
+												</Button>
+											</Link>
+											<ShareButton
+												mapId={map.id}
+												slug={map.slug}
+												title={selectedLocation.name}
+												description={selectedLocation.note || ""}
+												image={placeDetails?.imageUrl || map.image}
+											/>
+										</div>
+									</>
+								) : null}
 							</div>
 
-							<div className="p-4 space-y-4 pb-safe">
-								<div className="flex gap-4 text-sm text-muted-foreground">
-									<UpvoteButton
-										mapId={map.id}
-										initialUpvotes={map.upvotes}
-										initialIsUpvoted={map.hasUpvoted}
-										variant="pill"
-									/>
-									<span className="flex items-center">
-										<MapPin className="mr-1 h-4 w-4" />
-										{approvedLocationsCount} locations
-									</span>
-									<span className="flex items-center">
-										<Users className="mr-1 h-4 w-4" />
-										{map.contributors} contributors
-									</span>
-								</div>
+							<div className="p-4 space-y-3 pb-safe">
+								{!selectedLocation ? (
+									<>
+										<div className="flex gap-4 text-sm text-muted-foreground">
+											<UpvoteButton
+												mapId={map.id}
+												initialUpvotes={map.upvotes}
+												initialIsUpvoted={map.hasUpvoted}
+												variant="pill"
+											/>
+											<span className="flex items-center">
+												<MapPin className="mr-1 h-4 w-4" />
+												{approvedLocationsCount} locations
+											</span>
+											<span className="flex items-center">
+												<Users className="mr-1 h-4 w-4" />
+												{map.contributors} contributors
+											</span>
+										</div>
 
-								<p className="text-muted-foreground">{map.description}</p>
+										<p className="text-muted-foreground">{map.description}</p>
 
-								<div className="flex items-center gap-2">
-									<Link
-										href={`/maps/${map.slug || "map"}/${map.id}/submit`}
-										className="flex-1"
-									>
-										<Button variant="default" size="sm" className="w-full">
-											Add Location
-										</Button>
-									</Link>
-									<ShareButton
-										mapId={map.id}
-										slug={map.slug}
-										title={map.title}
-										description={map.description}
-										image={map.image}
-									/>
-								</div>
+										{/* Map content */}
+										<div className="prose prose-sm max-w-none mt-2 pt-2 border-t border-gray-100">
+											<Markdown content={map.body} />
+										</div>
+									</>
+								) : (
+									<>
+										{/* Location details */}
+										{placeDetails?.imageUrl && (
+											<div className="mb-3">
+												<Image
+													src={placeDetails.imageUrl}
+													alt={selectedLocation.name}
+													width={600}
+													height={400}
+													className="w-full h-40 object-cover rounded-md"
+													priority
+												/>
+											</div>
+										)}
 
-								{/* Map content */}
-								<div className="prose prose-sm max-w-none mt-4 pt-4 border-t border-gray-100">
-									<Markdown content={map.body} />
-								</div>
+										{/* Status and Ratings Section */}
+										{placeDetails && (
+											<div className="mb-3 p-3 bg-gray-50 rounded-md">
+												<div className="flex justify-between items-center mb-2">
+													{placeDetails.isOpenNow !== null && (
+														<span
+															className={`text-sm font-medium ${
+																placeDetails.isOpenNow
+																	? "text-green-600"
+																	: "text-red-600"
+															}`}
+														>
+															{placeDetails.isOpenNow
+																? "Open Now"
+																: "Closed Now"}
+														</span>
+													)}
+
+													{placeDetails.rating && (
+														<div className="flex items-center gap-1">
+															<Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+															<span className="text-sm font-medium">
+																{placeDetails.rating.toFixed(1)}/5
+															</span>
+														</div>
+													)}
+												</div>
+
+												{/* Today's hours */}
+												{placeDetails.todayHours && (
+													<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+														<Clock className="h-3 w-3 flex-shrink-0" />
+														<span className="break-words">
+															Today: {placeDetails.todayHours}
+														</span>
+													</div>
+												)}
+											</div>
+										)}
+
+										{/* Note Section */}
+										{displayNote && (
+											<div className="mb-3">
+												<div className="flex items-center gap-1.5 mb-1">
+													<User className="h-3.5 w-3.5 text-muted-foreground" />
+													<span className="text-xs font-medium text-muted-foreground">
+														Note from contributor:
+													</span>
+												</div>
+												<div className="text-sm text-foreground/90 bg-gray-50 p-3 rounded-md">
+													<p className="break-words">{displayNote}</p>
+													{noteIsLong && (
+														<button
+															onClick={() => setShowFullNote(!showFullNote)}
+															className="text-xs text-primary mt-1 hover:underline"
+														>
+															{showFullNote ? "Show less" : "Read more"}
+														</button>
+													)}
+												</div>
+											</div>
+										)}
+
+										{canDelete && (
+											<Button
+												variant="outline"
+												size="sm"
+												className="flex items-center justify-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 w-full"
+												onClick={() => setShowDeleteDialog(true)}
+											>
+												<Trash2 className="h-4 w-4" />
+												Delete Location
+											</Button>
+										)}
+
+										<div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+											<Link
+												href={`/maps/${map.slug || "map"}/${map.id}/submit`}
+												className="flex-1"
+											>
+												<Button variant="default" size="sm" className="w-full">
+													Add New Location
+												</Button>
+											</Link>
+										</div>
+									</>
+								)}
 							</div>
 						</div>
+					)}
+
+					{/* Delete Location Dialog */}
+					{showDeleteDialog && selectedLocation && (
+						<DeleteLocationDialog
+							locationId={selectedLocation.id}
+							locationName={selectedLocation.name}
+							onDeleted={handleLocationDeleted}
+							onCancel={() => setShowDeleteDialog(false)}
+						/>
 					)}
 				</div>
 			</div>
