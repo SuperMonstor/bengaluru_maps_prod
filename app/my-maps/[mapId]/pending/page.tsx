@@ -52,7 +52,7 @@ export default function PendingSubmissionsPage({
 				console.error("Error fetching map:", mapError)
 				setMapName("Unknown Map")
 			} else {
-				setMapName(mapData.title)
+				setMapName(mapData.name || mapData.title || "Unknown Map")
 			}
 
 			// Fetch pending submissions

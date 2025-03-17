@@ -47,7 +47,7 @@ export async function approveLocation(locationId: string) {
 				status: "approved",
 			})
 			.eq("id", locationId)
-			.select("*, maps(title, slug, id)")
+			.select("*, maps(name, slug, id)")
 			.single()
 
 		if (error) throw error
@@ -68,7 +68,7 @@ export async function approveLocation(locationId: string) {
 
 			if (submitterData && data.maps) {
 				const submitterEmail = submitterData.email
-				const mapTitle = data.maps.title
+				const mapTitle = data.maps.name
 				const locationName = data.name
 				const mapSlug = data.maps.slug || "map"
 				const mapUrl = `${process.env.NEXT_PUBLIC_APP_URL}/maps/${mapSlug}/${data.maps.id}`
@@ -107,7 +107,7 @@ export async function rejectLocation(locationId: string) {
 				status: "rejected",
 			})
 			.eq("id", locationId)
-			.select("*, maps(title, slug, id)")
+			.select("*, maps(name, slug, id)")
 			.single()
 
 		if (error) throw error
@@ -128,7 +128,7 @@ export async function rejectLocation(locationId: string) {
 
 			if (submitterData && data.maps) {
 				const submitterEmail = submitterData.email
-				const mapTitle = data.maps.title
+				const mapTitle = data.maps.name
 				const locationName = data.name
 
 				// Send email notification

@@ -290,10 +290,12 @@ export async function getMapById(mapId: string, userId?: string) {
 			? data.votes.some((vote) => vote.user_id === userId)
 			: false
 
+		// Create a consistent data structure that includes both name and title properties
 		return {
 			data: {
 				id: data.id,
-				title: data.name,
+				name: data.name, // Include the original name property
+				title: data.name, // Map name to title for backward compatibility
 				description: data.short_description,
 				body: data.body,
 				image: data.display_picture || "/placeholder.svg",
@@ -522,7 +524,7 @@ export async function createLocation({
 				// Get map details
 				const { data: mapData } = await supabase
 					.from("maps")
-					.select("title, owner_id")
+					.select("name, owner_id")
 					.eq("id", mapId)
 					.single()
 
@@ -542,7 +544,7 @@ export async function createLocation({
 
 				if (mapData && ownerData && submitterData) {
 					const ownerEmail = ownerData.email
-					const mapTitle = mapData.title
+					const mapTitle = mapData.name
 					const submitterName = `${submitterData.first_name} ${submitterData.last_name}`
 					const mapUrl = `${process.env.NEXT_PUBLIC_APP_URL}/my-maps/${mapId}`
 
