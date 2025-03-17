@@ -309,7 +309,7 @@ export async function createLocation({
 	mapId: string
 	creatorId: string
 	location: string
-	description: string
+	description?: string
 	place_id?: string
 	address?: string | null
 	geometry?: google.maps.LatLngLiteral
@@ -477,7 +477,7 @@ export async function createLocation({
 				latitude,
 				longitude,
 				google_maps_url: googleMapsUrl,
-				note: description,
+				note: description || null,
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
 				is_approved: isOwner, // Auto-approve if the creator is the map owner

@@ -392,18 +392,17 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 							htmlFor="description"
 							className="text-sm font-medium text-foreground"
 						>
-							Leave a note about the place (the funnier the better)
+							Leave a note about the place (optional)
 						</Label>
 						<Textarea
 							id="description"
 							{...register("description", {
-								required: "Description is required",
 								maxLength: {
 									value: 60,
 									message: "Description must be less than 60 characters",
 								},
 							})}
-							placeholder="Great sushi, awesome vibes"
+							placeholder="Great sushi, awesome vibes (optional)"
 							className="w-full border border-border rounded-md shadow-sm text-foreground placeholder-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary h-24 px-3 py-2"
 						/>
 						<div className="flex justify-between">
