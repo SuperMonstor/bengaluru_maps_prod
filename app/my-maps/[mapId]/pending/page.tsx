@@ -215,7 +215,7 @@ export default function PendingSubmissionsPage({
 
 	return (
 		<main className="flex flex-col min-h-screen bg-gray-50">
-			<div className="container mx-auto px-3 py-4 md:px-4 md:py-8">
+			<div className="container mx-auto px-4 py-8">
 				<div className="mb-4 md:mb-8">
 					<h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
 						{`Pending Submissions for ${mapName}`}

@@ -70,17 +70,19 @@ export async function generateMetadata(
 // Separate component for the map shell that loads immediately
 function MapShell() {
 	return (
-		<div className="container mx-auto px-4 py-8">
-			<div className="animate-pulse">
-				<div className="h-8 w-3/4 bg-gray-200 rounded mb-4"></div>
-				<div className="h-4 w-1/2 bg-gray-200 rounded mb-8"></div>
-				<div className="h-64 bg-gray-200 rounded mb-6"></div>
-				<div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
-				<div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
-				<div className="h-4 w-3/4 bg-gray-200 rounded mb-6"></div>
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<div className="h-32 bg-gray-200 rounded"></div>
-					<div className="h-32 bg-gray-200 rounded"></div>
+		<div className="bg-gray-50/50 w-full h-full">
+			<div className="container mx-auto px-4 py-8">
+				<div className="animate-pulse">
+					<div className="h-8 w-3/4 bg-gray-200 rounded mb-4"></div>
+					<div className="h-4 w-1/2 bg-gray-200 rounded mb-8"></div>
+					<div className="h-64 bg-gray-200 rounded mb-6"></div>
+					<div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
+					<div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
+					<div className="h-4 w-3/4 bg-gray-200 rounded mb-6"></div>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="h-32 bg-gray-200 rounded"></div>
+						<div className="h-32 bg-gray-200 rounded"></div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -104,24 +106,34 @@ async function MapContent({
 
 		if (error || !map) {
 			return (
-				<div className="container mx-auto px-4 py-8">
-					<p className="text-red-500">
-						Error loading map: {error || "Map not found"}
-					</p>
+				<div className="bg-gray-50/50 w-full">
+					<div className="container mx-auto px-4 py-8">
+						<p className="text-red-500">
+							Error loading map: {error || "Map not found"}
+						</p>
+					</div>
 				</div>
 			)
 		}
 
 		return (
-			<ClientMapPageContent map={map} user={user} searchParams={searchParams} />
+			<div className="bg-gray-50/50 w-full">
+				<ClientMapPageContent
+					map={map}
+					user={user}
+					searchParams={searchParams}
+				/>
+			</div>
 		)
 	} catch (error) {
 		return (
-			<div className="container mx-auto px-4 py-8">
-				<p className="text-red-500">
-					Error loading map:{" "}
-					{error instanceof Error ? error.message : "Unknown error"}
-				</p>
+			<div className="bg-gray-50/50 w-full">
+				<div className="container mx-auto px-4 py-8">
+					<p className="text-red-500">
+						Error loading map:{" "}
+						{error instanceof Error ? error.message : "Unknown error"}
+					</p>
+				</div>
 			</div>
 		)
 	}
@@ -177,7 +189,7 @@ export default async function MapPage({ params, searchParams }: MapPageProps) {
 	}
 
 	return (
-		<main className="min-h-screen bg-gray-50/50">
+		<>
 			{/* Add basic JSON-LD structured data immediately */}
 			<script
 				type="application/ld+json"
@@ -222,6 +234,6 @@ export default async function MapPage({ params, searchParams }: MapPageProps) {
 				{/* Load the actual content */}
 				<MapContent id={id} searchParams={resolvedSearchParams} />
 			</Suspense>
-		</main>
+		</>
 	)
 }

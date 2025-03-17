@@ -92,7 +92,10 @@ export default function RootLayout({
 	children: React.ReactNode
 }>) {
 	return (
-		<html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+		<html
+			lang="en"
+			className={`${geistSans.variable} ${geistMono.variable} h-full`}
+		>
 			<head>
 				<meta
 					name="viewport"
@@ -140,8 +143,11 @@ export default function RootLayout({
 				<AuthProvider>
 					<PendingCountProvider>
 						<RouteTransition />
-						<Header />
-						{children}
+						{/* Create a flex layout with header and main content */}
+						<div className="flex flex-col min-h-screen">
+							<Header />
+							<main className="flex-1">{children}</main>
+						</div>
 						{/* <FeedbackButton /> */}
 					</PendingCountProvider>
 				</AuthProvider>
