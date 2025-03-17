@@ -7,6 +7,9 @@ import { slugify } from "@/lib/utils/slugify"
 import ClientMapPageContent from "./ClientMapPageComponent"
 import type { Metadata, ResolvingMetadata } from "next"
 
+// Add revalidate for ISR
+export const revalidate = 60
+
 interface MapPageProps {
 	params: Promise<{ slug: string; id: string }>
 	searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -64,6 +67,26 @@ export async function generateMetadata(
 	}
 }
 
+// Separate component for the map shell that loads immediately
+function MapShell() {
+	return (
+		<div className="container mx-auto px-4 py-8">
+			<div className="animate-pulse">
+				<div className="h-8 w-3/4 bg-gray-200 rounded mb-4"></div>
+				<div className="h-4 w-1/2 bg-gray-200 rounded mb-8"></div>
+				<div className="h-64 bg-gray-200 rounded mb-6"></div>
+				<div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
+				<div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
+				<div className="h-4 w-3/4 bg-gray-200 rounded mb-6"></div>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div className="h-32 bg-gray-200 rounded"></div>
+					<div className="h-32 bg-gray-200 rounded"></div>
+				</div>
+			</div>
+		</div>
+	)
+}
+
 async function MapContent({
 	id,
 	searchParams,
@@ -104,78 +127,99 @@ async function MapContent({
 	}
 }
 
-export default async function MapPage({ params, searchParams }: MapPageProps) {
-	const supabase = await createClient()
-	const {
-		data: { user },
-	} = await supabase.auth.getUser()
+// Component to handle slug validation without returning React elements
+function SlugValidator({
+	slug,
+	id,
+	searchParams,
+}: {
+	slug: string
+	id: string
+	searchParams: { [key: string]: string | string[] | undefined }
+}) {
+	// This is a server component that will run on the server
+	// and redirect if needed, but won't render anything
+	const validateSlug = async () => {
+		const supabase = await createClient()
+		const {
+			data: { user },
+		} = await supabase.auth.getUser()
+		const { data: map, error } = await getMapById(id, user?.id)
 
+		if (!error && map) {
+			const correctSlug = map.slug || slugify(map.title)
+			if (slug !== correctSlug) {
+				const expand = searchParams?.expand ? "?expand=true" : ""
+				redirect(`/maps/${correctSlug}/${id}${expand}`)
+			}
+		}
+	}
+
+	// Execute the validation but don't return anything to render
+	validateSlug()
+
+	// Return null to avoid rendering anything
+	return null
+}
+
+export default async function MapPage({ params, searchParams }: MapPageProps) {
 	const resolvedParams = await params
 	const { slug, id } = resolvedParams
-
 	const resolvedSearchParams = await searchParams
 
-	const { data: map, error } = await getMapById(id, user?.id)
-
-	if (error || !map) {
-		return (
-			<main className="min-h-screen bg-gray-50/50">
-				<div className="container mx-auto px-4 py-8">
-					<p className="text-red-500">
-						Error loading map: {error || "Map not found"}
-					</p>
-				</div>
-			</main>
-		)
-	}
-
-	const correctSlug = map.slug || slugify(map.title)
-	if (slug !== correctSlug) {
-		const expand = resolvedSearchParams?.expand ? "?expand=true" : ""
-		redirect(`/maps/${correctSlug}/${id}${expand}`)
-	}
-
-	const jsonLd = {
+	// Create a lightweight JSON-LD with minimal data that can be rendered immediately
+	const basicJsonLd = {
 		"@context": "https://schema.org",
 		"@type": "Map",
-		name: map.title,
-		description:
-			map.description || `A community-driven map of locations in Bengaluru.`,
-		url: `https://www.bengalurumaps.com/maps/${correctSlug}/${id}`,
-		author: {
-			"@type": "Person",
-			name: map.username || "Bengaluru Maps User",
-		},
-		dateCreated: new Date().toISOString(),
-		locationCreated: {
-			"@type": "Place",
-			name: "Bengaluru, India",
-		},
-		contentLocation: {
-			"@type": "Place",
-			name: "Bengaluru, India",
-			geo: {
-				"@type": "GeoCoordinates",
-				latitude: "12.9716",
-				longitude: "77.5946",
-			},
-		},
-		about: {
-			"@type": "Thing",
-			name: "Bengaluru Points of Interest",
-			description: "Interesting locations in Bengaluru, India",
-		},
-		thumbnailUrl:
-			map.image || "https://www.bengalurumaps.com/images/og-image.jpg",
+		name: "Bengaluru Map",
+		description: "A community-driven map of locations in Bengaluru.",
+		url: `https://www.bengalurumaps.com/maps/${slug}/${id}`,
 	}
 
 	return (
 		<main className="min-h-screen bg-gray-50/50">
+			{/* Add basic JSON-LD structured data immediately */}
 			<script
 				type="application/ld+json"
-				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+				dangerouslySetInnerHTML={{ __html: JSON.stringify(basicJsonLd) }}
 			/>
-			<Suspense fallback={<LoadingIndicator />}>
+
+			{/* Add client-side script to improve loading experience */}
+			<script
+				dangerouslySetInnerHTML={{
+					__html: `
+						(function() {
+							try {
+								// Check if we came from a specific map card
+								const lastClickedMapCard = sessionStorage.getItem('lastClickedMapCard');
+								const currentPath = window.location.pathname;
+								
+								if (lastClickedMapCard && currentPath === lastClickedMapCard) {
+									// We came from the card that matches this page
+									// Clear the storage item
+									sessionStorage.removeItem('lastClickedMapCard');
+									
+									// Add a class to the body to indicate we're coming from a card
+									document.body.classList.add('from-map-card');
+								}
+							} catch (e) {
+								console.error('Error in map page script:', e);
+							}
+						})();
+					`,
+				}}
+			/>
+
+			{/* Show a skeleton UI immediately */}
+			<Suspense fallback={<MapShell />}>
+				{/* Check slug validity without rendering the result */}
+				<SlugValidator
+					slug={slug}
+					id={id}
+					searchParams={resolvedSearchParams}
+				/>
+
+				{/* Load the actual content */}
 				<MapContent id={id} searchParams={resolvedSearchParams} />
 			</Suspense>
 		</main>

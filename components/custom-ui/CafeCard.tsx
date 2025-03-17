@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { cn } from "@/lib/utils/utils"
 import { UpvoteButton } from "./UpvoteButton"
+import { memo } from "react"
 
 interface CafeCardProps {
 	title: string
@@ -22,7 +23,8 @@ interface CafeCardProps {
 	initialIsUpvoted?: boolean
 }
 
-export function CafeCard({
+// Memoize the CafeCard component to prevent unnecessary re-renders
+export const CafeCard = memo(function CafeCard({
 	title,
 	description,
 	image,
@@ -35,6 +37,9 @@ export function CafeCard({
 	mapId,
 	initialIsUpvoted,
 }: CafeCardProps) {
+	// Use a placeholder for broken images
+	const imageSrc = image || "/placeholder.svg"
+
 	return (
 		<Card
 			className={cn(
@@ -45,9 +50,9 @@ export function CafeCard({
 		>
 			<CardHeader className="p-4 md:p-6 space-y-4 md:flex md:flex-row md:items-start md:gap-6 md:space-y-0">
 				{/* Image Container */}
-				<div className="relative w-full md:w-64 aspect-[16/10] overflow-hidden rounded-md shrink-0">
+				<div className="relative w-full md:w-64 aspect-[16/10] overflow-hidden rounded-md shrink-0 bg-gray-100">
 					<Image
-						src={image || "/placeholder.svg"}
+						src={imageSrc}
 						alt={title}
 						fill
 						className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -55,6 +60,13 @@ export function CafeCard({
 						loading="lazy"
 						sizes="(max-width: 768px) 100vw, 256px"
 						quality={75}
+						onError={(e) => {
+							// Fallback to placeholder if image fails to load
+							const target = e.target as HTMLImageElement
+							if (target.src !== "/placeholder.svg") {
+								target.src = "/placeholder.svg"
+							}
+						}}
 					/>
 				</div>
 
@@ -111,4 +123,4 @@ export function CafeCard({
 			</CardFooter>
 		</Card>
 	)
-}
+})

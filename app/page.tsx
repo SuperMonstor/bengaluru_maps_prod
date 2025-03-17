@@ -59,11 +59,15 @@ async function MapsList({
 	return (
 		<>
 			<div className="grid gap-6 max-w-5xl mx-auto">
-				{maps.map((map) => (
+				{maps.map((map, index) => (
 					<Link
 						key={map.id}
 						href={`/maps/${map.slug || "map"}/${map.id}`}
-						prefetch={false}
+						// Prefetch only the first 3 maps for better performance
+						prefetch={index < 3}
+						// Add a data attribute to help with transition
+						data-map-card="true"
+						className="transition-opacity duration-300"
 					>
 						<CafeCard
 							mapId={map.id}
@@ -143,6 +147,49 @@ export default async function Home({ searchParams }: HomeProps) {
 			<script
 				type="application/ld+json"
 				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+			/>
+
+			{/* Add client-side script to handle transitions */}
+			<script
+				dangerouslySetInnerHTML={{
+					__html: `
+						(function() {
+							try {
+								document.addEventListener('click', function(e) {
+									// Find the closest map card link
+									const mapCard = e.target.closest('[data-map-card="true"]');
+									if (mapCard) {
+										// Store the clicked card URL to help with navigation
+										const href = mapCard.getAttribute('href');
+										if (href) {
+											sessionStorage.setItem('lastClickedMapCard', href);
+										}
+										
+										// Add a small delay to allow for visual feedback
+										setTimeout(() => {
+											// Fade out all cards except the clicked one
+											document.querySelectorAll('[data-map-card="true"]').forEach(card => {
+												if (card !== mapCard) {
+													card.style.opacity = '0.5';
+													card.style.transform = 'scale(0.98)';
+													card.style.transition = 'opacity 300ms ease, transform 300ms ease';
+												} else {
+													// Highlight the clicked card
+													card.style.transform = 'scale(1.02)';
+													card.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.1)';
+													card.style.transition = 'transform 300ms ease, box-shadow 300ms ease';
+												}
+											});
+										}, 50);
+									}
+								});
+							} catch (e) {
+								// Silently fail if there's an error
+								console.error('Error in transition script:', e);
+							}
+						})();
+					`,
+				}}
 			/>
 
 			<div className="container mx-auto px-4 py-8">

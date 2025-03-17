@@ -6,6 +6,7 @@ import { AuthProvider } from "@/lib/context/AuthContext"
 import { Toaster } from "@/components/ui/toaster"
 import { PendingCountProvider } from "@/lib/context/PendingCountContext"
 import FeedbackButton from "@/components/custom-ui/FeedbackButton"
+import { RouteTransition } from "@/components/custom-ui/RouteTransition"
 
 // Optimize font loading with display: swap
 const geistSans = Geist({
@@ -138,6 +139,7 @@ export default function RootLayout({
 			<body className="font-sans antialiased">
 				<AuthProvider>
 					<PendingCountProvider>
+						<RouteTransition />
 						<Header />
 						{children}
 						{/* <FeedbackButton /> */}
