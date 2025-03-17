@@ -61,46 +61,38 @@ export async function updateMapAction(formData: FormData) {
 
 		// If a new image is provided, upload it
 		if (displayPicture && displayPicture.size > 0) {
-			// Validate image
-			const validation = ImageProcessor.validateImage(displayPicture)
-			if (!validation.isValid) {
-				return { success: false, error: validation.error }
-			}
+			try {
+				console.log(
+					"Uploading image:",
+					displayPicture.name,
+					displayPicture.type,
+					displayPicture.size
+				)
 
-			// Compress image
-			const compressedImage = await ImageProcessor.compressImage(displayPicture)
-			if (compressedImage.size > IMAGE_CONFIG.MAX_FILE_SIZE) {
+				// Use the modular uploadImage function from ImageProcessor
+				// Pass the server-side Supabase client to ensure proper authentication
+				const displayPictureUrl = await ImageProcessor.uploadImage(
+					displayPicture,
+					{
+						upsert: true,
+						// Explicitly set content type based on the file
+						contentType: displayPicture.type || "image/jpeg",
+						serverSupabase: supabase, // Pass the authenticated server-side client
+					}
+				)
+
+				updateData.display_picture = displayPictureUrl
+				console.log("Image uploaded successfully:", displayPictureUrl)
+			} catch (uploadError) {
+				console.error("Image upload error:", uploadError)
 				return {
 					success: false,
-					error: "Image too large after compression. Try a smaller image.",
+					error:
+						uploadError instanceof Error
+							? `Image upload failed: ${uploadError.message}`
+							: "Failed to upload image",
 				}
 			}
-
-			// Upload image
-			const fileName = ImageProcessor.generateFileName(displayPicture.name)
-			const { error: uploadError } = await supabase.storage
-				.from("maps")
-				.upload(`maps-display-pictures/${fileName}`, compressedImage, {
-					contentType: "image/jpeg",
-					cacheControl: "3600",
-					upsert: true,
-				})
-
-			if (uploadError) {
-				return {
-					success: false,
-					error: `Failed to upload image: ${uploadError.message}`,
-				}
-			}
-
-			// Get public URL
-			const {
-				data: { publicUrl },
-			} = supabase.storage
-				.from("maps")
-				.getPublicUrl(`maps-display-pictures/${fileName}`)
-
-			updateData.display_picture = publicUrl
 		}
 
 		// Update the map

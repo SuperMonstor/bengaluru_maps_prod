@@ -31,35 +31,6 @@ const handleMapsError = (
 	}
 }
 
-async function uploadImage(file: File): Promise<string> {
-	const validation = ImageProcessor.validateImage(file)
-	if (!validation.isValid) throw new Error(validation.error)
-
-	const compressedImage = await ImageProcessor.compressImage(file)
-	if (compressedImage.size > IMAGE_CONFIG.MAX_FILE_SIZE) {
-		throw new Error("Image too large after compression. Try a smaller image.")
-	}
-
-	const fileName = ImageProcessor.generateFileName(file.name)
-	const { error: uploadError } = await supabase.storage
-		.from("maps")
-		.upload(`maps-display-pictures/${fileName}`, compressedImage, {
-			contentType: "image/jpeg",
-			cacheControl: "3600",
-		})
-
-	if (uploadError)
-		throw new Error(`Failed to upload image: ${uploadError.message}`)
-
-	const {
-		data: { publicUrl },
-	} = supabase.storage
-		.from("maps")
-		.getPublicUrl(`maps-display-pictures/${fileName}`)
-
-	return publicUrl
-}
-
 export async function createMap({
 	title,
 	shortDescription,
@@ -78,7 +49,11 @@ export async function createMap({
 			throw new Error("All fields are required")
 		}
 
-		const displayPictureUrl = await uploadImage(displayPicture)
+		// Use the modular uploadImage function from ImageProcessor
+		// Pass the supabase client to ensure proper authentication
+		const displayPictureUrl = await ImageProcessor.uploadImage(displayPicture, {
+			serverSupabase: supabase,
+		})
 		const slug = slugify(title)
 
 		const { data, error } = await supabase
@@ -680,7 +655,12 @@ export async function updateMap({
 
 		// If a new image is provided, upload it
 		if (displayPicture) {
-			const displayPictureUrl = await uploadImage(displayPicture)
+			const displayPictureUrl = await ImageProcessor.uploadImage(
+				displayPicture,
+				{
+					serverSupabase: supabase,
+				}
+			)
 			updateData.display_picture = displayPictureUrl
 		}
 
