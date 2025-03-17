@@ -491,46 +491,237 @@ export async function createLocation({
 		// If the creator is not the owner, send a notification email to the map owner
 		if (!isOwner) {
 			try {
-				// Import the email service dynamically to avoid server/client mismatch issues
-				const { sendSubmissionNotification } = await import(
-					"../services/emailService"
+				console.log(
+					"Starting email notification process for non-owner submission"
 				)
 
+				// First, let's test if the email API is accessible at all
+				try {
+					console.log("Testing email API endpoint...")
+					const testResponse = await fetch("/api/email/test", {
+						method: "GET",
+					})
+					const testResult = await testResponse.json()
+					console.log("Email API test response:", testResult)
+				} catch (testError) {
+					console.error("Error testing email API:", testError)
+				}
+
 				// Get map details
-				const { data: mapData } = await supabase
+				console.log("Fetching map details for mapId:", mapId)
+				const { data: mapData, error: mapDataError } = await supabase
 					.from("maps")
 					.select("name, owner_id")
 					.eq("id", mapId)
 					.single()
 
+				if (mapDataError) {
+					console.error("Error fetching map details:", mapDataError)
+					throw new Error(
+						`Failed to fetch map details: ${mapDataError.message}`
+					)
+				}
+				console.log("Map details fetched:", mapData)
+
 				// Get map owner details
-				const { data: ownerData } = await supabase
+				console.log("Fetching owner details for owner_id:", mapData?.owner_id)
+				const { data: ownerData, error: ownerDataError } = await supabase
 					.from("users")
 					.select("email, first_name, last_name")
 					.eq("id", mapData?.owner_id)
 					.single()
 
+				if (ownerDataError) {
+					console.error("Error fetching owner details:", ownerDataError)
+					throw new Error(
+						`Failed to fetch owner details: ${ownerDataError.message}`
+					)
+				}
+				console.log("Owner details fetched:", {
+					email: ownerData?.email,
+					name: `${ownerData?.first_name} ${ownerData?.last_name}`,
+				})
+
 				// Get submitter details
-				const { data: submitterData } = await supabase
-					.from("users")
-					.select("first_name, last_name")
-					.eq("id", creatorId)
-					.single()
+				console.log("Fetching submitter details for creator_id:", creatorId)
+				const { data: submitterData, error: submitterDataError } =
+					await supabase
+						.from("users")
+						.select("first_name, last_name")
+						.eq("id", creatorId)
+						.single()
+
+				if (submitterDataError) {
+					console.error("Error fetching submitter details:", submitterDataError)
+					throw new Error(
+						`Failed to fetch submitter details: ${submitterDataError.message}`
+					)
+				}
+				console.log("Submitter details fetched:", {
+					name: `${submitterData?.first_name} ${submitterData?.last_name}`,
+				})
 
 				if (mapData && ownerData && submitterData) {
 					const ownerEmail = ownerData.email
 					const mapTitle = mapData.name
 					const submitterName = `${submitterData.first_name} ${submitterData.last_name}`
-					const mapUrl = `${process.env.NEXT_PUBLIC_APP_URL}/my-maps/${mapId}`
 
-					// Send email notification
-					await sendSubmissionNotification(
+					// Fix the mapUrl to use NEXT_PUBLIC_SITE_URL instead of NEXT_PUBLIC_APP_URL
+					// Add proper fallbacks and logging to diagnose URL issues
+					console.log("Environment variables:", {
+						NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+						NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+						windowOrigin:
+							typeof window !== "undefined"
+								? window.location.origin
+								: "not available",
+					})
+
+					const baseUrl =
+						process.env.NEXT_PUBLIC_SITE_URL ||
+						(typeof window !== "undefined"
+							? window.location.origin
+							: "https://bengalurumaps.com")
+
+					console.log("Using baseUrl for email links:", baseUrl)
+
+					// Ensure mapUrl is properly constructed with the pending path
+					const mapUrl = `${baseUrl}/my-maps/${mapId}/pending`
+
+					console.log("Final mapUrl for email:", mapUrl)
+
+					console.log("Preparing to send email with the following data:", {
 						ownerEmail,
 						mapTitle,
-						name,
+						locationName: name,
 						submitterName,
-						mapUrl
-					)
+						mapUrl,
+						baseUrl: baseUrl,
+					})
+
+					// Use the server-side API route to send the email
+					console.log("Calling email API route...")
+
+					// Create the email payload
+					const emailPayload = {
+						ownerEmail,
+						mapTitle,
+						locationName: name,
+						submitterName,
+						mapUrl,
+					}
+
+					// Log the payload for debugging
+					console.log("Email payload:", JSON.stringify(emailPayload))
+
+					// Get the base URL from environment or use a default
+					// In browser environments, use the current origin
+					const emailApiUrl = `${baseUrl}/api/email`
+
+					console.log("Email API URL:", emailApiUrl)
+
+					// Use a more robust fetch implementation
+					try {
+						// First, try using the fetch API
+						const controller = new AbortController()
+						const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+						console.log("Sending fetch request to email API...")
+						const response = await fetch(emailApiUrl, {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+							},
+							body: JSON.stringify(emailPayload),
+							signal: controller.signal,
+							// Add these options to ensure the request is sent properly
+							credentials: "same-origin",
+							mode: "cors",
+							cache: "no-cache",
+						})
+
+						clearTimeout(timeoutId)
+
+						console.log("Fetch response status:", response.status)
+
+						if (!response.ok) {
+							const errorText = await response.text()
+							console.error(
+								`Email API responded with status ${response.status}:`,
+								errorText
+							)
+							throw new Error(
+								`Email API error: ${response.status} ${errorText}`
+							)
+						}
+
+						const emailResult = await response.json()
+						console.log("Email API response:", emailResult)
+
+						if (!emailResult.success) {
+							console.error("Email sending failed:", emailResult.error)
+						} else {
+							console.log("Email sent successfully!")
+						}
+					} catch (fetchError) {
+						console.error("Error calling email API:", fetchError)
+
+						// Fallback: Try using XMLHttpRequest as a backup
+						console.log("Trying fallback with XMLHttpRequest...")
+
+						try {
+							await new Promise((resolve, reject) => {
+								const xhr = new XMLHttpRequest()
+								xhr.open("POST", emailApiUrl)
+								xhr.setRequestHeader("Content-Type", "application/json")
+								xhr.timeout = 10000 // 10 second timeout
+
+								xhr.onload = function () {
+									if (xhr.status >= 200 && xhr.status < 300) {
+										console.log("XHR response:", xhr.responseText)
+										resolve(xhr.responseText)
+									} else {
+										console.error("XHR error response:", xhr.responseText)
+										reject(
+											new Error(`XHR error: ${xhr.status} ${xhr.statusText}`)
+										)
+									}
+								}
+
+								xhr.onerror = function () {
+									console.error("XHR network error")
+									reject(new Error("XHR network error"))
+								}
+
+								xhr.ontimeout = function () {
+									console.error("XHR timeout")
+									reject(new Error("XHR timeout"))
+								}
+
+								xhr.send(JSON.stringify(emailPayload))
+							})
+
+							console.log("Fallback email request completed")
+						} catch (xhrError) {
+							console.error("Fallback email request also failed:", xhrError)
+
+							// Last resort: Log to console that we need to manually send an email
+							console.warn("MANUAL EMAIL NEEDED:", {
+								to: ownerEmail,
+								subject: `New Location Submission: ${name}`,
+								mapTitle,
+								locationName: name,
+								submitterName,
+								mapUrl,
+							})
+						}
+					}
+				} else {
+					console.error("Missing data required for email:", {
+						mapData: !!mapData,
+						ownerData: !!ownerData,
+						submitterData: !!submitterData,
+					})
 				}
 			} catch (emailError) {
 				// Log the error but don't fail the location creation
@@ -538,7 +729,13 @@ export async function createLocation({
 					"Error sending submission notification email:",
 					emailError
 				)
+				// Log the full error stack for debugging
+				if (emailError instanceof Error) {
+					console.error("Error stack:", emailError.stack)
+				}
 			}
+		} else {
+			console.log("No email notification sent - creator is the map owner")
 		}
 
 		return { data, error: null }

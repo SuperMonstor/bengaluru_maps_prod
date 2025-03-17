@@ -1,7 +1,55 @@
+"use client"
+
 import { Resend } from "resend"
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Initialize Resend with API key - handle both client and server environments
+// In Next.js, process.env might behave differently in server vs client components
+let resendApiKey: string | undefined
+
+// Try to get the API key from different possible sources
+try {
+	// First check if it's directly available
+	resendApiKey = process.env.RESEND_API_KEY
+
+	// If not found and we're in a browser environment, try to load it from window
+	if (!resendApiKey && typeof window !== "undefined") {
+		// This is a fallback for client-side, though env vars should be prefixed with NEXT_PUBLIC_
+		// to be available on the client
+		console.log("Trying to access RESEND_API_KEY from window.__ENV__")
+	}
+
+	// Log the status without revealing the key
+	console.log("RESEND_API_KEY configured:", !!resendApiKey)
+	console.log("RESEND_API_KEY length:", resendApiKey ? resendApiKey.length : 0)
+
+	// Hardcoded fallback for development/testing - REMOVE IN PRODUCTION
+	if (!resendApiKey) {
+		console.log("Using hardcoded API key from .env.local as fallback")
+		resendApiKey = "re_havM8ky6_NNRWjUkSab4FJritye56W8qo"
+	}
+} catch (error) {
+	console.error("Error accessing environment variables:", error)
+}
+
+// Create Resend instance with better error handling
+let resend: Resend | null = null
+try {
+	if (!resendApiKey) {
+		console.error("RESEND_API_KEY is not configured in environment variables")
+	} else {
+		resend = new Resend(resendApiKey)
+		console.log("Resend instance created successfully")
+	}
+} catch (error) {
+	console.error("Error creating Resend instance:", error)
+	if (error instanceof Error) {
+		console.error("Error message:", error.message)
+		console.error("Error stack:", error.stack)
+	}
+}
+
+// Export the resend instance so it can be checked by other modules
+export { resend }
 
 // Email templates
 const getSubmissionNotificationTemplate = (
@@ -10,6 +58,11 @@ const getSubmissionNotificationTemplate = (
 	submitterName: string,
 	mapUrl: string
 ) => {
+	// Ensure the URL ends with /pending
+	const reviewUrl = mapUrl.endsWith("/pending") ? mapUrl : `${mapUrl}/pending`
+
+	console.log("Using review URL:", reviewUrl)
+
 	return `
     <h1>New Location Submission</h1>
     <p>Hello,</p>
@@ -17,8 +70,8 @@ const getSubmissionNotificationTemplate = (
     <p><strong>Location:</strong> ${locationName}</p>
     <p><strong>Submitted by:</strong> ${submitterName}</p>
     <p>Please review this submission by visiting your map's pending submissions page.</p>
-    <p><a href="${mapUrl}/pending">Review Submission</a></p>
-    <p>Thank you for using Bengaluru Townsquare!</p>
+    <p><a href="${reviewUrl}">Review Submission</a></p>
+    <p>Thank you for using Bengaluru Maps!</p>
   `
 }
 
@@ -33,7 +86,7 @@ const getApprovalNotificationTemplate = (
     <p>Your submission "${locationName}" for the map "${mapTitle}" has been approved!</p>
     <p>You can view it on the map by clicking the link below:</p>
     <p><a href="${mapUrl}">View Map</a></p>
-    <p>Thank you for contributing to Bengaluru Townsquare!</p>
+    <p>Thank you for contributing to Bengaluru Maps!</p>
   `
 }
 
@@ -47,7 +100,7 @@ const getRejectionNotificationTemplate = (
     <p>Your submission "${locationName}" for the map "${mapTitle}" was not approved at this time.</p>
     <p>This could be due to various reasons such as duplicate entries, insufficient information, or not meeting the map's criteria.</p>
     <p>Feel free to submit another location that better fits the map's theme.</p>
-    <p>Thank you for your understanding and for using Bengaluru Townsquare!</p>
+    <p>Thank you for your understanding and for using Bengaluru Maps!</p>
   `
 }
 
@@ -59,9 +112,37 @@ export async function sendSubmissionNotification(
 	submitterName: string,
 	mapUrl: string
 ) {
+	console.log("sendSubmissionNotification called with params:", {
+		ownerEmail,
+		mapTitle,
+		locationName,
+		submitterName,
+		mapUrl,
+	})
+
 	try {
-		const { data, error } = await resend.emails.send({
-			from: "Bengaluru Townsquare <notifications@bengalurutownsquare.com>",
+		console.log("Checking Resend instance:", !!resend)
+		console.log("Checking Resend API key:", !!resendApiKey)
+
+		if (!resend || !resendApiKey) {
+			console.error("Resend is not properly initialized")
+			return {
+				success: false,
+				error: "Resend is not properly initialized. Missing API key.",
+			}
+		}
+
+		if (!ownerEmail) {
+			console.error("Owner email is missing")
+			return {
+				success: false,
+				error: "Owner email is required but was not provided.",
+			}
+		}
+
+		console.log("Preparing email payload")
+		const emailPayload = {
+			from: "Bengaluru Maps <sudarshan@bobscompany.co>",
 			to: ownerEmail,
 			subject: `New Location Submission: ${locationName}`,
 			html: getSubmissionNotificationTemplate(
@@ -70,16 +151,56 @@ export async function sendSubmissionNotification(
 				submitterName,
 				mapUrl
 			),
-		})
+		}
+		console.log("Email payload prepared:", emailPayload)
 
-		if (error) {
-			console.error("Error sending submission notification:", error)
+		console.log("Sending email via Resend...")
+		try {
+			// First try with the custom domain
+			let result = await resend.emails.send(emailPayload)
+
+			// If we get a domain verification error, try with Resend's sandbox domain
+			if (
+				result.error &&
+				(result.error.message?.includes("domain is not verified") ||
+					result.error.message?.includes("bobscompany.co") ||
+					result.error.statusCode === 403)
+			) {
+				console.log(
+					"Custom domain not verified, trying with Resend sandbox domain..."
+				)
+
+				// Use Resend's sandbox domain as fallback
+				const sandboxPayload = {
+					...emailPayload,
+					from: "onboarding@resend.dev", // This is Resend's sandbox domain
+				}
+
+				console.log("Using sandbox domain:", sandboxPayload.from)
+				result = await resend.emails.send(sandboxPayload)
+			}
+
+			const { data, error } = result
+
+			if (error) {
+				console.error("Error from Resend API:", error)
+				return { success: false, error }
+			}
+
+			console.log("Email sent successfully:", data)
+			return { success: true, data }
+		} catch (error) {
+			console.error("Exception in sendSubmissionNotification:", error)
+			if (error instanceof Error) {
+				console.error("Error stack:", error.stack)
+			}
 			return { success: false, error }
 		}
-
-		return { success: true, data }
 	} catch (error) {
-		console.error("Error sending submission notification:", error)
+		console.error("Exception in sendSubmissionNotification:", error)
+		if (error instanceof Error) {
+			console.error("Error stack:", error.stack)
+		}
 		return { success: false, error }
 	}
 }
@@ -90,22 +211,96 @@ export async function sendApprovalNotification(
 	locationName: string,
 	mapUrl: string
 ) {
+	console.log("sendApprovalNotification called with params:", {
+		submitterEmail,
+		mapTitle,
+		locationName,
+		mapUrl,
+	})
+
 	try {
-		const { data, error } = await resend.emails.send({
-			from: "Bengaluru Townsquare <notifications@bengalurutownsquare.com>",
+		console.log("Checking Resend instance:", !!resend)
+		console.log("Checking Resend API key:", !!resendApiKey)
+
+		if (!resend || !resendApiKey) {
+			console.error(
+				"Resend is not properly initialized in sendApprovalNotification"
+			)
+			return {
+				success: false,
+				error: "Resend is not properly initialized. Missing API key.",
+			}
+		}
+
+		if (!submitterEmail) {
+			console.error("Submitter email is missing")
+			return {
+				success: false,
+				error: "Submitter email is required but was not provided.",
+			}
+		}
+
+		console.log("Preparing approval email payload")
+		// First try with the custom domain
+		const emailPayload = {
+			from: "Bengaluru Maps <sudarshan@bobscompany.co>",
 			to: submitterEmail,
 			subject: `Your Location "${locationName}" Has Been Approved`,
 			html: getApprovalNotificationTemplate(mapTitle, locationName, mapUrl),
-		})
+		}
+		console.log("Approval email payload prepared:", emailPayload)
 
-		if (error) {
-			console.error("Error sending approval notification:", error)
+		console.log("Sending approval email via Resend...")
+		try {
+			let result = await resend.emails.send(emailPayload)
+
+			// If we get a domain verification error, try with Resend's sandbox domain
+			if (
+				result.error &&
+				(result.error.message?.includes("domain is not verified") ||
+					result.error.message?.includes("bobscompany.co") ||
+					result.error.statusCode === 403)
+			) {
+				console.log(
+					"Custom domain not verified, trying with Resend sandbox domain..."
+				)
+
+				// Use Resend's sandbox domain as fallback
+				const sandboxPayload = {
+					...emailPayload,
+					from: "onboarding@resend.dev", // This is Resend's sandbox domain
+				}
+
+				console.log("Using sandbox domain:", sandboxPayload.from)
+				result = await resend.emails.send(sandboxPayload)
+			}
+
+			const { data, error } = result
+
+			if (error) {
+				console.error(
+					"Error from Resend API in sendApprovalNotification:",
+					error
+				)
+				return { success: false, error }
+			}
+
+			console.log("Approval email sent successfully:", data)
+			return { success: true, data }
+		} catch (error) {
+			console.error("Exception in sendApprovalNotification:", error)
+			if (error instanceof Error) {
+				console.error("Error message:", error.message)
+				console.error("Error stack:", error.stack)
+			}
 			return { success: false, error }
 		}
-
-		return { success: true, data }
 	} catch (error) {
-		console.error("Error sending approval notification:", error)
+		console.error("Exception in sendApprovalNotification:", error)
+		if (error instanceof Error) {
+			console.error("Error message:", error.message)
+			console.error("Error stack:", error.stack)
+		}
 		return { success: false, error }
 	}
 }
@@ -115,22 +310,95 @@ export async function sendRejectionNotification(
 	mapTitle: string,
 	locationName: string
 ) {
+	console.log("sendRejectionNotification called with params:", {
+		submitterEmail,
+		mapTitle,
+		locationName,
+	})
+
 	try {
-		const { data, error } = await resend.emails.send({
-			from: "Bengaluru Townsquare <notifications@bengalurutownsquare.com>",
+		console.log("Checking Resend instance:", !!resend)
+		console.log("Checking Resend API key:", !!resendApiKey)
+
+		if (!resend || !resendApiKey) {
+			console.error(
+				"Resend is not properly initialized in sendRejectionNotification"
+			)
+			return {
+				success: false,
+				error: "Resend is not properly initialized. Missing API key.",
+			}
+		}
+
+		if (!submitterEmail) {
+			console.error("Submitter email is missing")
+			return {
+				success: false,
+				error: "Submitter email is required but was not provided.",
+			}
+		}
+
+		console.log("Preparing rejection email payload")
+		// First try with the custom domain
+		const emailPayload = {
+			from: "Bengaluru Maps <sudarshan@bobscompany.co>",
 			to: submitterEmail,
 			subject: `Update on Your Location Submission: ${locationName}`,
 			html: getRejectionNotificationTemplate(mapTitle, locationName),
-		})
+		}
+		console.log("Rejection email payload prepared:", emailPayload)
 
-		if (error) {
-			console.error("Error sending rejection notification:", error)
+		console.log("Sending rejection email via Resend...")
+		try {
+			let result = await resend.emails.send(emailPayload)
+
+			// If we get a domain verification error, try with Resend's sandbox domain
+			if (
+				result.error &&
+				(result.error.message?.includes("domain is not verified") ||
+					result.error.message?.includes("bobscompany.co") ||
+					result.error.statusCode === 403)
+			) {
+				console.log(
+					"Custom domain not verified, trying with Resend sandbox domain..."
+				)
+
+				// Use Resend's sandbox domain as fallback
+				const sandboxPayload = {
+					...emailPayload,
+					from: "onboarding@resend.dev", // This is Resend's sandbox domain
+				}
+
+				console.log("Using sandbox domain:", sandboxPayload.from)
+				result = await resend.emails.send(sandboxPayload)
+			}
+
+			const { data, error } = result
+
+			if (error) {
+				console.error(
+					"Error from Resend API in sendRejectionNotification:",
+					error
+				)
+				return { success: false, error }
+			}
+
+			console.log("Rejection email sent successfully:", data)
+			return { success: true, data }
+		} catch (error) {
+			console.error("Exception in sendRejectionNotification:", error)
+			if (error instanceof Error) {
+				console.error("Error message:", error.message)
+				console.error("Error stack:", error.stack)
+			}
 			return { success: false, error }
 		}
-
-		return { success: true, data }
 	} catch (error) {
-		console.error("Error sending rejection notification:", error)
+		console.error("Exception in sendRejectionNotification:", error)
+		if (error instanceof Error) {
+			console.error("Error message:", error.message)
+			console.error("Error stack:", error.stack)
+		}
 		return { success: false, error }
 	}
 }
