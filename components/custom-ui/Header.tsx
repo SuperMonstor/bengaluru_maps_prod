@@ -8,7 +8,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { useContext } from "react"
+import { useContext, memo } from "react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { AuthContext } from "@/lib/context/AuthContext"
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton"
@@ -22,7 +22,63 @@ function useAuth() {
 	return context
 }
 
-export default function Header() {
+// SVG icons as memoized components to prevent re-renders
+const ExternalLinkIcon = memo(() => (
+	<svg
+		xmlns="http://www.w3.org/2000/svg"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		className="w-3 h-3 inline-block"
+		aria-hidden="true"
+	>
+		<path
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			strokeWidth="2"
+			d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+		/>
+	</svg>
+))
+
+const MapIcon = memo(() => (
+	<svg
+		xmlns="http://www.w3.org/2000/svg"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		className="w-4 h-4"
+		aria-hidden="true"
+	>
+		<path
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			strokeWidth="2"
+			d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+		/>
+	</svg>
+))
+
+const PlusIcon = memo(() => (
+	<svg
+		xmlns="http://www.w3.org/2000/svg"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		className="w-4 h-4"
+		aria-hidden="true"
+	>
+		<path
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			strokeWidth="2"
+			d="M12 4v16m8-8H4"
+		/>
+	</svg>
+))
+
+// Memoize the Header component to prevent unnecessary re-renders
+const Header = memo(function Header() {
 	const { user, isLoading: authLoading, signOut } = useAuth()
 	const { pendingCount } = usePendingCount()
 
@@ -46,20 +102,7 @@ export default function Header() {
 					className="text-xs text-gray-500 hover:text-blue-500 transition-colors flex items-center gap-1 mt-1"
 				>
 					<span>By Sudarshan S</span>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						className="w-3 h-3 inline-block"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth="2"
-							d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-						/>
-					</svg>
+					<ExternalLinkIcon />
 				</Link>
 			</div>
 
@@ -72,20 +115,7 @@ export default function Header() {
 							size="sm"
 							className="text-gray-700 hover:text-gray-900 flex items-center gap-2"
 						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								className="w-4 h-4"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth="2"
-									d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-								/>
-							</svg>
+							<MapIcon />
 							My Maps
 							{pendingCount > 0 && (
 								<span className="ml-1 bg-red-100 text-red-600 text-xs font-medium px-1.5 py-0.5 rounded-full">
@@ -102,20 +132,7 @@ export default function Header() {
 						size="sm"
 						className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-2"
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							className="w-4 h-4"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth="2"
-								d="M12 4v16m8-8H4"
-							/>
-						</svg>
+						<PlusIcon />
 						Create Map
 					</Button>
 				</Link>
@@ -125,20 +142,7 @@ export default function Header() {
 						size="icon"
 						className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 w-8 h-8"
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							className="w-4 h-4"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth="2"
-								d="M12 4v16m8-8H4"
-							/>
-						</svg>
+						<PlusIcon />
 					</Button>
 				</Link>
 
@@ -205,20 +209,7 @@ export default function Header() {
 								<Link href="/my-maps" className="block">
 									<DropdownMenuItem className="cursor-pointer flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
 										<div className="flex items-center gap-2">
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												className="w-4 h-4 text-gray-500"
-											>
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													strokeWidth="2"
-													d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-												/>
-											</svg>
+											<MapIcon />
 											My Maps
 										</div>
 										{pendingCount > 0 && (
@@ -231,29 +222,17 @@ export default function Header() {
 
 								<Link href="/create-map" className="block">
 									<DropdownMenuItem className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											className="w-4 h-4 text-gray-500"
-										>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												strokeWidth="2"
-												d="M12 4v16m8-8H4"
-											/>
-										</svg>
+										<PlusIcon />
 										Create New Map
 									</DropdownMenuItem>
 								</Link>
 							</div>
 
-							<div className="border-t border-gray-100">
+							{/* Rest of the dropdown menu content */}
+							<div className="py-1 border-t border-gray-100">
 								<DropdownMenuItem
-									onClick={handleSignOut}
 									className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+									onClick={handleSignOut}
 								>
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
@@ -261,6 +240,7 @@ export default function Header() {
 										fill="none"
 										stroke="currentColor"
 										className="w-4 h-4"
+										aria-hidden="true"
 									>
 										<path
 											strokeLinecap="round"
@@ -280,4 +260,6 @@ export default function Header() {
 			</div>
 		</header>
 	)
-}
+})
+
+export default Header

@@ -8,8 +8,9 @@ import { createClient } from "@/lib/supabase/api/supabaseServer"
 import { Suspense } from "react"
 import type { Metadata } from "next"
 
-// Set revalidate to 0 to ensure fresh data on each request
-export const revalidate = 0
+// Set revalidate to 60 seconds for ISR instead of 0
+// This allows the page to be cached and revalidated every minute
+export const revalidate = 60
 
 // Add specific metadata for the home page
 export const metadata: Metadata = {
@@ -59,7 +60,11 @@ async function MapsList({
 		<>
 			<div className="grid gap-6 max-w-5xl mx-auto">
 				{maps.map((map) => (
-					<Link key={map.id} href={`/maps/${map.slug || "map"}/${map.id}`}>
+					<Link
+						key={map.id}
+						href={`/maps/${map.slug || "map"}/${map.id}`}
+						prefetch={false}
+					>
 						<CafeCard
 							mapId={map.id}
 							title={map.title}
@@ -149,7 +154,7 @@ export default async function Home({ searchParams }: HomeProps) {
 						Explore community-driven maps of Bengaluru&apos;s best cafes,
 						restaurants, and hangout spots.
 					</p>
-					<Link href="/create-map">
+					<Link href="/create-map" prefetch={false}>
 						<Button size="lg">Create Your Own Map</Button>
 					</Link>
 				</div>
@@ -162,6 +167,7 @@ export default async function Home({ searchParams }: HomeProps) {
 							fill="none"
 							stroke="currentColor"
 							className="w-4 h-4 mr-2 text-gray-500"
+							aria-hidden="true"
 						>
 							<path
 								strokeLinecap="round"

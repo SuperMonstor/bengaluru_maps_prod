@@ -51,7 +51,10 @@ export function CafeCard({
 						alt={title}
 						fill
 						className="object-cover transition-transform duration-300 group-hover:scale-105"
-						priority
+						priority={false}
+						loading="lazy"
+						sizes="(max-width: 768px) 100vw, 256px"
+						quality={75}
 					/>
 				</div>
 

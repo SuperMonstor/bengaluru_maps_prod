@@ -2,7 +2,7 @@
 
 import { ThumbsUp } from "lucide-react"
 import { cn } from "@/lib/utils/utils"
-import { useState, useEffect } from "react"
+import { useState, useEffect, memo, useCallback } from "react"
 import { toggleUpvote, hasUserUpvoted } from "@/lib/supabase/votesService"
 import { useAuth } from "@/lib/context/AuthContext"
 import { useRouter } from "next/navigation"
@@ -16,7 +16,12 @@ interface UpvoteButtonProps {
 	variant?: "icon" | "text" | "pill"
 }
 
-export function UpvoteButton({
+// Memoized ThumbsUp icon to prevent re-renders
+const ThumbsUpIcon = memo(({ className }: { className?: string }) => (
+	<ThumbsUp className={className} />
+))
+
+export const UpvoteButton = memo(function UpvoteButton({
 	mapId,
 	initialUpvotes,
 	initialIsUpvoted = false,
@@ -31,67 +36,70 @@ export function UpvoteButton({
 	const router = useRouter()
 	const { toast } = useToast()
 
-	const handleUpvote = async (e: React.MouseEvent) => {
-		e.preventDefault() // Prevent navigation if button is inside a link
-		e.stopPropagation() // Prevent event bubbling
+	const handleUpvote = useCallback(
+		async (e: React.MouseEvent) => {
+			e.preventDefault() // Prevent navigation if button is inside a link
+			e.stopPropagation() // Prevent event bubbling
 
-		if (!user) {
-			toast({
-				title: "Authentication required",
-				description: "Please sign in to upvote",
-				variant: "destructive",
-			})
-			router.push("/login")
-			return
-		}
+			if (!user) {
+				toast({
+					title: "Authentication required",
+					description: "Please sign in to upvote",
+					variant: "destructive",
+				})
+				router.push("/login")
+				return
+			}
 
-		if (isLoading) return
+			if (isLoading) return
 
-		// Update UI immediately for better responsiveness
-		const newUpvotedState = !isUpvoted
-		setIsAnimating(true)
-		setIsUpvoted(newUpvotedState)
-		setUpvotes((prev) => (newUpvotedState ? prev + 1 : prev - 1))
+			// Update UI immediately for better responsiveness
+			const newUpvotedState = !isUpvoted
+			setIsAnimating(true)
+			setIsUpvoted(newUpvotedState)
+			setUpvotes((prev) => (newUpvotedState ? prev + 1 : prev - 1))
 
-		// Reset animation after a delay
-		setTimeout(() => {
-			setIsAnimating(false)
-		}, 500)
+			// Reset animation after a delay
+			setTimeout(() => {
+				setIsAnimating(false)
+			}, 500)
 
-		setIsLoading(true)
+			setIsLoading(true)
 
-		try {
-			const result = await toggleUpvote(mapId, user.id)
+			try {
+				const result = await toggleUpvote(mapId, user.id)
 
-			if (!result.success) {
-				// Revert the optimistic update if the server request fails
+				if (!result.success) {
+					// Revert the optimistic update if the server request fails
+					setIsUpvoted(!newUpvotedState)
+					setUpvotes((prev) => (newUpvotedState ? prev - 1 : prev + 1))
+
+					toast({
+						title: "Error",
+						description: result.error || "Failed to upvote",
+						variant: "destructive",
+					})
+				}
+
+				// Refresh the page data in the background
+				router.refresh()
+			} catch (error) {
+				// Revert the optimistic update if there's an error
 				setIsUpvoted(!newUpvotedState)
 				setUpvotes((prev) => (newUpvotedState ? prev - 1 : prev + 1))
 
+				console.error("Error upvoting:", error)
 				toast({
 					title: "Error",
-					description: result.error || "Failed to upvote",
+					description: "Something went wrong",
 					variant: "destructive",
 				})
+			} finally {
+				setIsLoading(false)
 			}
-
-			// Refresh the page data in the background
-			router.refresh()
-		} catch (error) {
-			// Revert the optimistic update if there's an error
-			setIsUpvoted(!newUpvotedState)
-			setUpvotes((prev) => (newUpvotedState ? prev - 1 : prev + 1))
-
-			console.error("Error upvoting:", error)
-			toast({
-				title: "Error",
-				description: "Something went wrong",
-				variant: "destructive",
-			})
-		} finally {
-			setIsLoading(false)
-		}
-	}
+		},
+		[isLoading, isUpvoted, mapId, router, toast, user]
+	)
 
 	if (variant === "pill") {
 		return (
@@ -109,7 +117,7 @@ export function UpvoteButton({
 				onClick={handleUpvote}
 				disabled={isLoading}
 			>
-				<ThumbsUp
+				<ThumbsUpIcon
 					className={cn("h-3.5 w-3.5", isUpvoted && "fill-green-500")}
 				/>
 				<span
@@ -137,7 +145,9 @@ export function UpvoteButton({
 					onClick={handleUpvote}
 					disabled={isLoading}
 				>
-					<ThumbsUp className={cn("h-4 w-4", isUpvoted && "fill-green-500")} />
+					<ThumbsUpIcon
+						className={cn("h-4 w-4", isUpvoted && "fill-green-500")}
+					/>
 				</button>
 				<span
 					className={cn(
@@ -157,7 +167,7 @@ export function UpvoteButton({
 			className={cn("flex items-center text-sm cursor-pointer", className)}
 			onClick={handleUpvote}
 		>
-			<ThumbsUp
+			<ThumbsUpIcon
 				className={cn(
 					"mr-1.5 h-4 w-4",
 					isUpvoted
@@ -178,4 +188,4 @@ export function UpvoteButton({
 			</span>
 		</div>
 	)
-}
+})

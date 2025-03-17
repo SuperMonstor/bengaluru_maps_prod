@@ -1,4 +1,7 @@
-export function LoadingIndicator({
+import { memo } from "react"
+
+// Memoize the LoadingIndicator to prevent unnecessary re-renders
+export const LoadingIndicator = memo(function LoadingIndicator({
 	message = "Loading content...",
 }: {
 	message?: string
@@ -16,4 +19,4 @@ export function LoadingIndicator({
 			<p className="text-sm text-muted-foreground">{message}</p>
 		</div>
 	)
-}
+})

@@ -7,14 +7,19 @@ import { Toaster } from "@/components/ui/toaster"
 import { PendingCountProvider } from "@/lib/context/PendingCountContext"
 import FeedbackButton from "@/components/custom-ui/FeedbackButton"
 
+// Optimize font loading with display: swap
 const geistSans = Geist({
 	subsets: ["latin"],
 	variable: "--font-geist-sans",
+	display: "swap",
+	preload: true,
 })
 
 const geistMono = Geist_Mono({
 	subsets: ["latin"],
 	variable: "--font-geist-mono",
+	display: "swap",
+	preload: false, // Only preload primary font
 })
 
 export const metadata: Metadata = {
@@ -118,6 +123,17 @@ export default function RootLayout({
 				/>
 				<meta name="msapplication-TileColor" content="#ffffff" />
 				<meta name="theme-color" content="#ffffff" />
+
+				{/* Preload critical assets */}
+				<link rel="preload" href="/placeholder.svg" as="image" />
+				<link
+					rel="dns-prefetch"
+					href="https://omnlyrfivyoazohpwdzu.supabase.co"
+				/>
+				<link
+					rel="preconnect"
+					href="https://omnlyrfivyoazohpwdzu.supabase.co"
+				/>
 			</head>
 			<body className="font-sans antialiased">
 				<AuthProvider>
