@@ -40,11 +40,8 @@ export function RouteTransition() {
 			const target = e.target as HTMLElement
 			const link = target.closest("a")
 
-			if (
-				link &&
-				link.getAttribute("href") &&
-				!link.getAttribute("href").startsWith("#")
-			) {
+			const href = link?.getAttribute("href")
+			if (href && !href.startsWith("#")) {
 				setIsNavigating(true)
 			}
 		}

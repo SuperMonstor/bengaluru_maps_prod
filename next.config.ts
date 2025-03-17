@@ -35,8 +35,8 @@ const nextConfig: NextConfig = {
 	compress: true,
 	// Increase performance budget
 	experimental: {
-		// Enable server components
-		serverActions: true,
+		// Enable server actions with default settings
+		serverActions: {},
 		// Enable optimizations
 		optimizeCss: true,
 		// Optimize package imports

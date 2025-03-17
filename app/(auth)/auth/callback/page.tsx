@@ -1,12 +1,15 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/api/supabaseClient"
 import { updateUserInDatabase } from "@/lib/supabase/userService"
+import { Suspense } from "react"
 
-export default function AuthCallback() {
+// Client component that uses useSearchParams
+function AuthCallbackContent() {
 	const router = useRouter()
+	const searchParams = useSearchParams()
 
 	useEffect(() => {
 		const handleAuth = async () => {
@@ -28,4 +31,13 @@ export default function AuthCallback() {
 	}, [router])
 
 	return <p>Signing in...</p>
+}
+
+// Main page component with Suspense boundary
+export default function AuthCallback() {
+	return (
+		<Suspense fallback={<p>Loading...</p>}>
+			<AuthCallbackContent />
+		</Suspense>
+	)
 }
