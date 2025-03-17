@@ -27,10 +27,6 @@ const nextConfig: NextConfig = {
 	},
 	// Enable React strict mode for better development experience
 	reactStrictMode: true,
-	// Enable SWC minification for faster builds
-	swcMinify: true,
-	// Optimize fonts
-	optimizeFonts: true,
 	// Enable compression
 	compress: true,
 	// Increase performance budget
