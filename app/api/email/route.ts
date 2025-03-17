@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
 				result.error &&
 				(result.error.message?.includes("domain is not verified") ||
 					result.error.message?.includes("bobscompany.co") ||
-					result.error.statusCode === 403)
+					(result.error as any).statusCode === 403)
 			) {
 				console.log(
 					"[Email API] Custom domain not verified, trying with Resend sandbox domain..."

@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 				result.error &&
 				(result.error.message?.includes("domain is not verified") ||
 					result.error.message?.includes("bobscompany.co") ||
-					result.error.statusCode === 403)
+					(result.error as any).statusCode === 403)
 			) {
 				if (process.env.NODE_ENV === "development") {
 					console.log("[Approval Email API] Using sandbox domain as fallback")
