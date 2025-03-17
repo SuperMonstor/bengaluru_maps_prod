@@ -6,6 +6,10 @@ import { createClient } from "@/lib/supabase/api/supabaseClient"
 import { updateUserInDatabase } from "@/lib/supabase/userService"
 import { Suspense } from "react"
 
+// Force this page to be dynamic, preventing static prerendering
+export const dynamic = "force-dynamic"
+export const runtime = "edge"
+
 // Client component that uses useSearchParams
 function AuthCallbackContent() {
 	const router = useRouter()
@@ -13,31 +17,54 @@ function AuthCallbackContent() {
 
 	useEffect(() => {
 		const handleAuth = async () => {
-			const { data, error } = await createClient().auth.getSession()
+			const supabase = createClient()
+			const { data, error } = await supabase.auth.getSession()
 
 			if (error || !data?.session) {
-				console.error("Authentication failed:", error)
-				router.replace("/login") // Redirect back to login if auth fails
-			} else {
-				const { success, error } = await updateUserInDatabase(data.session.user)
-				if (!success) {
-					console.error("User update failed: ", error)
-				}
-				router.replace("/") // Redirect to home on success
+				console.error(
+					"Authentication failed:",
+					error?.message || "No session found"
+				)
+				router.replace("/login")
+				return
 			}
+
+			const { success, error: updateError } = await updateUserInDatabase(
+				data.session.user
+			)
+			if (!success) {
+				console.error("User update failed:", updateError)
+			}
+
+			router.replace("/")
 		}
 
-		handleAuth()
+		handleAuth().catch((err) => {
+			console.error("Error in auth handling:", err)
+			router.replace("/login")
+		})
 	}, [router])
 
-	return <p>Signing in...</p>
+	return (
+		<div className="flex flex-col items-center justify-center min-h-[50vh]">
+			<p className="text-lg">Signing in...</p>
+		</div>
+	)
 }
 
 // Main page component with Suspense boundary
 export default function AuthCallback() {
 	return (
-		<Suspense fallback={<p>Loading...</p>}>
-			<AuthCallbackContent />
-		</Suspense>
+		<div className="container mx-auto">
+			<Suspense
+				fallback={
+					<div className="flex flex-col items-center justify-center min-h-[50vh]">
+						<p className="text-lg">Loading authentication...</p>
+					</div>
+				}
+			>
+				<AuthCallbackContent />
+			</Suspense>
+		</div>
 	)
 }

@@ -1,10 +1,11 @@
 "use client"
 
 import { usePathname, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter } from "next/navigation"
 
-export function RouteTransition() {
+// Component that uses useSearchParams
+function RouteTransitionContent() {
 	const pathname = usePathname()
 	const searchParams = useSearchParams()
 	const router = useRouter()
@@ -72,5 +73,20 @@ export function RouteTransition() {
 		>
 			<div className="h-full bg-primary animate-progress origin-left"></div>
 		</div>
+	)
+}
+
+// Export the component with a Suspense boundary
+export function RouteTransition() {
+	return (
+		<Suspense
+			fallback={
+				<div className="fixed top-0 left-0 right-0 z-50 h-1 bg-primary-50 transition-opacity duration-300 opacity-0">
+					<div className="h-full bg-primary animate-progress origin-left"></div>
+				</div>
+			}
+		>
+			<RouteTransitionContent />
+		</Suspense>
 	)
 }

@@ -27,6 +27,7 @@ import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/context/AuthContext"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 import DeleteLocationDialog from "@/components/map/DeleteLocationDialog"
+import { Suspense } from "react"
 
 interface MapData {
 	id: string
@@ -87,7 +88,8 @@ const CustomMarker = ({ position, onClick, isSelected }: any) => {
 	)
 }
 
-export default function ClientMapPageContent({
+// Component that uses useSearchParams
+function ClientMapPageContentInner({
 	map,
 	initialIsUpvoted = false,
 	user,
@@ -1042,5 +1044,25 @@ export default function ClientMapPageContent({
 				)}
 			</div>
 		</>
+	)
+}
+
+// Main component with Suspense boundary
+export default function ClientMapPageContent(props: ClientMapPageContentProps) {
+	return (
+		<Suspense
+			fallback={
+				<div className="p-4">
+					<div className="animate-pulse">
+						<div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
+						<div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+						<div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+						<div className="h-64 bg-gray-200 rounded mb-4"></div>
+					</div>
+				</div>
+			}
+		>
+			<ClientMapPageContentInner {...props} />
+		</Suspense>
 	)
 }
