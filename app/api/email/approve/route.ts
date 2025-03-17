@@ -3,19 +3,11 @@ import { Resend } from "resend"
 
 // Initialize Resend with API key
 const resendApiKey = process.env.RESEND_API_KEY
-console.log("[Approval Email API] RESEND_API_KEY configured:", !!resendApiKey)
-console.log(
-	"[Approval Email API] RESEND_API_KEY length:",
-	resendApiKey ? resendApiKey.length : 0
-)
+const resend = resendApiKey ? new Resend(resendApiKey) : null
 
-// Create Resend instance
-let resend: Resend | null = null
-try {
-	resend = new Resend(resendApiKey)
-	console.log("[Approval Email API] Resend instance created successfully")
-} catch (error) {
-	console.error("[Approval Email API] Error creating Resend instance:", error)
+// Only log in development
+if (process.env.NODE_ENV === "development") {
+	console.log("[Approval Email API] Resend configured:", !!resend)
 }
 
 // Email template
@@ -35,26 +27,12 @@ const getApprovalNotificationTemplate = (
 }
 
 export async function POST(request: NextRequest) {
-	console.log("[Approval Email API] Route handler started")
-
 	try {
-		// Log API key status (don't log the actual key)
-		console.log(
-			"[Approval Email API] RESEND_API_KEY configured:",
-			!!resendApiKey
-		)
-		console.log("[Approval Email API] Resend instance created:", !!resend)
-
 		// Parse request body
 		let body
 		try {
 			body = await request.json()
-			console.log("[Approval Email API] Request body parsed successfully")
 		} catch (parseError) {
-			console.error(
-				"[Approval Email API] Error parsing request body:",
-				parseError
-			)
 			return NextResponse.json(
 				{ success: false, error: "Invalid JSON in request body" },
 				{ status: 400 }
@@ -63,16 +41,8 @@ export async function POST(request: NextRequest) {
 
 		const { submitterEmail, mapTitle, locationName, mapUrl } = body
 
-		console.log("[Approval Email API] Email request received with params:", {
-			submitterEmail: submitterEmail ? "✓" : "✗",
-			mapTitle: mapTitle ? "✓" : "✗",
-			locationName: locationName ? "✓" : "✗",
-			mapUrl: mapUrl ? "✓" : "✗",
-		})
-
 		// Validate required fields
 		if (!submitterEmail || !mapTitle || !locationName || !mapUrl) {
-			console.error("[Approval Email API] Missing required fields for email")
 			return NextResponse.json(
 				{
 					success: false,
@@ -96,31 +66,14 @@ export async function POST(request: NextRequest) {
 			html: getApprovalNotificationTemplate(mapTitle, locationName, mapUrl),
 		}
 
-		console.log("[Approval Email API] Email payload prepared:", {
-			from: emailPayload.from,
-			to: emailPayload.to,
-			subject: emailPayload.subject,
-		})
-
 		// Check if Resend is configured
 		if (!resendApiKey || !resend) {
-			console.error(
-				"[Approval Email API] RESEND_API_KEY is not configured or Resend instance failed to initialize"
-			)
-
-			// Log the email that would have been sent
-			console.log(
-				"[Approval Email API] FALLBACK: Email would have been sent with the following details:"
-			)
-			console.log("[Approval Email API] FALLBACK: To:", submitterEmail)
-			console.log(
-				"[Approval Email API] FALLBACK: Subject:",
-				`Your Location "${locationName}" Has Been Approved`
-			)
-			console.log(
-				"[Approval Email API] FALLBACK: Content:",
-				getApprovalNotificationTemplate(mapTitle, locationName, mapUrl)
-			)
+			if (process.env.NODE_ENV === "development") {
+				console.log(
+					"[Approval Email API] FALLBACK: Email would have been sent to:",
+					submitterEmail
+				)
+			}
 
 			// Return success for testing purposes
 			return NextResponse.json({
@@ -133,7 +86,6 @@ export async function POST(request: NextRequest) {
 			})
 		}
 
-		console.log("[Approval Email API] Sending email via Resend...")
 		try {
 			// First try with the custom domain
 			let result = await resend.emails.send(emailPayload)
@@ -145,9 +97,9 @@ export async function POST(request: NextRequest) {
 					result.error.message?.includes("bobscompany.co") ||
 					result.error.statusCode === 403)
 			) {
-				console.log(
-					"[Approval Email API] Custom domain not verified, trying with Resend sandbox domain..."
-				)
+				if (process.env.NODE_ENV === "development") {
+					console.log("[Approval Email API] Using sandbox domain as fallback")
+				}
 
 				// Use Resend's sandbox domain as fallback
 				const sandboxPayload = {
@@ -155,27 +107,20 @@ export async function POST(request: NextRequest) {
 					from: "onboarding@resend.dev", // This is Resend's sandbox domain
 				}
 
-				console.log(
-					"[Approval Email API] Using sandbox domain:",
-					sandboxPayload.from
-				)
 				result = await resend.emails.send(sandboxPayload)
 			}
 
 			const { data, error } = result
 
 			if (error) {
-				console.error("[Approval Email API] Error from Resend API:", error)
 				return NextResponse.json(
 					{ success: false, error, details: "Resend API error" },
 					{ status: 500 }
 				)
 			}
 
-			console.log("[Approval Email API] Email sent successfully:", data)
 			return NextResponse.json({ success: true, data })
 		} catch (resendError) {
-			console.error("[Approval Email API] Exception from Resend:", resendError)
 			return NextResponse.json(
 				{
 					success: false,
@@ -189,13 +134,6 @@ export async function POST(request: NextRequest) {
 			)
 		}
 	} catch (error) {
-		console.error(
-			"[Approval Email API] Unhandled exception in email API route:",
-			error
-		)
-		if (error instanceof Error) {
-			console.error("[Approval Email API] Error stack:", error.stack)
-		}
 		return NextResponse.json(
 			{
 				success: false,

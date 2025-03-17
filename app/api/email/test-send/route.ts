@@ -5,12 +5,12 @@ import { Resend } from "resend"
 const resendApiKey = process.env.RESEND_API_KEY
 const resend = resendApiKey ? new Resend(resendApiKey) : null
 
-console.log("[Email Test Send API] Resend configured:", !!resend)
-console.log("[Email Test Send API] API key length:", resendApiKey?.length || 0)
+// Only log in development
+if (process.env.NODE_ENV === "development") {
+	console.log("[Email API] Resend configured:", !!resend)
+}
 
 export async function POST(request: NextRequest) {
-	console.log("[Email Test Send API] Test send endpoint called")
-
 	try {
 		// Parse request body
 		const body = await request.json()
@@ -19,8 +19,6 @@ export async function POST(request: NextRequest) {
 			subject = "Test Email from Bengaluru Maps",
 			message = "This is a test email",
 		} = body
-
-		console.log("[Email Test Send API] Sending test email to:", to)
 
 		// Validate email address
 		if (!to || typeof to !== "string" || !to.includes("@")) {
@@ -32,11 +30,8 @@ export async function POST(request: NextRequest) {
 
 		// Check if Resend is configured
 		if (!resend) {
-			console.error(
-				"[Email Test Send API] Resend not configured - missing API key"
-			)
 			return NextResponse.json(
-				{ error: "Email service not configured" },
+				{ error: "Email service not configured - missing API key" },
 				{ status: 500 }
 			)
 		}
@@ -61,18 +56,13 @@ export async function POST(request: NextRequest) {
       `,
 		}
 
-		console.log(
-			"[Email Test Send API] Sending email with payload:",
-			JSON.stringify(payload)
-		)
-
 		// Try to send email
 		try {
 			const result = await resend.emails.send(payload)
-			console.log(
-				"[Email Test Send API] Email sent successfully:",
-				JSON.stringify(result)
-			)
+
+			if (process.env.NODE_ENV === "development") {
+				console.log("[Email API] Email sent successfully")
+			}
 
 			return NextResponse.json({
 				success: true,
@@ -80,17 +70,17 @@ export async function POST(request: NextRequest) {
 				result,
 			})
 		} catch (error: any) {
-			console.error("[Email Test Send API] Error from Resend API:", error)
-
 			// Check if it's a domain verification error
 			if (
 				error.message?.includes("domain is not verified") ||
 				error.message?.includes("bobscompany.co") ||
 				error.statusCode === 403
 			) {
-				console.log(
-					"[Email Test Send API] Domain verification error, trying sandbox domain"
-				)
+				if (process.env.NODE_ENV === "development") {
+					console.log(
+						"[Email API] Domain verification error, trying sandbox domain"
+					)
+				}
 
 				// Try with sandbox domain
 				try {
@@ -99,16 +89,7 @@ export async function POST(request: NextRequest) {
 						from: "Bengaluru Maps <onboarding@resend.dev>",
 					}
 
-					console.log(
-						"[Email Test Send API] Sending with sandbox domain:",
-						JSON.stringify(sandboxPayload)
-					)
-
 					const sandboxResult = await resend.emails.send(sandboxPayload)
-					console.log(
-						"[Email Test Send API] Email sent with sandbox domain:",
-						JSON.stringify(sandboxResult)
-					)
 
 					return NextResponse.json({
 						success: true,
@@ -117,10 +98,6 @@ export async function POST(request: NextRequest) {
 						note: "Used sandbox domain due to domain verification issues",
 					})
 				} catch (sandboxError: any) {
-					console.error(
-						"[Email Test Send API] Error with sandbox domain:",
-						sandboxError
-					)
 					return NextResponse.json(
 						{
 							error: "Failed to send email even with sandbox domain",
@@ -137,7 +114,6 @@ export async function POST(request: NextRequest) {
 			)
 		}
 	} catch (error: any) {
-		console.error("[Email Test Send API] Unhandled exception:", error)
 		return NextResponse.json(
 			{ error: "Internal server error", details: error.message },
 			{ status: 500 }

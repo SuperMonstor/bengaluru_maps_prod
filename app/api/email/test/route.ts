@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
+import { useAuth } from "@/lib/context/AuthContext"
+
+// List of authorized emails that can access this endpoint
+const AUTHORIZED_EMAILS = ["senthilsudarshan@gmail.com"]
 
 export async function GET(request: NextRequest) {
 	console.log("[Email Test API] Test endpoint called")
@@ -13,7 +17,6 @@ export async function GET(request: NextRequest) {
 			resendApiKeyConfigured: !!resendApiKey,
 			resendApiKeyLength: resendApiKey ? resendApiKey.length : 0,
 			nextPublicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL || "(not set)",
-			nextPublicAppUrl: process.env.NEXT_PUBLIC_APP_URL || "(not set)",
 		},
 	})
 }

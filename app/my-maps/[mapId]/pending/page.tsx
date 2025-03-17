@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/context/AuthContext"
 import Image from "next/image"
 import { useLoadScript } from "@react-google-maps/api"
-import { Check, X, MapPin } from "lucide-react"
+import { Check, X, MapPin, Loader2 } from "lucide-react"
 import { getMapById } from "@/lib/supabase/mapsService"
 import {
 	fetchPendingSubmissions,
@@ -20,6 +20,9 @@ import { Submission } from "@/lib/types/mapTypes"
 import { useToast } from "@/lib/hooks/use-toast"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
 
+// Define action types for better type safety
+type ActionType = "approve" | "reject" | null
+
 export default function PendingSubmissionsPage({
 	params,
 }: {
@@ -29,6 +32,9 @@ export default function PendingSubmissionsPage({
 	const [submissions, setSubmissions] = useState<Submission[]>([])
 	const [mapName, setMapName] = useState<string>("")
 	const [loading, setLoading] = useState(true)
+	const [processingItems, setProcessingItems] = useState<
+		Record<string, ActionType>
+	>({})
 	const { refreshPendingCount } = usePendingCount()
 	const { toast } = useToast()
 
@@ -154,43 +160,81 @@ export default function PendingSubmissionsPage({
 	}, [user, isLoaded, mapId])
 
 	const handleApprove = async (locationId: string) => {
-		const { success, error } = await approveLocation(locationId)
+		// Set this location as processing with 'approve' action
+		setProcessingItems((prev) => ({ ...prev, [locationId]: "approve" }))
 
-		if (success) {
-			// Update UI and refresh pending count
-			setSubmissions((prev) => prev.filter((loc) => loc.id !== locationId))
-			refreshPendingCount()
+		try {
+			const { success, error } = await approveLocation(locationId)
 
-			toast({
-				title: "Location approved",
-				description: "The location has been added to your map.",
-			})
-		} else {
+			if (success) {
+				// Update UI and refresh pending count
+				setSubmissions((prev) => prev.filter((loc) => loc.id !== locationId))
+				refreshPendingCount()
+
+				toast({
+					title: "Location approved",
+					description: "The location has been added to your map.",
+				})
+			} else {
+				toast({
+					variant: "destructive",
+					title: "Error",
+					description: error || "Failed to approve location. Please try again.",
+				})
+			}
+		} catch (err) {
+			console.error("Error in approve handler:", err)
 			toast({
 				variant: "destructive",
 				title: "Error",
-				description: error || "Failed to approve location. Please try again.",
+				description: "An unexpected error occurred. Please try again.",
+			})
+		} finally {
+			// Remove this location from processing state
+			setProcessingItems((prev) => {
+				const newState = { ...prev }
+				delete newState[locationId]
+				return newState
 			})
 		}
 	}
 
 	const handleReject = async (locationId: string) => {
-		const { success, error } = await rejectLocation(locationId)
+		// Set this location as processing with 'reject' action
+		setProcessingItems((prev) => ({ ...prev, [locationId]: "reject" }))
 
-		if (success) {
-			// Update UI and refresh pending count
-			setSubmissions((prev) => prev.filter((loc) => loc.id !== locationId))
-			refreshPendingCount()
+		try {
+			const { success, error } = await rejectLocation(locationId)
 
-			toast({
-				title: "Location rejected",
-				description: "The location has been rejected.",
-			})
-		} else {
+			if (success) {
+				// Update UI and refresh pending count
+				setSubmissions((prev) => prev.filter((loc) => loc.id !== locationId))
+				refreshPendingCount()
+
+				toast({
+					title: "Location rejected",
+					description: "The location has been rejected.",
+				})
+			} else {
+				toast({
+					variant: "destructive",
+					title: "Error",
+					description: error || "Failed to reject location. Please try again.",
+				})
+			}
+		} catch (err) {
+			console.error("Error in reject handler:", err)
 			toast({
 				variant: "destructive",
 				title: "Error",
-				description: error || "Failed to reject location. Please try again.",
+				description: "An unexpected error occurred. Please try again.",
+			})
+		} finally {
+			// Remove this location from processing state
+			setProcessingItems((prev) => {
+				const newState = { ...prev }
+				delete newState[locationId]
+				return newState
 			})
 		}
 	}
@@ -208,7 +252,12 @@ export default function PendingSubmissionsPage({
 	if (loading) {
 		return (
 			<main className="bg-gray-50/50 flex flex-col min-h-screen">
-				<div className="container mx-auto px-4 py-8">Loading...</div>
+				<div className="container mx-auto px-4 py-8 flex items-center justify-center">
+					<div className="flex items-center gap-2">
+						<Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+						<span>Loading submissions...</span>
+					</div>
+				</div>
 			</main>
 		)
 	}
@@ -269,19 +318,39 @@ export default function PendingSubmissionsPage({
 														variant="outline"
 														size="sm"
 														onClick={() => handleApprove(submission.id)}
+														disabled={!!processingItems[submission.id]}
 														className="h-8 border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700"
 													>
-														<Check className="w-3.5 h-3.5 mr-1" />
-														Approve
+														{processingItems[submission.id] === "approve" ? (
+															<>
+																<Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+																Approving...
+															</>
+														) : (
+															<>
+																<Check className="w-3.5 h-3.5 mr-1" />
+																Approve
+															</>
+														)}
 													</Button>
 													<Button
 														variant="outline"
 														size="sm"
 														onClick={() => handleReject(submission.id)}
+														disabled={!!processingItems[submission.id]}
 														className="h-8 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700"
 													>
-														<X className="w-3.5 h-3.5 mr-1" />
-														Reject
+														{processingItems[submission.id] === "reject" ? (
+															<>
+																<Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+																Rejecting...
+															</>
+														) : (
+															<>
+																<X className="w-3.5 h-3.5 mr-1" />
+																Reject
+															</>
+														)}
 													</Button>
 												</div>
 											</div>
