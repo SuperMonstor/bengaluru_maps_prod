@@ -139,14 +139,14 @@ export default function RootLayout({
 					href="https://omnlyrfivyoazohpwdzu.supabase.co"
 				/>
 			</head>
-			<body className="font-sans antialiased">
+			<body className="font-sans antialiased h-full overflow-hidden">
 				<AuthProvider>
 					<PendingCountProvider>
 						<RouteTransition />
 						{/* Create a flex layout with header and main content */}
-						<div className="flex flex-col min-h-screen">
+						<div className="flex flex-col h-full">
 							<Header />
-							<main className="flex-1">{children}</main>
+							<main className="flex-1 overflow-auto">{children}</main>
 						</div>
 						{/* <FeedbackButton /> */}
 					</PendingCountProvider>

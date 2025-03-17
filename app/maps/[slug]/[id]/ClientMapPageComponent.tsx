@@ -265,7 +265,7 @@ export default function ClientMapPageContent({
 
 	if (!isLoaded) {
 		return (
-			<div className="flex items-center justify-center h-[calc(100vh-64px)] w-full">
+			<div className="flex items-center justify-center h-[calc(100vh-72px)] w-full">
 				<LoadingIndicator message="Loading map details..." />
 			</div>
 		)
@@ -274,7 +274,7 @@ export default function ClientMapPageContent({
 	return (
 		<>
 			<style>{popupStyles}</style>
-			<div className="flex flex-col h-[calc(100vh-64px)] w-full">
+			<div className="flex flex-col h-[calc(100vh-72px)] w-full">
 				{/* Desktop Layout */}
 				<div className="hidden md:flex h-full w-full">
 					<div
