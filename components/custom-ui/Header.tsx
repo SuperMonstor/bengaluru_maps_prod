@@ -13,6 +13,13 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { AuthContext } from "@/lib/context/AuthContext"
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
+import { Map, PanelRight, HeartHandshake, Menu } from "lucide-react"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+
+// Add URLs for Trello board and Google Maps feedback
+const KANBAN_BOARD_URL = "https://trello.com/b/your-board-url"
+const REQUEST_FEEDBACK_URL =
+	"https://sudarshansk.notion.site/1bc35e88bb08807ebce5ce39bd831d44?v=1bc35e88bb0880619762000c31b0b543&pvs=4"
 
 function useAuth() {
 	const context = useContext(AuthContext)
@@ -108,44 +115,92 @@ const Header = memo(function Header() {
 
 			{/* Right Section: Buttons and User Menu */}
 			<div className="flex items-center gap-2 md:gap-3">
-				{!authLoading && user && (
-					<Link href="/my-maps" className="hidden md:inline-block">
+				{/* Mobile Menu */}
+				<Sheet>
+					<SheetTrigger asChild className="md:hidden">
+						<Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+							<Menu className="h-5 w-5" />
+							<span className="sr-only">Toggle menu</span>
+						</Button>
+					</SheetTrigger>
+					<SheetContent side="right" className="w-[300px] sm:w-[400px]">
+						<div className="flex flex-col gap-6 mt-8">
+							<Link
+								href="/create-map"
+								className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-gray-100"
+							>
+								<PlusIcon />
+								<span>Create Map</span>
+							</Link>
+
+							<Link
+								href={KANBAN_BOARD_URL}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-gray-100"
+							>
+								<PanelRight className="h-5 w-5" />
+								<span>Upcoming Features</span>
+							</Link>
+
+							<Link
+								href={REQUEST_FEEDBACK_URL}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-gray-100"
+							>
+								<HeartHandshake className="h-5 w-5" />
+								<span>Feature Requests</span>
+							</Link>
+						</div>
+					</SheetContent>
+				</Sheet>
+
+				{/* Desktop Navigation */}
+				<div className="hidden md:flex items-center gap-3">
+					<Link href="/create-map">
 						<Button
-							variant="ghost"
+							variant="outline"
 							size="sm"
-							className="text-gray-700 hover:text-gray-900 flex items-center gap-2"
+							className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-2"
 						>
-							<MapIcon />
-							My Maps
-							{pendingCount > 0 && (
-								<span className="ml-1 bg-red-100 text-red-600 text-xs font-medium px-1.5 py-0.5 rounded-full">
-									{pendingCount}
-								</span>
-							)}
+							<PlusIcon />
+							Create Map
 						</Button>
 					</Link>
-				)}
 
-				<Link href="/create-map" className="hidden sm:inline-block">
-					<Button
-						variant="outline"
-						size="sm"
-						className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-2"
+					<Link
+						href={KANBAN_BOARD_URL}
+						target="_blank"
+						rel="noopener noreferrer"
 					>
-						<PlusIcon />
-						Create Map
-					</Button>
-				</Link>
-				<Link href="/create-map" className="sm:hidden inline-block">
-					<Button
-						variant="outline"
-						size="icon"
-						className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 w-8 h-8"
-					>
-						<PlusIcon />
-					</Button>
-				</Link>
+						<Button
+							variant="outline"
+							size="sm"
+							className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-2"
+						>
+							<PanelRight className="h-4 w-4" />
+							Upcoming Features
+						</Button>
+					</Link>
 
+					<Link
+						href={REQUEST_FEEDBACK_URL}
+						target="_blank"
+						rel="noopener noreferrer"
+					>
+						<Button
+							variant="outline"
+							size="sm"
+							className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-2"
+						>
+							<HeartHandshake className="h-4 w-4" />
+							Request Feature/Fix
+						</Button>
+					</Link>
+				</div>
+
+				{/* User Menu */}
 				{authLoading ? (
 					<div className="h-8 w-8 md:h-9 md:w-9 animate-pulse bg-gray-300 rounded-full" />
 				) : user ? (
@@ -161,18 +216,11 @@ const Header = memo(function Header() {
 											user.picture_url ??
 											`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
 										}
-										alt={`${user.first_name} ${user.last_name}`}
 									/>
-									<AvatarFallback className="bg-primary/10 text-primary font-medium">
-										{user.first_name?.[0]?.toUpperCase() ||
-											user.email?.[0]?.toUpperCase()}
+									<AvatarFallback>
+										{user.email?.[0]?.toUpperCase() ?? "U"}
 									</AvatarFallback>
 								</Avatar>
-								{pendingCount > 0 && (
-									<span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-medium rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-white shadow-sm md:hidden">
-										{pendingCount > 99 ? "99+" : pendingCount}
-									</span>
-								)}
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent
@@ -180,55 +228,31 @@ const Header = memo(function Header() {
 							sideOffset={8}
 							className="w-[calc(100vw-2rem)] max-w-[320px] p-0 bg-white shadow-lg rounded-lg border border-gray-100"
 						>
-							<div className="p-3 border-b border-gray-100 bg-gray-50 rounded-t-lg">
-								<div className="flex items-center gap-3">
-									<Avatar className="h-10 w-10 border border-gray-200">
-										<AvatarImage
-											src={
-												user.picture_url ??
-												`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
-											}
-										/>
-										<AvatarFallback className="bg-primary/10 text-primary font-medium">
-											{user.first_name?.[0]?.toUpperCase() ||
-												user.email?.[0]?.toUpperCase()}
-										</AvatarFallback>
-									</Avatar>
-									<div className="flex flex-col">
-										<span className="font-semibold text-gray-900">
-											{user.first_name} {user.last_name}
-										</span>
-										<span className="text-xs text-gray-500 truncate max-w-[180px]">
-											{user.email}
-										</span>
-									</div>
+							<div className="p-3 border-b border-gray-100">
+								<div className="flex flex-col">
+									<span className="font-semibold text-gray-900">
+										{user.first_name} {user.last_name}
+									</span>
+									<span className="text-xs text-gray-500 truncate max-w-[180px]">
+										{user.email}
+									</span>
 								</div>
 							</div>
 
-							<div className="py-1 md:hidden">
-								<Link href="/my-maps" className="block">
-									<DropdownMenuItem className="cursor-pointer flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-										<div className="flex items-center gap-2">
-											<MapIcon />
-											My Maps
-										</div>
+							<div className="py-1">
+								<Link href="/my-maps">
+									<DropdownMenuItem className="flex items-center gap-2 cursor-pointer px-3 py-2">
+										<MapIcon />
+										<span>My Maps</span>
 										{pendingCount > 0 && (
-											<span className="bg-red-100 text-red-600 text-xs font-medium px-2 py-0.5 rounded-full">
-												{pendingCount} pending
+											<span className="ml-auto bg-red-100 text-red-600 text-xs font-medium px-1.5 py-0.5 rounded-full">
+												{pendingCount}
 											</span>
 										)}
 									</DropdownMenuItem>
 								</Link>
-
-								<Link href="/create-map" className="block">
-									<DropdownMenuItem className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-										<PlusIcon />
-										Create New Map
-									</DropdownMenuItem>
-								</Link>
 							</div>
 
-							{/* Rest of the dropdown menu content */}
 							<div className="py-1 border-t border-gray-100">
 								<DropdownMenuItem
 									className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
