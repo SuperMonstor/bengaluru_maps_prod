@@ -150,7 +150,7 @@ const Header = memo(function Header() {
 								className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-gray-100"
 							>
 								<HeartHandshake className="h-5 w-5" />
-								<span>Feature Requests</span>
+								<span>Request Feature/Fix</span>
 							</Link>
 						</div>
 					</SheetContent>
@@ -191,18 +191,21 @@ const Header = memo(function Header() {
 
 				{/* Create Map Button and User Menu */}
 				<div className="flex items-center gap-2">
-					<Link href="/create-map">
-						<Button
-							variant="default"
-							size="sm"
-							className="flex items-center gap-2"
-						>
-							<PlusIcon />
-							Create Map
-						</Button>
-					</Link>
+					{/* Create Map Button - Hidden on mobile */}
+					<div className="hidden md:block">
+						<Link href="/create-map">
+							<Button
+								variant="default"
+								size="sm"
+								className="flex items-center gap-2"
+							>
+								<PlusIcon />
+								Create Map
+							</Button>
+						</Link>
+					</div>
 
-					{/* User Menu */}
+					{/* User Menu - Always visible */}
 					{authLoading ? (
 						<div className="h-8 w-8 md:h-9 md:w-9 animate-pulse bg-gray-300 rounded-full" />
 					) : user ? (

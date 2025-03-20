@@ -11,50 +11,26 @@ function RouteTransitionContent() {
 	const router = useRouter()
 	const [isNavigating, setIsNavigating] = useState(false)
 
-	// Track route changes using a more reliable approach
 	useEffect(() => {
-		// Create a MutationObserver to watch for changes to the DOM
-		// This is a more reliable way to detect navigation in Next.js
-		const observer = new MutationObserver((mutations) => {
-			mutations.forEach((mutation) => {
-				if (
-					mutation.type === "attributes" &&
-					mutation.attributeName === "class"
-				) {
-					const target = mutation.target as HTMLElement
-					if (target.classList.contains("nprogress-busy")) {
-						setIsNavigating(true)
-					} else if (target.classList.contains("nprogress-done")) {
-						setTimeout(() => {
-							setIsNavigating(false)
-						}, 300)
-					}
-				}
-			})
-		})
-
-		// Start observing the document body for attribute changes
-		observer.observe(document.body, { attributes: true })
-
-		// Add event listeners for clicks on links
-		const handleClick = (e: MouseEvent) => {
-			const target = e.target as HTMLElement
-			const link = target.closest("a")
-
-			const href = link?.getAttribute("href")
-			if (href && !href.startsWith("#")) {
+		const handleStart = () => {
+			// Only show loading indicator for internal navigation
+			if (window.location.href.startsWith(window.location.origin)) {
 				setIsNavigating(true)
 			}
 		}
 
-		document.addEventListener("click", handleClick)
-
-		// Clean up
-		return () => {
-			observer.disconnect()
-			document.removeEventListener("click", handleClick)
+		const handleStop = () => {
+			setIsNavigating(false)
 		}
-	}, [])
+
+		window.addEventListener("beforeunload", handleStart)
+		window.addEventListener("unload", handleStop)
+
+		return () => {
+			window.removeEventListener("beforeunload", handleStart)
+			window.removeEventListener("unload", handleStop)
+		}
+	}, [pathname])
 
 	// Reset navigation state when route changes
 	useEffect(() => {
