@@ -197,7 +197,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 			return
 		}
 
-		if (isSubmitting || !mapId) return // Ensure mapId is resolved before submitting
+		if (isSubmitting || !mapId) return
 
 		try {
 			setIsSubmitting(true)
@@ -238,6 +238,36 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 				// Check if the location was auto-approved (user is the map owner)
 				const isOwner = map.owner_id === user.id
 
+				// Send email notification if not auto-approved
+				if (!isOwner) {
+					try {
+						const response = await fetch("/api/email/", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+							},
+							body: JSON.stringify({
+								ownerEmail: map.owner_email,
+								mapTitle: map.title,
+								locationName: locationData.location,
+								submitterName: `${user.first_name} ${user.last_name}`,
+								mapUrl: `${window.location.origin}/maps/${
+									map.slug || slugify(map.title)
+								}/${mapId}/pending`,
+							}),
+						})
+
+						if (!response.ok) {
+							console.error(
+								"Failed to send email notification:",
+								await response.text()
+							)
+						}
+					} catch (emailError) {
+						console.error("Error sending email notification:", emailError)
+					}
+				}
+
 				toast({
 					title: "Success!",
 					description: isOwner
@@ -245,16 +275,15 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 						: "Your location has been submitted and is pending approval.",
 				})
 
-				// Redirect to the new URL structure
 				router.push(`/maps/${map.slug || slugify(map.title)}/${mapId}`)
 				router.refresh()
 			}
-		} catch (err) {
-			console.error("Unexpected error:", err)
+		} catch (error) {
+			console.error("Error in submission:", error)
 			toast({
 				variant: "destructive",
 				title: "Error",
-				description: "An unexpected error occurred. Please try again.",
+				description: "Failed to submit location. Please try again.",
 			})
 		} finally {
 			setIsSubmitting(false)
