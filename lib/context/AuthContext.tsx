@@ -31,7 +31,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 	useEffect(() => {
 		async function fetchUserData(authUserId: string | null) {
+			console.log("[AuthContext] Fetching user data for ID:", authUserId)
+
 			if (!authUserId) {
+				console.log("[AuthContext] No auth user ID provided")
 				setUser(null)
 				setIsLoading(false)
 				return
@@ -44,24 +47,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				.single()
 
 			if (error) {
-				console.error("Error fetching user data:", error.message)
+				console.error("[AuthContext] Error fetching user data:", error.message)
 				setUser(null)
 			} else {
+				console.log("[AuthContext] User data fetched successfully:", data)
 				setUser(data as UserSchema)
 			}
 			setIsLoading(false)
 		}
 
 		async function getSession() {
+			console.log("[AuthContext] Getting session...")
 			const {
 				data: { session },
 				error,
 			} = await supabase.auth.getSession()
+
 			if (error) {
-				console.error("Error getting session:", error.message)
+				console.error("[AuthContext] Error getting session:", error.message)
 				setUser(null)
 				setIsLoading(false)
 			} else {
+				console.log(
+					"[AuthContext] Session retrieved:",
+					session ? "Found" : "Not found"
+				)
 				await fetchUserData(session?.user?.id || null)
 			}
 		}
@@ -69,12 +79,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 		getSession()
 
 		const { data: authListener } = supabase.auth.onAuthStateChange(
-			(event, session) => {
-				fetchUserData(session?.user?.id || null)
+			async (event, session) => {
+				console.log("[AuthContext] Auth state changed:", event)
+				await fetchUserData(session?.user?.id || null)
 			}
 		)
 
 		return () => {
+			console.log("[AuthContext] Cleaning up auth listener")
 			authListener?.subscription?.unsubscribe()
 		}
 	}, [supabase])
@@ -82,7 +94,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 	const signOut = async () => {
 		const { error } = await supabase.auth.signOut()
 		if (error) {
-			console.error("Error signing out:", error.message)
+			console.error("[AuthContext] Error signing out:", error.message)
 		}
 	}
 

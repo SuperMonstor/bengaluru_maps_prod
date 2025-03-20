@@ -12,7 +12,7 @@ import { Loader2 } from "lucide-react"
 const AUTHORIZED_EMAILS = ["senthilsudarshan@gmail.com"]
 
 export default function TestEmailPage() {
-	const { user } = useAuth()
+	const { user, isLoading } = useAuth()
 	const router = useRouter()
 	const [loading, setLoading] = useState(false)
 	const [result, setResult] = useState<any>(null)
@@ -28,27 +28,68 @@ export default function TestEmailPage() {
 	// Add information about the sender email
 	const senderEmail = "sudarshan@bobscompany.co"
 
+	// Debug logs
+	useEffect(() => {
+		console.log("[TestEmail] Current state:", {
+			isLoading,
+			user,
+			userEmail: user?.email,
+			isAuthorized: user?.email && AUTHORIZED_EMAILS.includes(user.email),
+		})
+	}, [user, isLoading])
+
 	// Check if user is authorized
 	useEffect(() => {
+		if (isLoading) {
+			console.log("[TestEmail] Auth is still loading...")
+			return
+		}
+
 		if (!user) {
-			// Not logged in, redirect to home
-			router.push("/")
+			console.log("[TestEmail] No user found, will redirect to home")
+			// Add a small delay to ensure logs are captured
+			setTimeout(() => router.push("/"), 100)
 			return
 		}
 
 		// Check if user's email is in the authorized list
 		if (user.email && !AUTHORIZED_EMAILS.includes(user.email)) {
-			// User is logged in but not authorized
-			router.push("/")
+			console.log("[TestEmail] User not authorized:", user.email)
+			// Add a small delay to ensure logs are captured
+			setTimeout(() => router.push("/"), 100)
+		} else {
+			console.log("[TestEmail] User authorized:", user.email)
 		}
-	}, [user, router])
+	}, [user, router, isLoading])
 
-	// If user is not logged in or not authorized, don't render the page
+	// Show loading state while auth is being checked
+	if (isLoading) {
+		return (
+			<div className="container mx-auto py-8 px-4">
+				<h1 className="text-2xl font-bold mb-6">Loading...</h1>
+				<p>Checking authorization...</p>
+			</div>
+		)
+	}
+
+	// Show access denied with more details
 	if (!user || (user.email && !AUTHORIZED_EMAILS.includes(user.email))) {
 		return (
 			<div className="container mx-auto py-8 px-4">
 				<h1 className="text-2xl font-bold mb-6">Access Denied</h1>
 				<p>You are not authorized to access this page.</p>
+				<div className="mt-4 p-4 bg-gray-100 rounded">
+					<p className="text-sm text-gray-600">Debug Info:</p>
+					<p className="text-sm text-gray-600">
+						User Email: {user?.email || "Not logged in"}
+					</p>
+					<p className="text-sm text-gray-600">
+						Auth Loading: {isLoading ? "Yes" : "No"}
+					</p>
+					<p className="text-sm text-gray-600">
+						Authorized Emails: {AUTHORIZED_EMAILS.join(", ")}
+					</p>
+				</div>
 			</div>
 		)
 	}
