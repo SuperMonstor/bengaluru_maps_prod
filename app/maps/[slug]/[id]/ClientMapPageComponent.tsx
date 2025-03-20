@@ -812,7 +812,7 @@ function ClientMapPageContentInner({
 												className="flex-1"
 											>
 												<Button variant="default" size="sm" className="w-full">
-													Contribute
+													Add Location
 												</Button>
 											</Link>
 											<ShareButton
