@@ -239,9 +239,10 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 				const isOwner = map.owner_id === user.id
 
 				// Send email notification if not auto-approved
-				if (!isOwner) {
+				if (!isOwner && map.owner_email) {
 					try {
-						const response = await fetch("/api/email/", {
+						console.log("Sending email notification to:", map.owner_email)
+						const response = await fetch("/api/email", {
 							method: "POST",
 							headers: {
 								"Content-Type": "application/json",
@@ -258,10 +259,8 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 						})
 
 						if (!response.ok) {
-							console.error(
-								"Failed to send email notification:",
-								await response.text()
-							)
+							const errorText = await response.text()
+							console.error("Failed to send email notification:", errorText)
 						}
 					} catch (emailError) {
 						console.error("Error sending email notification:", emailError)

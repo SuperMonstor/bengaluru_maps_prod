@@ -18,6 +18,19 @@ try {
 	console.error("[Email API] Error creating Resend instance:", error)
 }
 
+// Helper function to add CORS headers
+function corsResponse(response: NextResponse) {
+	response.headers.set("Access-Control-Allow-Origin", "*")
+	response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	response.headers.set("Access-Control-Allow-Headers", "Content-Type")
+	return response
+}
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS(request: NextRequest) {
+	return corsResponse(new NextResponse(null, { status: 200 }))
+}
+
 // Email templates
 const getSubmissionNotificationTemplate = (
 	mapTitle: string,
@@ -57,9 +70,11 @@ export async function POST(request: NextRequest) {
 			console.log("[Email API] Request body parsed successfully")
 		} catch (parseError) {
 			console.error("[Email API] Error parsing request body:", parseError)
-			return NextResponse.json(
-				{ success: false, error: "Invalid JSON in request body" },
-				{ status: 400 }
+			return corsResponse(
+				NextResponse.json(
+					{ success: false, error: "Invalid JSON in request body" },
+					{ status: 400 }
+				)
 			)
 		}
 
@@ -82,19 +97,21 @@ export async function POST(request: NextRequest) {
 			!mapUrl
 		) {
 			console.error("[Email API] Missing required fields for email")
-			return NextResponse.json(
-				{
-					success: false,
-					error: "Missing required fields",
-					missingFields: {
-						ownerEmail: !ownerEmail,
-						mapTitle: !mapTitle,
-						locationName: !locationName,
-						submitterName: !submitterName,
-						mapUrl: !mapUrl,
+			return corsResponse(
+				NextResponse.json(
+					{
+						success: false,
+						error: "Missing required fields",
+						missingFields: {
+							ownerEmail: !ownerEmail,
+							mapTitle: !mapTitle,
+							locationName: !locationName,
+							submitterName: !submitterName,
+							mapUrl: !mapUrl,
+						},
 					},
-				},
-				{ status: 400 }
+					{ status: 400 }
+				)
 			)
 		}
 
@@ -143,14 +160,16 @@ export async function POST(request: NextRequest) {
 			)
 
 			// Return success for testing purposes
-			return NextResponse.json({
-				success: true,
-				data: {
-					id: "fallback-email-id",
-					message: "Email would have been sent (fallback mode)",
-				},
-				fallback: true,
-			})
+			return corsResponse(
+				NextResponse.json({
+					success: true,
+					data: {
+						id: "fallback-email-id",
+						message: "Email would have been sent (fallback mode)",
+					},
+					fallback: true,
+				})
+			)
 		}
 
 		console.log("[Email API] Sending email via Resend...")
@@ -183,26 +202,30 @@ export async function POST(request: NextRequest) {
 
 			if (error) {
 				console.error("[Email API] Error from Resend API:", error)
-				return NextResponse.json(
-					{ success: false, error, details: "Resend API error" },
-					{ status: 500 }
+				return corsResponse(
+					NextResponse.json(
+						{ success: false, error, details: "Resend API error" },
+						{ status: 500 }
+					)
 				)
 			}
 
 			console.log("[Email API] Email sent successfully:", data)
-			return NextResponse.json({ success: true, data })
+			return corsResponse(NextResponse.json({ success: true, data }))
 		} catch (resendError) {
 			console.error("[Email API] Exception from Resend:", resendError)
-			return NextResponse.json(
-				{
-					success: false,
-					error:
-						resendError instanceof Error
-							? resendError.message
-							: "Unknown Resend error",
-					details: "Resend exception",
-				},
-				{ status: 500 }
+			return corsResponse(
+				NextResponse.json(
+					{
+						success: false,
+						error:
+							resendError instanceof Error
+								? resendError.message
+								: "Unknown Resend error",
+						details: "Resend exception",
+					},
+					{ status: 500 }
+				)
 			)
 		}
 	} catch (error) {
@@ -210,13 +233,15 @@ export async function POST(request: NextRequest) {
 		if (error instanceof Error) {
 			console.error("[Email API] Error stack:", error.stack)
 		}
-		return NextResponse.json(
-			{
-				success: false,
-				error: error instanceof Error ? error.message : "Unknown error",
-				details: "Unhandled exception",
-			},
-			{ status: 500 }
+		return corsResponse(
+			NextResponse.json(
+				{
+					success: false,
+					error: error instanceof Error ? error.message : "Unknown error",
+					details: "Unhandled exception",
+				},
+				{ status: 500 }
+			)
 		)
 	}
 }
