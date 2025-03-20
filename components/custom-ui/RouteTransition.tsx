@@ -1,44 +1,29 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
-import { useEffect, useState, Suspense } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, useRef } from "react"
+import { usePathname } from "next/navigation"
+import { Suspense } from "react"
 
 // Component that uses useSearchParams
 function RouteTransitionContent() {
 	const pathname = usePathname()
-	const searchParams = useSearchParams()
-	const router = useRouter()
 	const [isNavigating, setIsNavigating] = useState(false)
+	const prevPathnameRef = useRef(pathname)
 
 	useEffect(() => {
-		const handleStart = () => {
-			// Only show loading indicator for internal navigation
-			if (window.location.href.startsWith(window.location.origin)) {
-				setIsNavigating(true)
-			}
-		}
+		// Only show loading indicator if the pathname has changed
+		if (pathname !== prevPathnameRef.current) {
+			setIsNavigating(true)
+			prevPathnameRef.current = pathname
 
-		const handleStop = () => {
-			setIsNavigating(false)
-		}
+			// Hide the loading indicator after a short delay
+			const timer = setTimeout(() => {
+				setIsNavigating(false)
+			}, 300)
 
-		window.addEventListener("beforeunload", handleStart)
-		window.addEventListener("unload", handleStop)
-
-		return () => {
-			window.removeEventListener("beforeunload", handleStart)
-			window.removeEventListener("unload", handleStop)
+			return () => clearTimeout(timer)
 		}
 	}, [pathname])
-
-	// Reset navigation state when route changes
-	useEffect(() => {
-		// When the route actually changes, we can be sure navigation is complete
-		setTimeout(() => {
-			setIsNavigating(false)
-		}, 300)
-	}, [pathname, searchParams])
 
 	// Create a simple progress bar
 	return (
