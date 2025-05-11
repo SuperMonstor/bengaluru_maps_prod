@@ -54,7 +54,7 @@ export const metadata: Metadata = {
 		siteName: "Bengaluru Maps",
 		images: [
 			{
-				url: "/images/og-image.jpg",
+				url: "/og-image.jpg",
 				width: 1200,
 				height: 630,
 				alt: "Bengaluru Maps - Community-Driven Maps",
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
 		description:
 			"Discover the best cafes, restaurants, and hangout spots in Bengaluru through community-curated maps.",
 		creator: "@realsudarshansk",
-		images: ["/images/og-image.jpg"],
+		images: ["/og-image.jpg"],
 	},
 	robots: {
 		index: true,
@@ -105,26 +105,34 @@ export default function RootLayout({
 				<link
 					rel="apple-touch-icon"
 					sizes="180x180"
-					href="/images/apple-touch-icon.png"
+					href="/apple-touch-icon.png"
 				/>
 				<link
 					rel="icon"
 					type="image/png"
 					sizes="32x32"
-					href="/images/favicon-32x32.png"
+					href="/favicon-32x32.png"
 				/>
 				<link
 					rel="icon"
 					type="image/png"
 					sizes="16x16"
-					href="/images/favicon-16x16.png"
+					href="/favicon-16x16.png"
+				/>
+				<link
+					rel="icon"
+					type="image/png"
+					sizes="192x192"
+					href="/android-chrome-192x192.png"
+				/>
+				<link
+					rel="icon"
+					type="image/png"
+					sizes="512x512"
+					href="/android-chrome-512x512.png"
 				/>
 				<link rel="manifest" href="/site.webmanifest" />
-				<link
-					rel="mask-icon"
-					href="/images/safari-pinned-tab.svg"
-					color="#000000"
-				/>
+				<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#000000" />
 				<meta name="msapplication-TileColor" content="#ffffff" />
 				<meta name="theme-color" content="#ffffff" />
 
