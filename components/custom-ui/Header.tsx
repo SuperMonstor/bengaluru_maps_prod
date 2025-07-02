@@ -13,12 +13,10 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { AuthContext } from "@/lib/context/AuthContext"
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
-import { Map, PanelRight, HeartHandshake, Menu } from "lucide-react"
+import { Map, HeartHandshake, Menu } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
-// Add URLs for Trello board and Google Maps feedback
-const KANBAN_BOARD_URL =
-	"https://sudarshansk.notion.site/1bc35e88bb08807ebce5ce39bd831d44?v=1bc35e88bb0880619762000c31b0b543&pvs=4"
+// Add URLs for Google Maps feedback
 const REQUEST_FEEDBACK_URL = "https://tally.so/r/nG5Mrk"
 
 function useAuth() {
@@ -134,16 +132,6 @@ const Header = memo(function Header() {
 							</Link>
 
 							<Link
-								href={KANBAN_BOARD_URL}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-gray-100"
-							>
-								<PanelRight className="h-5 w-5" />
-								<span>Upcoming Features</span>
-							</Link>
-
-							<Link
 								href={REQUEST_FEEDBACK_URL}
 								target="_blank"
 								rel="noopener noreferrer"
@@ -158,21 +146,6 @@ const Header = memo(function Header() {
 
 				{/* Desktop Navigation */}
 				<div className="hidden md:flex items-center gap-3">
-					<Link
-						href={KANBAN_BOARD_URL}
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						<Button
-							variant="outline"
-							size="sm"
-							className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-2"
-						>
-							<PanelRight className="h-4 w-4" />
-							Upcoming Features
-						</Button>
-					</Link>
-
 					<Link
 						href={REQUEST_FEEDBACK_URL}
 						target="_blank"
