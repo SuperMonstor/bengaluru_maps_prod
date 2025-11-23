@@ -27,9 +27,10 @@ export const AuthContext = createContext<AuthContextValue | undefined>(
 export function AuthProvider({ children }: AuthProviderProps) {
 	const [user, setUser] = useState<UserSchema | null>(null)
 	const [isLoading, setIsLoading] = useState<boolean>(true)
-	const supabase = createClient()
 
 	useEffect(() => {
+		const supabase = createClient()
+
 		async function fetchUserData(authUserId: string | null) {
 			console.log("[AuthContext] Fetching user data for ID:", authUserId)
 
@@ -89,9 +90,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			console.log("[AuthContext] Cleaning up auth listener")
 			authListener?.subscription?.unsubscribe()
 		}
-	}, [supabase])
+	}, [])
 
 	const signOut = async () => {
+		const supabase = createClient()
 		const { error } = await supabase.auth.signOut()
 		if (error) {
 			console.error("[AuthContext] Error signing out:", error.message)

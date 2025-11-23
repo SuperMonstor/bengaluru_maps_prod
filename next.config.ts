@@ -1,5 +1,9 @@
 import type { NextConfig } from "next"
 
+// Extract hostname from Supabase URL
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+const supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : ""
+
 const nextConfig: NextConfig = {
 	/* config options here */
 	images: {
@@ -8,10 +12,9 @@ const nextConfig: NextConfig = {
 				protocol: "https",
 				hostname: "hebbkx1anhila5yf.public.blob.vercel-storage.com",
 			},
-			{
-				protocol: "https",
-				hostname: "omnlyrfivyoazohpwdzu.supabase.co",
-			},
+			...(supabaseHostname
+				? [{ protocol: "https" as const, hostname: supabaseHostname }]
+				: []),
 			{
 				protocol: "https",
 				hostname: "lh3.googleusercontent.com",

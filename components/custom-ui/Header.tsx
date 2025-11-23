@@ -8,12 +8,13 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { useContext, memo } from "react"
+import { useContext, memo, useState, useEffect } from "react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { AuthContext } from "@/lib/context/AuthContext"
+import { signOutAction } from "@/lib/actions/auth"
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
-import { Map, HeartHandshake, Menu } from "lucide-react"
+import { HeartHandshake, Menu } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 // Add URLs for Google Maps feedback
@@ -84,11 +85,19 @@ const PlusIcon = memo(() => (
 
 // Memoize the Header component to prevent unnecessary re-renders
 const Header = memo(function Header() {
-	const { user, isLoading: authLoading, signOut } = useAuth()
+	const { user, isLoading: authLoading } = useAuth()
 	const { pendingCount } = usePendingCount()
+	const [mounted, setMounted] = useState(false)
+
+	// Prevent hydration mismatch by only rendering interactive components after mount
+	useEffect(() => {
+		setMounted(true)
+	}, [])
 
 	const handleSignOut = async () => {
-		await signOut()
+		await signOutAction()
+		// Full page reload to reset all client-side auth state
+		window.location.href = "/"
 	}
 
 	return (
@@ -113,36 +122,38 @@ const Header = memo(function Header() {
 
 			{/* Right Section: Buttons and User Menu */}
 			<div className="flex items-center gap-2 md:gap-3">
-				{/* Mobile Menu */}
-				<Sheet>
-					<SheetTrigger asChild className="md:hidden">
-						<Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-							<Menu className="h-5 w-5" />
-							<span className="sr-only">Toggle menu</span>
-						</Button>
-					</SheetTrigger>
-					<SheetContent side="right" className="w-[300px] sm:w-[400px]">
-						<div className="flex flex-col gap-6 mt-8">
-							<Link
-								href="/create-map"
-								className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-gray-100"
-							>
-								<PlusIcon />
-								<span>Create Map</span>
-							</Link>
+				{/* Mobile Menu - Only render after mount to prevent hydration mismatch */}
+				{mounted && (
+					<Sheet>
+						<SheetTrigger asChild className="md:hidden">
+							<Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+								<Menu className="h-5 w-5" />
+								<span className="sr-only">Toggle menu</span>
+							</Button>
+						</SheetTrigger>
+						<SheetContent side="right" className="w-[300px] sm:w-[400px]">
+							<div className="flex flex-col gap-6 mt-8">
+								<Link
+									href="/create-map"
+									className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-gray-100"
+								>
+									<PlusIcon />
+									<span>Create Map</span>
+								</Link>
 
-							<Link
-								href={REQUEST_FEEDBACK_URL}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-gray-100"
-							>
-								<HeartHandshake className="h-5 w-5" />
-								<span>Request Feature/Fix</span>
-							</Link>
-						</div>
-					</SheetContent>
-				</Sheet>
+								<Link
+									href={REQUEST_FEEDBACK_URL}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-gray-100"
+								>
+									<HeartHandshake className="h-5 w-5" />
+									<span>Request Feature/Fix</span>
+								</Link>
+							</div>
+						</SheetContent>
+					</Sheet>
+				)}
 
 				{/* Desktop Navigation */}
 				<div className="hidden md:flex items-center gap-3">
@@ -178,10 +189,10 @@ const Header = memo(function Header() {
 						</Link>
 					</div>
 
-					{/* User Menu - Always visible */}
-					{authLoading ? (
+					{/* User Menu - Only render after mount to prevent hydration mismatch */}
+					{!mounted ? (
 						<div className="h-8 w-8 md:h-9 md:w-9 animate-pulse bg-gray-300 rounded-full" />
-					) : user ? (
+					) : user || authLoading ? (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button
@@ -189,15 +200,21 @@ const Header = memo(function Header() {
 									className="relative h-8 w-8 md:h-9 md:w-9 rounded-full p-0 border-2 border-transparent hover:border-primary/20 transition-colors"
 								>
 									<Avatar className="h-full w-full">
-										<AvatarImage
-											src={
-												user.picture_url ??
-												`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
-											}
-										/>
-										<AvatarFallback>
-											{user.email?.[0]?.toUpperCase() ?? "U"}
-										</AvatarFallback>
+										{authLoading ? (
+											<AvatarFallback className="animate-pulse bg-gray-200" />
+										) : (
+											<>
+												<AvatarImage
+													src={
+														user?.picture_url ??
+														`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
+													}
+												/>
+												<AvatarFallback>
+													{user?.email?.[0]?.toUpperCase() ?? "U"}
+												</AvatarFallback>
+											</>
+										)}
 									</Avatar>
 								</Button>
 							</DropdownMenuTrigger>
@@ -208,12 +225,21 @@ const Header = memo(function Header() {
 							>
 								<div className="p-3 border-b border-gray-100">
 									<div className="flex flex-col">
-										<span className="font-semibold text-gray-900">
-											{user.first_name} {user.last_name}
-										</span>
-										<span className="text-xs text-gray-500 truncate max-w-[180px]">
-											{user.email}
-										</span>
+										{authLoading ? (
+											<>
+												<span className="h-4 w-24 bg-gray-200 animate-pulse rounded" />
+												<span className="h-3 w-32 bg-gray-100 animate-pulse rounded mt-1" />
+											</>
+										) : (
+											<>
+												<span className="font-semibold text-gray-900">
+													{user?.first_name} {user?.last_name}
+												</span>
+												<span className="text-xs text-gray-500 truncate max-w-[180px]">
+													{user?.email}
+												</span>
+											</>
+										)}
 									</div>
 								</div>
 

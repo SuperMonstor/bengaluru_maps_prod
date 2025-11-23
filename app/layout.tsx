@@ -138,14 +138,18 @@ export default function RootLayout({
 
 				{/* Preload critical assets */}
 				<link rel="preload" href="/placeholder.svg" as="image" />
-				<link
-					rel="dns-prefetch"
-					href="https://omnlyrfivyoazohpwdzu.supabase.co"
-				/>
-				<link
-					rel="preconnect"
-					href="https://omnlyrfivyoazohpwdzu.supabase.co"
-				/>
+				{process.env.NEXT_PUBLIC_SUPABASE_URL && (
+					<>
+						<link
+							rel="dns-prefetch"
+							href={process.env.NEXT_PUBLIC_SUPABASE_URL}
+						/>
+						<link
+							rel="preconnect"
+							href={process.env.NEXT_PUBLIC_SUPABASE_URL}
+						/>
+					</>
+				)}
 			</head>
 			<body className="font-sans antialiased h-full overflow-hidden">
 				<AuthProvider>
