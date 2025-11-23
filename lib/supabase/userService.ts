@@ -1,48 +1,41 @@
 import { User } from "@supabase/supabase-js"
 import { createClient } from "./api/supabaseClient"
-import { UserSchema } from "../types/userTypes"
 
 interface UpdateUserResult {
 	success: boolean
 	error?: string
 }
+
 export async function updateUserInDatabase(
 	user: User
 ): Promise<UpdateUserResult> {
 	try {
 		const supabase = createClient()
 
-		const { data: existingUser, error: fetchError } = await supabase
-			.from("users")
-			.select("*")
-			.eq("id", user.id)
-			.single()
+		// Parse name safely - handle missing or malformed full_name
+		const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "User"
+		const nameParts = fullName.trim().split(/\s+/)
+		const firstName = nameParts[0] || "User"
+		const lastName = nameParts.slice(1).join(" ") || ""
 
-		if (fetchError && fetchError.code === "PGRST116") {
-			const fullName = user.user_metadata?.full_name
-			const [firstName, lastName = ""] = fullName.split(" ") // Split full_name into first and last
-			// No user found
-			const userData: UserSchema = {
+		// Use upsert to handle race conditions - if user exists, update; if not, insert
+		const { error: upsertError } = await supabase.from("users").upsert(
+			{
 				id: user.id,
 				email: user.email!,
 				first_name: firstName,
-				last_name: lastName || "",
+				last_name: lastName,
 				picture_url: user.user_metadata?.avatar_url || null,
-				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
+			},
+			{
+				onConflict: "id",
+				ignoreDuplicates: false, // Update on conflict
 			}
+		)
 
-			const { error: insertError } = await supabase
-				.from("users")
-				.insert(userData)
-
-			if (insertError) {
-				throw new Error(`Failed to create user: ${insertError.message}`)
-			}
-
-			return { success: true }
-		} else if (fetchError) {
-			throw new Error(`Failed to check user existence: ${fetchError.message}`)
+		if (upsertError) {
+			throw new Error(`Failed to upsert user: ${upsertError.message}`)
 		}
 
 		return { success: true }

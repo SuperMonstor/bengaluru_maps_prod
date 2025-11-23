@@ -5,6 +5,8 @@ import {
 	useContext,
 	useState,
 	useEffect,
+	useRef,
+	useCallback,
 	ReactNode,
 } from "react"
 import { createClient } from "../supabase/api/supabaseClient"
@@ -28,37 +30,68 @@ export function AuthProvider({ children }: AuthProviderProps) {
 	const [user, setUser] = useState<UserSchema | null>(null)
 	const [isLoading, setIsLoading] = useState<boolean>(true)
 
-	useEffect(() => {
-		const supabase = createClient()
+	// Track in-flight requests to prevent duplicate fetches
+	const fetchingUserIdRef = useRef<string | null>(null)
+	const initializedRef = useRef(false)
 
-		async function fetchUserData(authUserId: string | null) {
-			console.log("[AuthContext] Fetching user data for ID:", authUserId)
-
-			if (!authUserId) {
-				console.log("[AuthContext] No auth user ID provided")
-				setUser(null)
-				setIsLoading(false)
+	// Memoize fetchUserData to prevent recreation on each render
+	const fetchUserData = useCallback(
+		async (supabase: ReturnType<typeof createClient>, authUserId: string | null) => {
+			// Skip if we're already fetching this user
+			if (fetchingUserIdRef.current === authUserId) {
 				return
 			}
 
-			const { data, error } = await supabase
-				.from("users")
-				.select("*")
-				.eq("id", authUserId)
-				.single()
+			fetchingUserIdRef.current = authUserId
 
-			if (error) {
-				console.error("[AuthContext] Error fetching user data:", error.message)
+			if (!authUserId) {
 				setUser(null)
-			} else {
-				console.log("[AuthContext] User data fetched successfully:", data)
-				setUser(data as UserSchema)
+				setIsLoading(false)
+				fetchingUserIdRef.current = null
+				return
 			}
-			setIsLoading(false)
-		}
 
-		async function getSession() {
-			console.log("[AuthContext] Getting session...")
+			try {
+				const { data, error } = await supabase
+					.from("users")
+					.select("*")
+					.eq("id", authUserId)
+					.single()
+
+				// Check if this request is still relevant
+				if (fetchingUserIdRef.current !== authUserId) {
+					return // A newer request has started, ignore this result
+				}
+
+				if (error) {
+					console.error("[AuthContext] Error fetching user data:", error.message)
+					setUser(null)
+				} else {
+					setUser(data as UserSchema)
+				}
+			} catch (err) {
+				console.error("[AuthContext] Unexpected error fetching user:", err)
+				setUser(null)
+			} finally {
+				if (fetchingUserIdRef.current === authUserId) {
+					setIsLoading(false)
+					fetchingUserIdRef.current = null
+				}
+			}
+		},
+		[]
+	)
+
+	useEffect(() => {
+		// Prevent double initialization in React StrictMode
+		if (initializedRef.current) {
+			return
+		}
+		initializedRef.current = true
+
+		const supabase = createClient()
+
+		async function initAuth() {
 			const {
 				data: { session },
 				error,
@@ -68,37 +101,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				console.error("[AuthContext] Error getting session:", error.message)
 				setUser(null)
 				setIsLoading(false)
-			} else {
-				console.log(
-					"[AuthContext] Session retrieved:",
-					session ? "Found" : "Not found"
-				)
-				await fetchUserData(session?.user?.id || null)
+				return
 			}
+
+			await fetchUserData(supabase, session?.user?.id || null)
 		}
 
-		getSession()
+		initAuth()
 
+		// Set up auth state listener - only handles state changes after initial load
 		const { data: authListener } = supabase.auth.onAuthStateChange(
 			async (event, session) => {
+				// Skip INITIAL_SESSION as we handle it above
+				if (event === "INITIAL_SESSION") {
+					return
+				}
+
 				console.log("[AuthContext] Auth state changed:", event)
-				await fetchUserData(session?.user?.id || null)
+				await fetchUserData(supabase, session?.user?.id || null)
 			}
 		)
 
 		return () => {
-			console.log("[AuthContext] Cleaning up auth listener")
 			authListener?.subscription?.unsubscribe()
 		}
-	}, [])
+	}, [fetchUserData])
 
-	const signOut = async () => {
+	const signOut = useCallback(async () => {
 		const supabase = createClient()
 		const { error } = await supabase.auth.signOut()
 		if (error) {
 			console.error("[AuthContext] Error signing out:", error.message)
 		}
-	}
+	}, [])
 
 	const value: AuthContextValue = { user, isLoading, signOut }
 

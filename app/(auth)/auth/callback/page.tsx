@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState, useRef } from "react"
 import { createClient } from "@/lib/supabase/api/supabaseClient"
 import { updateUserInDatabase } from "@/lib/supabase/userService"
 import { Suspense } from "react"
@@ -8,65 +8,121 @@ import { Suspense } from "react"
 // Force this page to be dynamic, preventing static prerendering
 export const dynamic = "force-dynamic"
 
+const AUTH_TIMEOUT_MS = 30000 // 30 second timeout
+const MAX_RETRIES = 2
+const RETRY_DELAY_MS = 1000
+
+// Helper to create a timeout promise
+function withTimeout<T>(promise: Promise<T>, ms: number, operation: string): Promise<T> {
+	return Promise.race([
+		promise,
+		new Promise<T>((_, reject) =>
+			setTimeout(() => reject(new Error(`${operation} timed out after ${ms}ms`)), ms)
+		),
+	])
+}
+
+// Helper to delay execution
+function delay(ms: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 // Client component that handles auth callback
 function AuthCallbackContent() {
+	const [error, setError] = useState<string | null>(null)
+	const [retryCount, setRetryCount] = useState(0)
+	const isProcessingRef = useRef(false)
+
 	useEffect(() => {
-		const handleAuth = async () => {
-			console.log("[AuthCallback] Starting auth handling...")
-			const supabase = createClient()
+		// Prevent duplicate processing
+		if (isProcessingRef.current) {
+			return
+		}
+		isProcessingRef.current = true
 
-			// Get the code from the URL
-			const url = new URL(window.location.href)
-			const code = url.searchParams.get("code")
+		const handleAuth = async (attempt: number = 0): Promise<void> => {
+			try {
+				const supabase = createClient()
 
-			if (code) {
-				console.log("[AuthCallback] Exchanging code for session...")
-				const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-				if (exchangeError) {
-					console.error("[AuthCallback] Code exchange failed:", exchangeError.message)
-					window.location.href = "/login"
-					return
+				// Get the code from the URL
+				const url = new URL(window.location.href)
+				const code = url.searchParams.get("code")
+
+				if (code) {
+					const { error: exchangeError } = await withTimeout(
+						supabase.auth.exchangeCodeForSession(code),
+						AUTH_TIMEOUT_MS,
+						"Code exchange"
+					)
+
+					if (exchangeError) {
+						throw new Error(`Code exchange failed: ${exchangeError.message}`)
+					}
 				}
-				console.log("[AuthCallback] Code exchange successful")
-			}
 
-			console.log("[AuthCallback] Getting session...")
-			const { data, error } = await supabase.auth.getSession()
-			console.log("[AuthCallback] Session result:", { hasSession: !!data?.session, error: error?.message })
-
-			if (error || !data?.session) {
-				console.error(
-					"Authentication failed:",
-					error?.message || "No session found"
+				const { data, error: sessionError } = await withTimeout(
+					supabase.auth.getSession(),
+					AUTH_TIMEOUT_MS,
+					"Session retrieval"
 				)
-				window.location.href = "/login"
-				return
+
+				if (sessionError || !data?.session) {
+					throw new Error(sessionError?.message || "No session found")
+				}
+
+				// Update user in database - don't fail auth if this fails
+				const { success, error: updateError } = await withTimeout(
+					updateUserInDatabase(data.session.user),
+					AUTH_TIMEOUT_MS,
+					"User database update"
+				)
+
+				if (!success) {
+					console.error("[AuthCallback] User update failed:", updateError)
+					// Continue anyway - user is authenticated, DB sync can happen later
+				}
+
+				// Success - redirect home
+				window.location.href = "/"
+			} catch (err) {
+				const errorMessage = err instanceof Error ? err.message : "Unknown error"
+				console.error(`[AuthCallback] Attempt ${attempt + 1} failed:`, errorMessage)
+
+				// Retry on transient failures
+				if (attempt < MAX_RETRIES) {
+					setRetryCount(attempt + 1)
+					await delay(RETRY_DELAY_MS * (attempt + 1)) // Exponential backoff
+					return handleAuth(attempt + 1)
+				}
+
+				// Max retries exceeded
+				setError(errorMessage)
 			}
-
-			console.log("[AuthCallback] Updating user in database...")
-			const { success, error: updateError } = await updateUserInDatabase(
-				data.session.user
-			)
-			console.log("[AuthCallback] Update result:", { success, error: updateError })
-
-			if (!success) {
-				console.error("User update failed:", updateError)
-			}
-
-			console.log("[AuthCallback] Redirecting to home...")
-			// Full page reload to ensure AuthContext re-initializes with fresh state
-			window.location.href = "/"
 		}
 
-		handleAuth().catch((err) => {
-			console.error("Error in auth handling:", err)
-			window.location.href = "/login"
-		})
+		handleAuth()
 	}, [])
+
+	if (error) {
+		return (
+			<div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+				<p className="text-lg text-red-600">Authentication failed</p>
+				<p className="text-sm text-gray-500">{error}</p>
+				<button
+					onClick={() => (window.location.href = "/login")}
+					className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+				>
+					Return to Login
+				</button>
+			</div>
+		)
+	}
 
 	return (
 		<div className="flex flex-col items-center justify-center min-h-[50vh]">
-			<p className="text-lg">Signing in...</p>
+			<p className="text-lg">
+				{retryCount > 0 ? `Retrying... (attempt ${retryCount + 1})` : "Signing in..."}
+			</p>
 		</div>
 	)
 }

@@ -2,8 +2,8 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
-	// Create an unmodified response
-	let response = NextResponse.next({
+	// Create a single response object that we'll mutate
+	const response = NextResponse.next({
 		request: {
 			headers: request.headers,
 		},
@@ -18,17 +18,13 @@ export async function middleware(request: NextRequest) {
 					return request.cookies.get(name)?.value
 				},
 				set(name: string, value: string, options: CookieOptions) {
-					// If the cookie is set, update the request and response cookies
+					// Update request cookies for downstream middleware/routes
 					request.cookies.set({
 						name,
 						value,
 						...options,
 					})
-					response = NextResponse.next({
-						request: {
-							headers: request.headers,
-						},
-					})
+					// Update the same response object (don't reassign)
 					response.cookies.set({
 						name,
 						value,
@@ -36,17 +32,13 @@ export async function middleware(request: NextRequest) {
 					})
 				},
 				remove(name: string, options: CookieOptions) {
-					// If the cookie is removed, update the request and response cookies
+					// Update request cookies for downstream middleware/routes
 					request.cookies.set({
 						name,
 						value: "",
 						...options,
 					})
-					response = NextResponse.next({
-						request: {
-							headers: request.headers,
-						},
-					})
+					// Update the same response object (don't reassign)
 					response.cookies.set({
 						name,
 						value: "",
