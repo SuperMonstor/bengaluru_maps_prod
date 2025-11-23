@@ -15,8 +15,7 @@ import {
 	ComboboxPopover,
 	ComboboxList,
 	ComboboxOption,
-} from "@reach/combobox"
-import "@reach/combobox/styles.css"
+} from "@/components/ui/combobox"
 import { useToast } from "@/lib/hooks/use-toast"
 import { LocationSuggestion, SubmitLocationProps } from "@/lib/types/mapTypes"
 import { getMapById } from "@/lib/supabase/mapsService"
