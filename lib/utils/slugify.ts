@@ -1,21 +1,19 @@
+import slugifyLib from "slugify"
+
 /**
- * Converts a string to a URL-friendly slug
+ * Converts a string to a URL-friendly slug with proper unicode transliteration
  * @param text The text to convert to a slug
  * @returns A URL-friendly slug
  */
 export function slugify(text: string): string {
 	if (!text) return "map"
 
-	return text
-		.toString()
-		.toLowerCase()
-		.trim()
-		.replace(/\s+/g, "-") // Replace spaces with -
-		.replace(/&/g, "-and-") // Replace & with 'and'
-		.replace(/[^\w\-]+/g, "") // Remove all non-word characters
-		.replace(/\-\-+/g, "-") // Replace multiple - with single -
-		.replace(/^-+/, "") // Trim - from start of text
-		.replace(/-+$/, "") // Trim - from end of text
+	return slugifyLib(text, {
+		lower: true, // Convert to lowercase
+		strict: true, // Strip special characters
+		remove: /[*+~.()'"!:@]/g, // Remove specific characters
+		replacement: "-", // Replace spaces with hyphens
+	})
 }
 
 /**
