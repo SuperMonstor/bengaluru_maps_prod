@@ -16,16 +16,17 @@ export async function createClient() {
 				set(name, value, options) {
 					try {
 						cookieStore.set(name, value, options)
-					} catch (error) {
-						// This can happen when attempting to set cookies in middleware
-						console.error(`Error setting cookie ${name}:`, error)
+					} catch {
+						// Silently ignore - this is expected when called from Server Components
+						// Cookies can only be modified in Server Actions or Route Handlers
+						// The middleware handles token refresh, so this is safe to ignore
 					}
 				},
 				remove(name, options) {
 					try {
 						cookieStore.set(name, "", { ...options, maxAge: 0 })
-					} catch (error) {
-						console.error(`Error removing cookie ${name}:`, error)
+					} catch {
+						// Silently ignore - same reason as set()
 					}
 				},
 			},

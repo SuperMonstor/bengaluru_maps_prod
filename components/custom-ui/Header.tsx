@@ -190,9 +190,9 @@ const Header = memo(function Header() {
 					</div>
 
 					{/* User Menu - Only render after mount to prevent hydration mismatch */}
-					{!mounted ? (
+					{!mounted || authLoading ? (
 						<div className="h-8 w-8 md:h-9 md:w-9 animate-pulse bg-gray-300 rounded-full" />
-					) : user || authLoading ? (
+					) : user ? (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button
@@ -200,21 +200,15 @@ const Header = memo(function Header() {
 									className="relative h-8 w-8 md:h-9 md:w-9 rounded-full p-0 border-2 border-transparent hover:border-primary/20 transition-colors"
 								>
 									<Avatar className="h-full w-full">
-										{authLoading ? (
-											<AvatarFallback className="animate-pulse bg-gray-200" />
-										) : (
-											<>
-												<AvatarImage
-													src={
-														user?.picture_url ??
-														`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
-													}
-												/>
-												<AvatarFallback>
-													{user?.email?.[0]?.toUpperCase() ?? "U"}
-												</AvatarFallback>
-											</>
-										)}
+										<AvatarImage
+											src={
+												user?.picture_url ??
+												`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
+											}
+										/>
+										<AvatarFallback>
+											{user?.email?.[0]?.toUpperCase() ?? "U"}
+										</AvatarFallback>
 									</Avatar>
 								</Button>
 							</DropdownMenuTrigger>
@@ -225,21 +219,12 @@ const Header = memo(function Header() {
 							>
 								<div className="p-3 border-b border-gray-100">
 									<div className="flex flex-col">
-										{authLoading ? (
-											<>
-												<span className="h-4 w-24 bg-gray-200 animate-pulse rounded" />
-												<span className="h-3 w-32 bg-gray-100 animate-pulse rounded mt-1" />
-											</>
-										) : (
-											<>
-												<span className="font-semibold text-gray-900">
-													{user?.first_name} {user?.last_name}
-												</span>
-												<span className="text-xs text-gray-500 truncate max-w-[180px]">
-													{user?.email}
-												</span>
-											</>
-										)}
+										<span className="font-semibold text-gray-900">
+											{user?.first_name} {user?.last_name}
+										</span>
+										<span className="text-xs text-gray-500 truncate max-w-[180px]">
+											{user?.email}
+										</span>
 									</div>
 								</div>
 

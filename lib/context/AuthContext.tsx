@@ -7,7 +7,7 @@ import {
 	useEffect,
 	useRef,
 	useCallback,
-	ReactNode,
+	type ReactNode,
 } from "react"
 import { createClient } from "../supabase/api/supabaseClient"
 import { UserSchema } from "../types/userTypes"
@@ -32,24 +32,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 	// Track in-flight requests to prevent duplicate fetches
 	const fetchingUserIdRef = useRef<string | null>(null)
-	const initializedRef = useRef(false)
 
 	// Memoize fetchUserData to prevent recreation on each render
 	const fetchUserData = useCallback(
 		async (supabase: ReturnType<typeof createClient>, authUserId: string | null) => {
-			// Skip if we're already fetching this user
-			if (fetchingUserIdRef.current === authUserId) {
-				return
-			}
-
-			fetchingUserIdRef.current = authUserId
-
 			if (!authUserId) {
 				setUser(null)
 				setIsLoading(false)
 				fetchingUserIdRef.current = null
 				return
 			}
+
+			// Skip if we're already fetching this exact user
+			if (fetchingUserIdRef.current === authUserId) {
+				return
+			}
+
+			fetchingUserIdRef.current = authUserId
 
 			try {
 				const { data, error } = await supabase
@@ -83,12 +82,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 	)
 
 	useEffect(() => {
-		// Prevent double initialization in React StrictMode
-		if (initializedRef.current) {
-			return
-		}
-		initializedRef.current = true
-
+		let isCancelled = false
 		const supabase = createClient()
 
 		async function initAuth() {
@@ -97,6 +91,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				error,
 			} = await supabase.auth.getSession()
 
+			if (isCancelled) return
+
 			if (error) {
 				console.error("[AuthContext] Error getting session:", error.message)
 				setUser(null)
@@ -104,7 +100,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				return
 			}
 
-			await fetchUserData(supabase, session?.user?.id || null)
+			if (!isCancelled) {
+				await fetchUserData(supabase, session?.user?.id || null)
+			}
 		}
 
 		initAuth()
@@ -117,12 +115,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 					return
 				}
 
+				if (isCancelled) return
+
 				console.log("[AuthContext] Auth state changed:", event)
 				await fetchUserData(supabase, session?.user?.id || null)
 			}
 		)
 
 		return () => {
+			isCancelled = true
+			fetchingUserIdRef.current = null
 			authListener?.subscription?.unsubscribe()
 		}
 	}, [fetchUserData])
