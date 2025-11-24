@@ -98,6 +98,7 @@ export default function CreateMapPage() {
 					title: "Error creating map",
 					description: error,
 				})
+				setIsSubmitting(false)
 			} else {
 				toast({
 					title: "Success!",
@@ -244,15 +245,26 @@ export default function CreateMapPage() {
 							htmlFor="displayPicture"
 							className="text-sm font-medium text-gray-700"
 						>
-							Display Picture (16:9 recommended)
+							Display Picture (16:9 recommended) *
 						</label>
 						<Input
 							type="file"
 							accept="image/*"
-							{...register("displayPicture")}
+							{...register("displayPicture", {
+								required: "Display picture is required",
+								validate: {
+									hasFile: (files) =>
+										(files && files.length > 0) || "Display picture is required",
+								},
+							})}
 							id="displayPicture"
 							className="w-full border border-gray-300 rounded-md shadow-sm"
 						/>
+						{errors.displayPicture && (
+							<p className="text-sm text-red-500">
+								{errors.displayPicture.message}
+							</p>
+						)}
 						{imagePreview && (
 							<div className="aspect-video relative overflow-hidden rounded-lg">
 								<img

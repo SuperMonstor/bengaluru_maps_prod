@@ -51,9 +51,17 @@ export async function createMap({
 
 		// Use the modular uploadImage function from ImageProcessor
 		// Pass the supabase client to ensure proper authentication
-		const displayPictureUrl = await ImageProcessor.uploadImage(displayPicture, {
-			serverSupabase: supabase,
-		})
+		let displayPictureUrl: string
+		try {
+			displayPictureUrl = await ImageProcessor.uploadImage(displayPicture, {
+				serverSupabase: supabase,
+			})
+		} catch (uploadError) {
+			console.error("Image upload failed:", uploadError)
+			throw new Error(
+				`Failed to upload image: ${uploadError instanceof Error ? uploadError.message : "Unknown error"}`
+			)
+		}
 		const slug = slugify(title)
 
 		const { data, error } = await supabase
