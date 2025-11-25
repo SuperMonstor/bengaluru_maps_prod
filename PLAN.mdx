@@ -1,139 +1,66 @@
-# Auth Refactor Plan: Server-First Architecture
+# Map Migration Plan: Google Maps to OpenStreetMap (Leaflet)
 
 ## Goal
-Eliminate client-side auth race conditions by moving auth state management to server components and using server actions for mutations.
+Replace the visual Google Maps component on the maps page (`app/maps/[slug]/page.tsx`) with an OpenStreetMap (OSM) implementation using Leaflet, while preserving existing functionality where possible.
 
-## Current Problems
-- AuthContext fetches user data on client mount (race conditions)
-- Client-side session management leads to timing issues
-- Profile icon shows blank after sign-in due to async state updates
-- Multiple auth state sources causing inconsistency
+## Current Architecture
+- **Map Component**: `GoogleMap` from `@react-google-maps/api`.
+- **Markers**: `Marker` from `@react-google-maps/api`.
+- **State Management**: `useGoogleMaps` hook handles loading the script, map state, and fetching place details.
+- **Data Dependency**:
+  - `fetchPlaceDetails` uses `google.maps.places.PlacesService` to get photos, ratings, and opening hours.
+  - `submit/page.tsx` uses `google.maps.places.AutocompleteService` for location search.
 
-## Target Architecture
-```
-Server Component (layout.tsx)
-  ↓ Fetches complete user (auth + profile)
-  ↓ Passes user as prop
-Client Component (Header.tsx)
-  ↓ Displays user
-  ↓ Handles sign-out via server action
-  ↓ Triggers router.refresh() on auth changes
-```
-
----
+## Strategy
+We will perform a **Visual Migration** to OpenStreetMap (Leaflet).
+**Important**: Due to Google Maps Platform Terms of Service, we cannot use Google Places API data (Photos, Ratings, Reviews) on a non-Google Map. Therefore, we will **comment out/disable** the `fetchPlaceDetails` logic. The location details panel will only display data stored in our database (Name, Note, User Info).
 
 ## Implementation Steps
 
-### Phase 1: Create Server-Side User Fetcher
-- [ ] Create new file `lib/auth/getUser.ts` (server-only utility)
-- [ ] Implement `getUser()` function that:
-  - Gets Supabase session using server client
-  - If session exists, queries users table for full profile
-  - Returns complete user object or null
-  - No retry logic needed (server-side is synchronous)
-- [ ] Export type for the return value
+### Phase 1: Dependencies & Setup
+- [ ] Install required packages:
+  ```bash
+  npm install leaflet react-leaflet leaflet-defaulticon-compatibility
+  npm install -D @types/leaflet
+  ```
+- [ ] Create a new component `components/map/OSMMap.tsx`.
 
-### Phase 2: Update Root Layout to Server Component
-- [ ] Check current `app/layout.tsx` - verify if it's already a server component
-- [ ] If it has `"use client"`, we need to split it:
-  - Keep layout as server component
-  - Move client-only parts to separate client components
-- [ ] In layout, call `await getUser()` at the top level
-- [ ] Pass user data to a new `<LayoutClient>` wrapper component
+### Phase 2: Create OSM Map Component
+- [ ] Implement `OSMMap.tsx` (New Component):
+  - Use `MapContainer`, `TileLayer`, `Marker`, `Popup`.
+  - Re-implement custom marker icons (Red/Blue).
+  - Handle map bounds and centering.
 
-### Phase 3: Create Layout Client Wrapper
-- [ ] Create `components/layout/LayoutClient.tsx` as client component
-- [ ] Accept `user` as prop (passed from server layout)
-- [ ] Create lightweight React Context just for passing user down tree
-  - Only stores user object (no loading state, no fetching logic)
-  - Just a prop-drilling alternative
-- [ ] Render children with context provider
+### Phase 3: Refactor Map Logic
+- [ ] Refactor `lib/hooks/useGoogleMaps.ts`:
+  - Rename to `useMapLogic.ts` (optional, or just keep and strip).
+  - **Comment out** `fetchPlaceDetails` logic.
+  - Remove `useLoadScript` if we are fully removing the Google Maps dependency for the *view* page (we might still need it for the *submit* page if we keep autocomplete there, but for the view page it should be gone).
 
-### Phase 4: Update Header Component
-- [ ] Remove `useAuth()` hook import from `AuthContext`
-- [ ] Import user from new lightweight context instead
-- [ ] Remove all loading state handling (server gives complete data)
-- [ ] Update sign-out handler to:
-  - Call server action
-  - Call `router.refresh()` to re-fetch server data
-  - Don't do `window.location.href` (let Next.js handle it)
-- [ ] Simplify avatar rendering (user is always complete or null)
+### Phase 4: Integration (Refactor)
+- [ ] Refactor `app/maps/[slug]/ClientMapPageComponent.tsx`:
+  - Replace `<GoogleMap>` with `<OSMMap>`.
+  - Remove usage of `placeDetails` (photos, ratings, hours).
+  - Update UI to handle missing place details gracefully (cleaner UI without empty gaps).
 
-### Phase 5: Update Other Components Using Auth
-- [ ] Find all files importing `useAuth` from old AuthContext:
-  - `app/create-map/page.tsx`
-  - `app/maps/[slug]/edit/page.tsx`
-  - `app/maps/[slug]/submit/page.tsx`
-  - `app/maps/[slug]/ClientMapPageComponent.tsx`
-  - `app/my-maps/page.tsx`
-  - `app/my-maps/[mapId]/pending/page.tsx`
-- [ ] For each file, replace with new lightweight context hook
-- [ ] Remove `isLoading` checks (not needed anymore)
-- [ ] Keep pages as client components if they need interactivity
-- [ ] For server components, fetch user directly with `getUser()`
 
-### Phase 6: Update Auth Callback Flow
-- [ ] Simplify `app/(auth)/auth/callback/page.tsx`:
-  - Remove retry logic (not needed)
-  - After successful OAuth exchange, just redirect
-  - Server will handle user fetch on next page load
-- [ ] Ensure `updateUserInDatabase` is called before redirect
-- [ ] Use `router.push('/')` instead of `window.location.href`
+### Phase 5: Verification
+- [ ] Verify map renders with OSM tiles.
+- [ ] Verify all markers appear correctly.
+- [ ] Verify clicking a marker:
+  - Selects the location.
+  - Fetches and displays place details (photos, ratings) - *Crucial check*.
+  - Pans/Zooms map if needed.
+- [ ] Verify "View on Google Maps" links still work (they use URL construction).
 
-### Phase 7: Update Sign-Out Action
-- [ ] Check `lib/actions/auth.ts` (or wherever signOutAction lives)
-- [ ] Ensure it:
-  - Calls Supabase sign out
-  - Revalidates path or tag
-  - Returns success/error
-- [ ] Remove client-side auth state clearing (server handles it)
+## Technical Considerations
+- **Google Places API**: We are **disabling** the Google Maps script on the map view page to comply with ToS.
+- **Styling**: Leaflet requires its CSS to be imported.
+- **Refactor vs Rewrite**:
+  - `OSMMap.tsx`: **Rewrite** (New component).
+  - `ClientMapPageComponent.tsx`: **Refactor** (Swapping components, removing props).
+  - `useGoogleMaps.ts`: **Refactor** (Commenting out code).
 
-### Phase 8: Update PendingCountContext
-- [ ] Check if `PendingCountContext` depends on old AuthContext
-- [ ] If yes, update to use new user context
-- [ ] Consider if pending count should be server-fetched too
-
-### Phase 9: Remove Old AuthContext
-- [ ] Delete `lib/context/AuthContext.tsx`
-- [ ] Remove any remaining imports
-- [ ] Clean up any unused auth utilities
-
-### Phase 10: Testing & Cleanup
-- [ ] Test sign-in flow:
-  - Google OAuth should work smoothly
-  - Profile icon should appear immediately
-  - No blank avatar state
-- [ ] Test sign-out flow:
-  - Should clear user state
-  - Should redirect to home
-  - Should show sign-in button
-- [ ] Test protected pages:
-  - Create map page
-  - Edit map page
-  - My maps page
-- [ ] Test page navigation (user state persists)
-- [ ] Remove any debug logging
-- [ ] Update any affected tests
-
----
-
-## Benefits After Refactor
-- ✅ No race conditions (server has full control)
-- ✅ Simpler mental model (data flows down from server)
-- ✅ Better performance (less client-side code)
-- ✅ Easier debugging (server logs are reliable)
-- ✅ Works with React Server Components properly
-- ✅ Better for SEO (user data available on server)
-
-## Rollback Plan
-If issues arise:
-1. Keep old AuthContext temporarily
-2. Feature flag between old and new system
-3. Test incrementally (start with just Header)
-4. Can run both systems in parallel during migration
-
-## Notes
-- This is a significant refactor but touches fewer files than it seems
-- Most components just swap one hook for another
-- The core logic simplifies dramatically
-- Server Components are the future of Next.js - this aligns with best practices
+## Future Steps (Optional)
+- Replace `submit/page.tsx` search with an OSM-based geocoder (e.g., Nominatim) to fully remove the Google Maps API dependency.
+- Replace Place Details with another provider or user-generated content.
