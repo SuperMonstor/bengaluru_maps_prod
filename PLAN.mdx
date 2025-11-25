@@ -31,15 +31,17 @@ We will perform a **Visual Migration** to OpenStreetMap (Leaflet).
   - Re-implement custom marker icons (Red/Blue).
   - Handle map bounds and centering.
 
-### Phase 3: Refactor Map Logic
-- [ ] Refactor `lib/hooks/useGoogleMaps.ts`:
-  - Rename to `useMapLogic.ts` (optional, or just keep and strip).
-  - **Comment out** `fetchPlaceDetails` logic.
-  - Remove `useLoadScript` if we are fully removing the Google Maps dependency for the *view* page (we might still need it for the *submit* page if we keep autocomplete there, but for the view page it should be gone).
+### Phase 3: Clean Up & Refactor
+- [ ] Move `Location` interface from `lib/hooks/useGoogleMaps.ts` to `lib/types/mapTypes.ts`.
+- [ ] **Delete** `lib/hooks/useGoogleMaps.ts`.
+  - The `selectedLocation` state will be moved directly into `ClientMapPageComponent`.
+  - The `fetchPlaceDetails` logic is being removed (ToS compliance).
+  - The `useLoadScript` logic is not needed for Leaflet.
 
 ### Phase 4: Integration (Refactor)
 - [ ] Refactor `app/maps/[slug]/ClientMapPageComponent.tsx`:
   - Replace `<GoogleMap>` with `<OSMMap>`.
+  - Use local `useState` for `selectedLocation`.
   - Remove usage of `placeDetails` (photos, ratings, hours).
   - Update UI to handle missing place details gracefully (cleaner UI without empty gaps).
 
@@ -59,7 +61,7 @@ We will perform a **Visual Migration** to OpenStreetMap (Leaflet).
 - **Refactor vs Rewrite**:
   - `OSMMap.tsx`: **Rewrite** (New component).
   - `ClientMapPageComponent.tsx`: **Refactor** (Swapping components, removing props).
-  - `useGoogleMaps.ts`: **Refactor** (Commenting out code).
+  - `useGoogleMaps.ts`: **Delete** (Logic moved/removed).
 
 ## Future Steps (Optional)
 - Replace `submit/page.tsx` search with an OSM-based geocoder (e.g., Nominatim) to fully remove the Google Maps API dependency.

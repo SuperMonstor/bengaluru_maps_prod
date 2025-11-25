@@ -19,9 +19,14 @@ import Image from "next/image"
 import ShareButton from "@/components/custom-ui/ShareButton"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { GoogleMap, Marker } from "@react-google-maps/api"
-import { useGoogleMaps, Location } from "@/lib/hooks/useGoogleMaps"
+import dynamic from "next/dynamic"
+import { Location } from "@/lib/types/mapTypes"
 import { useUserInfo } from "@/lib/hooks/useUserInfo"
+
+const OSMMap = dynamic(() => import("@/components/map/OSMMap"), {
+	ssr: false,
+	loading: () => <LoadingIndicator message="Loading map..." />,
+})
 import { UpvoteButton } from "@/components/custom-ui/UpvoteButton"
 import { useSearchParams } from "next/navigation"
 import { useUser } from "@/components/layout/LayoutClient"
@@ -52,41 +57,7 @@ interface ClientMapPageContentProps {
 	searchParams?: { [key: string]: string | string[] | undefined }
 }
 
-const popupStyles = `
-	@keyframes popupFadeIn {
-		from {
-			opacity: 0;
-			transform: scale(0.95);
-		}
-		to {
-			opacity: 1;
-			transform: scale(1);
-		}
-	}
-	.popup-card {
-		animation: popupFadeIn 0.2s ease-out;
-		overflow-x: hidden;
-	}
-`
 
-// Custom marker with different colors for selected/unselected state
-const CustomMarker = ({ position, onClick, isSelected }: any) => {
-	return (
-		<Marker
-			position={position}
-			onClick={onClick}
-			icon={{
-				path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z",
-				fillColor: isSelected ? "#2563EB" : "#E53935", // Blue when selected, red when not
-				fillOpacity: 1,
-				strokeWeight: 2,
-				strokeColor: "#FFFFFF",
-				scale: isSelected ? 1.8 : 1.5, // Slightly larger when selected
-				anchor: new google.maps.Point(12, 22),
-			}}
-		/>
-	)
-}
 
 // Component that uses useSearchParams
 function ClientMapPageContentInner({
@@ -103,17 +74,9 @@ function ClientMapPageContentInner({
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 	const [showFullNote, setShowFullNote] = useState(false)
 
-	const {
-		isLoaded,
-		mapRef,
-		selectedLocation,
-		setSelectedLocation,
-		placeDetails,
-		fetchPlaceDetails,
-		initialSettings,
-		onMapLoad,
-		mapStyles,
-	} = useGoogleMaps(map.locations)
+	const [selectedLocation, setSelectedLocation] = useState<Location | null>(
+		null
+	)
 
 	const { userInfo, fetchUserInfo } = useUserInfo()
 	const { user: authUser } = useUser()
@@ -126,30 +89,7 @@ function ClientMapPageContentInner({
 		}, 300) // Match the animation duration
 	}
 
-	const mapStateRef = useRef({
-		center: null as google.maps.LatLng | null | undefined,
-		zoom: null as number | null | undefined,
-	})
 
-	const handleMapLoad = (map: google.maps.Map) => {
-		onMapLoad(map)
-
-		const center = map.getCenter()
-		const zoom = map.getZoom()
-
-		if (center) mapStateRef.current.center = center
-		if (zoom !== undefined) mapStateRef.current.zoom = zoom
-
-		map.addListener("idle", () => {
-			if (!selectedLocation) {
-				const center = map.getCenter()
-				const zoom = map.getZoom()
-
-				if (center) mapStateRef.current.center = center
-				if (zoom !== undefined) mapStateRef.current.zoom = zoom
-			}
-		})
-	}
 
 	const onMarkerClick = (location: Location) => {
 		// If clicking the same marker, deselect it
@@ -160,28 +100,14 @@ function ClientMapPageContentInner({
 
 		setSelectedLocation(location)
 		fetchUserInfo(location.creator_id)
-		fetchPlaceDetails(location.google_maps_url)
 
 		// Always open the bottom panel when a location is selected
 		setIsOpen(true)
 	}
 
-	const handleInfoWindowClose = () => {
-		if (
-			mapRef.current &&
-			mapStateRef.current.center &&
-			mapStateRef.current.zoom
-		) {
-			mapRef.current.setCenter(mapStateRef.current.center)
-			mapRef.current.setZoom(mapStateRef.current.zoom)
-		}
-		setSelectedLocation(null)
-	}
 
-	const handleMapClick = (e: google.maps.MapMouseEvent) => {
-		// Only deselect if it's a direct map click, not a marker click
-		if ((e as any).placeId) return
 
+	const handleMapClick = () => {
 		setSelectedLocation(null)
 		// Don't close the panel on map click, just deselect the location
 	}
@@ -210,40 +136,7 @@ function ClientMapPageContentInner({
 		}
 	}, [shouldExpand])
 
-	useEffect(() => {
-		if (!isLoaded || !mapRef.current) return
 
-		// Apply optimal zoom and bounds
-		const bounds = new google.maps.LatLngBounds()
-		map.locations.forEach((location) => {
-			bounds.extend({ lat: location.latitude, lng: location.longitude })
-		})
-
-		if (map.locations.length > 1) {
-			mapRef.current.fitBounds(bounds)
-		} else if (map.locations.length === 1) {
-			mapRef.current.setCenter({
-				lat: map.locations[0].latitude,
-				lng: map.locations[0].longitude,
-			})
-			mapRef.current.setZoom(15)
-		}
-
-		// Ensure zoom stays within a reasonable range
-		const listener = google.maps.event.addListenerOnce(
-			mapRef.current,
-			"idle",
-			() => {
-				const currentZoom = mapRef.current?.getZoom()
-				if (currentZoom && currentZoom < 10) mapRef.current?.setZoom(10)
-				if (currentZoom && currentZoom > 15) mapRef.current?.setZoom(15)
-			}
-		)
-
-		return () => {
-			google.maps.event.removeListener(listener)
-		}
-	}, [isLoaded, map.locations])
 
 	// Use the filtered locations count to match server-side logic
 	const approvedLocationsCount = map.locations.filter(
@@ -265,24 +158,17 @@ function ClientMapPageContentInner({
 			? `${selectedLocation.note.substring(0, 120)}...`
 			: selectedLocation.note)
 
-	if (!isLoaded) {
-		return (
-			<div className="flex items-center justify-center h-[calc(100vh-72px)] w-full">
-				<LoadingIndicator message="Loading map details..." />
-			</div>
-		)
-	}
+
 
 	return (
 		<>
-			<style>{popupStyles}</style>
+
 			<div className="flex flex-col h-[calc(100vh-72px)] w-full">
 				{/* Desktop Layout */}
 				<div className="hidden md:flex h-full w-full">
 					<div
-						className={`w-2/5 max-w-[500px] p-4 md:p-8 lg:p-12 space-y-6 overflow-y-auto bg-white ${
-							selectedLocation ? "border-r-4 border-r-blue-500/20" : ""
-						}`}
+						className={`w-2/5 max-w-[500px] p-4 md:p-8 lg:p-12 space-y-6 overflow-y-auto bg-white ${selectedLocation ? "border-r-4 border-r-blue-500/20" : ""
+							}`}
 					>
 						{!selectedLocation ? (
 							<>
@@ -391,7 +277,7 @@ function ClientMapPageContentInner({
 											slug={map.slug}
 											title={selectedLocation.name}
 											description={selectedLocation.note || ""}
-											image={placeDetails?.imageUrl || map.image}
+											image={map.image}
 										/>
 									</div>
 								</div>
@@ -422,56 +308,7 @@ function ClientMapPageContentInner({
 									</span>
 								</div>
 
-								{/* Location image */}
-								{placeDetails?.imageUrl && (
-									<div className="relative w-full h-[200px] mt-4">
-										<Image
-											src={placeDetails.imageUrl}
-											alt={selectedLocation.name}
-											fill
-											className="object-cover rounded-md"
-											priority
-										/>
-									</div>
-								)}
 
-								{/* Status and Ratings Section */}
-								{placeDetails && (
-									<div className="p-4 bg-gray-50 rounded-md">
-										<div className="flex justify-between items-center mb-2">
-											{placeDetails.isOpenNow !== null && (
-												<span
-													className={`text-sm font-medium ${
-														placeDetails.isOpenNow
-															? "text-green-600"
-															: "text-red-600"
-													}`}
-												>
-													{placeDetails.isOpenNow ? "Open Now" : "Closed Now"}
-												</span>
-											)}
-
-											{placeDetails.rating && (
-												<div className="flex items-center gap-1">
-													<Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-													<span className="text-sm font-medium">
-														{placeDetails.rating.toFixed(1)}/5
-													</span>
-												</div>
-											)}
-										</div>
-
-										{/* Today's hours */}
-										{placeDetails.todayHours && (
-											<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-												<Clock className="h-3 w-3 flex-shrink-0" />
-												<span className="break-words">
-													Today: {placeDetails.todayHours}
-												</span>
-											</div>
-										)}
-									</div>
-								)}
 
 								{/* Note Section */}
 								{displayNote && (
@@ -504,21 +341,19 @@ function ClientMapPageContentInner({
 												"place/?q=place_id:"
 											)
 												? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-														selectedLocation.name
-												  )}&query_place_id=${
-														selectedLocation.google_maps_url.split(
-															"place_id:"
-														)[1]
-												  }`
+													selectedLocation.name
+												)}&query_place_id=${selectedLocation.google_maps_url.split(
+													"place_id:"
+												)[1]
+												}`
 												: selectedLocation.google_maps_url.includes(
-														"maps.google.com/?cid="
-												  )
-												? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+													"maps.google.com/?cid="
+												)
+													? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
 														selectedLocation.name
-												  )}&query_place_id=${
-														selectedLocation.google_maps_url.split("cid=")[1]
-												  }`
-												: selectedLocation.google_maps_url
+													)}&query_place_id=${selectedLocation.google_maps_url.split("cid=")[1]
+													}`
+													: selectedLocation.google_maps_url
 										}
 										target="_blank"
 										rel="noopener noreferrer"
@@ -561,39 +396,11 @@ function ClientMapPageContentInner({
 					</div>
 
 					<div className="flex-1 h-full">
-						<GoogleMap
-							mapContainerStyle={{ width: "100%", height: "100%" }}
-							center={initialSettings.center}
-							zoom={initialSettings.zoom}
-							onLoad={handleMapLoad}
-							onClick={handleMapClick}
-							options={{
-								streetViewControl: false,
-								mapTypeControl: false,
-								fullscreenControl: false,
-								styles: mapStyles,
-								gestureHandling: "greedy",
-								maxZoom: 18,
-								minZoom: 3,
-								disableDefaultUI: false,
-								zoomControl: false,
-								clickableIcons: false,
-							}}
-						>
-							{map.locations
-								.filter((location) => location.is_approved)
-								.map((location) => (
-									<CustomMarker
-										key={location.id}
-										position={{
-											lat: location.latitude,
-											lng: location.longitude,
-										}}
-										onClick={() => onMarkerClick(location)}
-										isSelected={selectedLocation?.id === location.id}
-									/>
-								))}
-						</GoogleMap>
+						<OSMMap
+							locations={map.locations}
+							selectedLocation={selectedLocation}
+							onMarkerClick={onMarkerClick}
+						/>
 					</div>
 				</div>
 
@@ -601,39 +408,11 @@ function ClientMapPageContentInner({
 				<div className="md:hidden h-full w-full relative">
 					{/* Map container */}
 					<div className="absolute inset-0">
-						<GoogleMap
-							mapContainerStyle={{ width: "100%", height: "100%" }}
-							center={initialSettings.center}
-							zoom={initialSettings.zoom}
-							onLoad={handleMapLoad}
-							onClick={handleMapClick}
-							options={{
-								streetViewControl: false,
-								mapTypeControl: false,
-								fullscreenControl: false,
-								styles: mapStyles,
-								gestureHandling: "greedy",
-								maxZoom: 18,
-								minZoom: 3,
-								disableDefaultUI: false,
-								zoomControl: false,
-								clickableIcons: false,
-							}}
-						>
-							{map.locations
-								.filter((location) => location.is_approved)
-								.map((location) => (
-									<CustomMarker
-										key={location.id}
-										position={{
-											lat: location.latitude,
-											lng: location.longitude,
-										}}
-										onClick={() => onMarkerClick(location)}
-										isSelected={selectedLocation?.id === location.id}
-									/>
-								))}
-						</GoogleMap>
+						<OSMMap
+							locations={map.locations}
+							selectedLocation={selectedLocation}
+							onMarkerClick={onMarkerClick}
+						/>
 					</div>
 
 					{/* Bottom panel - only shown when not expanded */}
@@ -697,7 +476,7 @@ function ClientMapPageContentInner({
 												slug={map.slug}
 												title={selectedLocation.name}
 												description={selectedLocation.note || ""}
-												image={placeDetails?.imageUrl || map.image}
+												image={map.image}
 											/>
 										</div>
 									</div>
@@ -723,24 +502,7 @@ function ClientMapPageContentInner({
 										</>
 									) : (
 										<>
-											{placeDetails?.isOpenNow !== null && (
-												<span
-													className={`flex items-center ${
-														placeDetails?.isOpenNow
-															? "text-green-600"
-															: "text-red-600"
-													}`}
-												>
-													<Clock className="mr-1 h-4 w-4" />
-													{placeDetails?.isOpenNow ? "Open" : "Closed"}
-												</span>
-											)}
-											{placeDetails?.rating && (
-												<span className="flex items-center">
-													<Star className="mr-1 h-4 w-4 text-yellow-500" />
-													{placeDetails.rating.toFixed(1)}
-												</span>
-											)}
+
 										</>
 									)}
 								</div>
@@ -751,9 +513,8 @@ function ClientMapPageContentInner({
 					{/* Expanded panel - only shown when expanded */}
 					{isOpen && (
 						<div
-							className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg z-50 max-h-[85vh] h-auto overflow-y-auto ${
-								isExiting ? "animate-slide-down" : "animate-slide-up"
-							}`}
+							className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg z-50 max-h-[85vh] h-auto overflow-y-auto ${isExiting ? "animate-slide-down" : "animate-slide-up"
+								}`}
 						>
 							<div className="sticky top-0 bg-white p-4 border-b border-gray-100">
 								<div className="flex items-center justify-between">
@@ -855,23 +616,21 @@ function ClientMapPageContentInner({
 														"place/?q=place_id:"
 													)
 														? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-																selectedLocation.name
-														  )}&query_place_id=${
-																selectedLocation.google_maps_url.split(
-																	"place_id:"
-																)[1]
-														  }`
+															selectedLocation.name
+														)}&query_place_id=${selectedLocation.google_maps_url.split(
+															"place_id:"
+														)[1]
+														}`
 														: selectedLocation.google_maps_url.includes(
-																"maps.google.com/?cid="
-														  )
-														? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+															"maps.google.com/?cid="
+														)
+															? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
 																selectedLocation.name
-														  )}&query_place_id=${
-																selectedLocation.google_maps_url.split(
-																	"cid="
-																)[1]
-														  }`
-														: selectedLocation.google_maps_url
+															)}&query_place_id=${selectedLocation.google_maps_url.split(
+																"cid="
+															)[1]
+															}`
+															: selectedLocation.google_maps_url
 												}
 												target="_blank"
 												rel="noopener noreferrer"
@@ -891,7 +650,7 @@ function ClientMapPageContentInner({
 												slug={map.slug}
 												title={selectedLocation.name}
 												description={selectedLocation.note || ""}
-												image={placeDetails?.imageUrl || map.image}
+												image={map.image}
 											/>
 										</div>
 									</>
@@ -928,58 +687,7 @@ function ClientMapPageContentInner({
 								) : (
 									<>
 										{/* Location details */}
-										{placeDetails?.imageUrl && (
-											<div className="mb-3">
-												<Image
-													src={placeDetails.imageUrl}
-													alt={selectedLocation.name}
-													width={600}
-													height={400}
-													className="w-full h-40 object-cover rounded-md"
-													priority
-												/>
-											</div>
-										)}
 
-										{/* Status and Ratings Section */}
-										{placeDetails && (
-											<div className="mb-3 p-3 bg-gray-50 rounded-md">
-												<div className="flex justify-between items-center mb-2">
-													{placeDetails.isOpenNow !== null && (
-														<span
-															className={`text-sm font-medium ${
-																placeDetails.isOpenNow
-																	? "text-green-600"
-																	: "text-red-600"
-															}`}
-														>
-															{placeDetails.isOpenNow
-																? "Open Now"
-																: "Closed Now"}
-														</span>
-													)}
-
-													{placeDetails.rating && (
-														<div className="flex items-center gap-1">
-															<Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-															<span className="text-sm font-medium">
-																{placeDetails.rating.toFixed(1)}/5
-															</span>
-														</div>
-													)}
-												</div>
-
-												{/* Today's hours */}
-												{placeDetails.todayHours && (
-													<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-														<Clock className="h-3 w-3 flex-shrink-0" />
-														<span className="break-words">
-															Today: {placeDetails.todayHours}
-														</span>
-													</div>
-												)}
-											</div>
-										)}
 
 										{/* Note Section */}
 										{displayNote && (
