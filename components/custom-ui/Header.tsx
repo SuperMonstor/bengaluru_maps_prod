@@ -94,13 +94,6 @@ const Header = memo(function Header() {
 		router.refresh()
 	}
 
-	// Debug: Log user picture_url
-	useEffect(() => {
-		if (user?.picture_url) {
-			console.log('[Header] User picture_url:', user.picture_url)
-		}
-	}, [user])
-
 	return (
 		<header className="flex items-center justify-between p-3 md:p-4 w-full bg-white">
 			{/* Left Section: Title and Byline */}
@@ -202,9 +195,11 @@ const Header = memo(function Header() {
 								>
 									<Avatar className="h-full w-full">
 										<AvatarImage
-											src={user?.picture_url || undefined}
+											src={
+												user?.picture_url ??
+												`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
+											}
 											alt={`${user?.first_name} ${user?.last_name}`}
-											onError={() => console.log('[Header] Avatar image failed to load')}
 										/>
 										<AvatarFallback>
 											{user?.email?.[0]?.toUpperCase() ?? "U"}

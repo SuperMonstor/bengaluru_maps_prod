@@ -13,18 +13,19 @@ import { UserSchema } from "@/lib/types/userTypes"
 export async function getUser(): Promise<UserSchema | null> {
 	const supabase = await createClient()
 
-	// Get the current session
+	// Use getUser() instead of getSession() for better security
+	// This authenticates the data by contacting Supabase Auth server
 	const {
-		data: { session },
-		error: sessionError,
-	} = await supabase.auth.getSession()
+		data: { user },
+		error: authError,
+	} = await supabase.auth.getUser()
 
-	if (sessionError) {
-		console.error("[getUser] Error getting session:", sessionError.message)
+	if (authError) {
+		console.error("[getUser] Error getting user:", authError.message)
 		return null
 	}
 
-	if (!session?.user?.id) {
+	if (!user?.id) {
 		return null
 	}
 
@@ -32,7 +33,7 @@ export async function getUser(): Promise<UserSchema | null> {
 	const { data, error } = await supabase
 		.from("users")
 		.select("*")
-		.eq("id", session.user.id)
+		.eq("id", user.id)
 		.single()
 
 	if (error) {
