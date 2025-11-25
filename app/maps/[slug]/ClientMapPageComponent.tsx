@@ -24,7 +24,7 @@ import { useGoogleMaps, Location } from "@/lib/hooks/useGoogleMaps"
 import { useUserInfo } from "@/lib/hooks/useUserInfo"
 import { UpvoteButton } from "@/components/custom-ui/UpvoteButton"
 import { useSearchParams } from "next/navigation"
-import { useAuth } from "@/lib/context/AuthContext"
+import { useUser } from "@/components/layout/LayoutClient"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 import DeleteLocationDialog from "@/components/map/DeleteLocationDialog"
 import { Suspense } from "react"
@@ -116,7 +116,7 @@ function ClientMapPageContentInner({
 	} = useGoogleMaps(map.locations)
 
 	const { userInfo, fetchUserInfo } = useUserInfo()
-	const { user: authUser } = useAuth()
+	const { user: authUser } = useUser()
 
 	const handleCollapse = () => {
 		setIsExiting(true)

@@ -1,8 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { useAuth } from "@/lib/context/AuthContext"
-
-// List of authorized emails that can access this endpoint
-const AUTHORIZED_EMAILS = ["senthilsudarshan@gmail.com"]
 
 export async function GET(request: NextRequest) {
 	console.log("[Email Test API] Test endpoint called")

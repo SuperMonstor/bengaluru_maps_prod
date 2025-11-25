@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import Image from "next/image"
-import { useAuth } from "@/lib/context/AuthContext"
+import { useUser } from "@/components/layout/LayoutClient"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useLoadScript } from "@react-google-maps/api"
@@ -37,7 +37,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 	const mapSlug = resolvedParams.slug
 
 	const { toast } = useToast()
-	const { user, isLoading: authLoading } = useAuth()
+	const { user } = useUser()
 	const router = useRouter()
 	const [map, setMap] = useState<any>(null)
 	const [error, setError] = useState<string | null>(null)

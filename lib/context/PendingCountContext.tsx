@@ -8,7 +8,7 @@ import {
 	ReactNode,
 } from "react"
 import { createClient } from "@/lib/supabase/api/supabaseClient"
-import { useAuth } from "@/lib/context/AuthContext"
+import { useUser } from "@/components/layout/LayoutClient"
 
 interface PendingCountContextType {
 	pendingCount: number
@@ -21,13 +21,13 @@ const PendingCountContext = createContext<PendingCountContextType | undefined>(
 )
 
 export function PendingCountProvider({ children }: { children: ReactNode }) {
-	const { user, isLoading: authLoading } = useAuth()
+	const { user } = useUser()
 	const [pendingCount, setPendingCount] = useState(0)
 	const [isLoading, setIsLoading] = useState(true)
 	const supabase = createClient()
 
 	const fetchPendingCount = async () => {
-		if (!user || authLoading) {
+		if (!user) {
 			setPendingCount(0)
 			setIsLoading(false)
 			return
@@ -79,7 +79,7 @@ export function PendingCountProvider({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		fetchPendingCount()
-	}, [user, authLoading])
+	}, [user])
 
 	const refreshPendingCount = async () => {
 		await fetchPendingCount()

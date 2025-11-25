@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useAuth } from "@/lib/context/AuthContext"
+import { useUser } from "@/components/layout/LayoutClient"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 
@@ -12,7 +12,7 @@ import { Loader2 } from "lucide-react"
 const AUTHORIZED_EMAILS = ["senthilsudarshan@gmail.com"]
 
 export default function TestEmailPage() {
-	const { user, isLoading } = useAuth()
+	const { user } = useUser()
 	const router = useRouter()
 	const [loading, setLoading] = useState(false)
 	const [result, setResult] = useState<any>(null)
@@ -28,26 +28,10 @@ export default function TestEmailPage() {
 	// Add information about the sender email
 	const senderEmail = "sudarshan@bobscompany.co"
 
-	// Debug logs
-	useEffect(() => {
-		console.log("[TestEmail] Current state:", {
-			isLoading,
-			user,
-			userEmail: user?.email,
-			isAuthorized: user?.email && AUTHORIZED_EMAILS.includes(user.email),
-		})
-	}, [user, isLoading])
-
 	// Check if user is authorized
 	useEffect(() => {
-		if (isLoading) {
-			console.log("[TestEmail] Auth is still loading...")
-			return
-		}
-
 		if (!user) {
 			console.log("[TestEmail] No user found, will redirect to home")
-			// Add a small delay to ensure logs are captured
 			setTimeout(() => router.push("/"), 100)
 			return
 		}
@@ -55,22 +39,11 @@ export default function TestEmailPage() {
 		// Check if user's email is in the authorized list
 		if (user.email && !AUTHORIZED_EMAILS.includes(user.email)) {
 			console.log("[TestEmail] User not authorized:", user.email)
-			// Add a small delay to ensure logs are captured
 			setTimeout(() => router.push("/"), 100)
 		} else {
 			console.log("[TestEmail] User authorized:", user.email)
 		}
-	}, [user, router, isLoading])
-
-	// Show loading state while auth is being checked
-	if (isLoading) {
-		return (
-			<div className="container mx-auto py-8 px-4">
-				<h1 className="text-2xl font-bold mb-6">Loading...</h1>
-				<p>Checking authorization...</p>
-			</div>
-		)
-	}
+	}, [user, router])
 
 	// Show access denied with more details
 	if (!user || (user.email && !AUTHORIZED_EMAILS.includes(user.email))) {
@@ -82,9 +55,6 @@ export default function TestEmailPage() {
 					<p className="text-sm text-gray-600">Debug Info:</p>
 					<p className="text-sm text-gray-600">
 						User Email: {user?.email || "Not logged in"}
-					</p>
-					<p className="text-sm text-gray-600">
-						Auth Loading: {isLoading ? "Yes" : "No"}
 					</p>
 					<p className="text-sm text-gray-600">
 						Authorized Emails: {AUTHORIZED_EMAILS.join(", ")}

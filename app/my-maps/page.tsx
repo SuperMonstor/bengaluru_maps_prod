@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from "@/lib/context/AuthContext"
+import { useUser } from "@/components/layout/LayoutClient"
 import { fetchUserMaps } from "@/lib/supabase/userMapsService"
 import {
 	Card,
@@ -22,7 +22,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 
 export default function MyMapsPage() {
-	const { user } = useAuth()
+	const { user } = useUser()
 	const [maps, setMaps] = useState<UserMap[]>([])
 	const [loading, setLoading] = useState(true)
 	const { refreshPendingCount } = usePendingCount()

@@ -82,11 +82,14 @@ export const metadata: Metadata = {
 	},
 }
 
-export default function RootLayout({
+export default async function RootLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode
 }>) {
+	// Fetch user data on the server - no race conditions
+	const user = await getUser()
+
 	return (
 		<html
 			lang="en"
@@ -148,18 +151,7 @@ export default function RootLayout({
 				)}
 			</head>
 			<body className="font-sans antialiased h-full overflow-hidden">
-				<AuthProvider>
-					<PendingCountProvider>
-						<RouteTransition />
-						{/* Create a flex layout with header and main content */}
-						<div className="flex flex-col h-full">
-							<Header />
-							<main className="flex-1 overflow-auto">{children}</main>
-						</div>
-						{/* <FeedbackButton /> */}
-					</PendingCountProvider>
-				</AuthProvider>
-				<Toaster />
+				<LayoutClient user={user}>{children}</LayoutClient>
 			</body>
 		</html>
 	)

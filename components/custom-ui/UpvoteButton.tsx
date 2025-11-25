@@ -4,7 +4,7 @@ import { ThumbsUp } from "lucide-react"
 import { cn } from "@/lib/utils/utils"
 import { useState, useEffect, memo, useCallback } from "react"
 import { toggleUpvote, hasUserUpvoted } from "@/lib/supabase/votesService"
-import { useAuth } from "@/lib/context/AuthContext"
+import { useUser } from "@/components/layout/LayoutClient"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/lib/hooks/use-toast"
 
@@ -32,7 +32,7 @@ export const UpvoteButton = memo(function UpvoteButton({
 	const [isUpvoted, setIsUpvoted] = useState(initialIsUpvoted)
 	const [isLoading, setIsLoading] = useState(false)
 	const [isAnimating, setIsAnimating] = useState(false)
-	const { user } = useAuth()
+	const { user } = useUser()
 	const router = useRouter()
 	const { toast } = useToast()
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from "@/lib/context/AuthContext"
+import { useUser } from "@/components/layout/LayoutClient"
 import Image from "next/image"
 import { useLoadScript } from "@react-google-maps/api"
 import { Check, X, MapPin, Loader2 } from "lucide-react"
@@ -28,7 +28,7 @@ export default function PendingSubmissionsPage({
 }: {
 	params: Promise<{ mapId: string }>
 }) {
-	const { user } = useAuth()
+	const { user } = useUser()
 	const [submissions, setSubmissions] = useState<Submission[]>([])
 	const [mapName, setMapName] = useState<string>("")
 	const [loading, setLoading] = useState(true)

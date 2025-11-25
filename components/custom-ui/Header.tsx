@@ -8,25 +8,18 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { useContext, memo, useState, useEffect } from "react"
+import { memo, useState, useEffect } from "react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { AuthContext } from "@/lib/context/AuthContext"
+import { useUser } from "@/components/layout/LayoutClient"
 import { signOutAction } from "@/lib/actions/auth"
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
 import { HeartHandshake, Menu } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { useRouter } from "next/navigation"
 
 // Add URLs for Google Maps feedback
 const REQUEST_FEEDBACK_URL = "https://tally.so/r/nG5Mrk"
-
-function useAuth() {
-	const context = useContext(AuthContext)
-	if (context === undefined) {
-		throw new Error("useAuth must be used within an AuthProvider")
-	}
-	return context
-}
 
 // SVG icons as memoized components to prevent re-renders
 const ExternalLinkIcon = memo(() => (
@@ -85,8 +78,9 @@ const PlusIcon = memo(() => (
 
 // Memoize the Header component to prevent unnecessary re-renders
 const Header = memo(function Header() {
-	const { user, isLoading: authLoading } = useAuth()
+	const { user } = useUser()
 	const { pendingCount } = usePendingCount()
+	const router = useRouter()
 	const [mounted, setMounted] = useState(false)
 
 	// Prevent hydration mismatch by only rendering interactive components after mount
@@ -96,9 +90,16 @@ const Header = memo(function Header() {
 
 	const handleSignOut = async () => {
 		await signOutAction()
-		// Full page reload to reset all client-side auth state
-		window.location.href = "/"
+		// Trigger router refresh to re-fetch server data
+		router.refresh()
 	}
+
+	// Debug: Log user picture_url
+	useEffect(() => {
+		if (user?.picture_url) {
+			console.log('[Header] User picture_url:', user.picture_url)
+		}
+	}, [user])
 
 	return (
 		<header className="flex items-center justify-between p-3 md:p-4 w-full bg-white">
@@ -190,7 +191,7 @@ const Header = memo(function Header() {
 					</div>
 
 					{/* User Menu - Only render after mount to prevent hydration mismatch */}
-					{!mounted || authLoading ? (
+					{!mounted ? (
 						<div className="h-8 w-8 md:h-9 md:w-9 animate-pulse bg-gray-300 rounded-full" />
 					) : user ? (
 						<DropdownMenu>
@@ -201,10 +202,9 @@ const Header = memo(function Header() {
 								>
 									<Avatar className="h-full w-full">
 										<AvatarImage
-											src={
-												user?.picture_url ??
-												`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
-											}
+											src={user?.picture_url || undefined}
+											alt={`${user?.first_name} ${user?.last_name}`}
+											onError={() => console.log('[Header] Avatar image failed to load')}
 										/>
 										<AvatarFallback>
 											{user?.email?.[0]?.toUpperCase() ?? "U"}

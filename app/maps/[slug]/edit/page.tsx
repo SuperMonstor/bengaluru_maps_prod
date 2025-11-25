@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/context/AuthContext"
+import { useUser } from "@/components/layout/LayoutClient"
 import { getMapBySlug } from "@/lib/supabase/mapsService"
 import { updateMapAction } from "@/lib/supabase/api/updateMapAction"
 import { Button } from "@/components/ui/button"
@@ -24,7 +24,7 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 	const resolvedParams = use(params)
 	const mapSlug = resolvedParams.slug
 
-	const { user, isLoading: authLoading } = useAuth()
+	const { user } = useUser()
 	const router = useRouter()
 	const { toast } = useToast()
 	const [map, setMap] = useState<any>(null)

@@ -7,7 +7,7 @@ import "@mdxeditor/editor/style.css"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { useAuth } from "@/lib/context/AuthContext"
+import { useUser } from "@/components/layout/LayoutClient"
 import MarkdownEditor from "@/components/markdown/MarkdownEditor"
 import { useRouter } from "next/navigation"
 import { createMap } from "@/lib/supabase/mapsService"
@@ -33,7 +33,7 @@ interface CreateMapForm {
 }
 
 export default function CreateMapPage() {
-	const { user, isLoading } = useAuth()
+	const { user } = useUser()
 	const router = useRouter()
 	const { toast } = useToast()
 	const [markdownValue, setMarkdownValue] = useState<string>("")
@@ -215,10 +215,6 @@ export default function CreateMapPage() {
 		}
 		// Don't set isSubmitting to false on success - keep the button disabled
 		// The page will redirect anyway, so there's no need to re-enable the button
-	}
-
-	if (isLoading) {
-		return <LoadingIndicator />
 	}
 
 	if (!user) {
@@ -492,7 +488,7 @@ export default function CreateMapPage() {
 					<Button
 						type="submit"
 						className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-md py-2"
-						disabled={isSubmitting || isLoading || charCount > 60}
+						disabled={isSubmitting || charCount > 60}
 					>
 						{isSubmitting ? (
 							<div className="flex items-center justify-center">
