@@ -8,8 +8,9 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import Image from "next/image"
 import { memo, useState, useEffect } from "react"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useUser } from "@/components/layout/LayoutClient"
 import { signOutAction } from "@/lib/actions/auth"
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton"
@@ -194,16 +195,19 @@ const Header = memo(function Header() {
 									className="relative h-8 w-8 md:h-9 md:w-9 rounded-full p-0 border-2 border-transparent hover:border-primary/20 transition-colors"
 								>
 									<Avatar className="h-full w-full">
-										<AvatarImage
-											src={
-												user?.picture_url ??
-												`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
-											}
-											alt={`${user?.first_name} ${user?.last_name}`}
-										/>
-										<AvatarFallback>
-											{user?.email?.[0]?.toUpperCase() ?? "U"}
-										</AvatarFallback>
+										{user?.picture_url ? (
+											<Image
+												src={user.picture_url}
+												alt={`${user?.first_name} ${user?.last_name}`}
+												fill
+												className="object-cover rounded-full"
+												sizes="36px"
+											/>
+										) : (
+											<AvatarFallback>
+												{user?.email?.[0]?.toUpperCase() ?? "U"}
+											</AvatarFallback>
+										)}
 									</Avatar>
 								</Button>
 							</DropdownMenuTrigger>
