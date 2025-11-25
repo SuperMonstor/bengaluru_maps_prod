@@ -135,8 +135,7 @@ export default async function RootLayout({
 				<meta name="msapplication-TileColor" content="#ffffff" />
 				<meta name="theme-color" content="#ffffff" />
 
-				{/* Preload critical assets */}
-				<link rel="preload" href="/placeholder.svg" as="image" />
+				{/* DNS prefetch and preconnect for Supabase */}
 				{process.env.NEXT_PUBLIC_SUPABASE_URL && (
 					<>
 						<link

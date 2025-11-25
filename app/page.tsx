@@ -80,6 +80,7 @@ async function MapsList({
 							initialIsUpvoted={map.hasUpvoted}
 							username={map.username}
 							userProfilePicture={map.userProfilePicture}
+							priority={index === 0}
 						/>
 					</Link>
 				))}

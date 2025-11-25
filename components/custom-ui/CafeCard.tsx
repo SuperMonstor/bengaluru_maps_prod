@@ -21,6 +21,7 @@ interface CafeCardProps {
 	className?: string
 	mapId: string
 	initialIsUpvoted?: boolean
+	priority?: boolean
 }
 
 // Memoize the CafeCard component to prevent unnecessary re-renders
@@ -36,6 +37,7 @@ export const CafeCard = memo(function CafeCard({
 	className,
 	mapId,
 	initialIsUpvoted,
+	priority = false,
 }: CafeCardProps) {
 	// Use a placeholder for broken images
 	const imageSrc = image || "/placeholder.svg"
@@ -56,8 +58,8 @@ export const CafeCard = memo(function CafeCard({
 						alt={title}
 						fill
 						className="object-cover transition-transform duration-300 group-hover:scale-105"
-						priority={false}
-						loading="lazy"
+						priority={priority}
+						loading={priority ? "eager" : "lazy"}
 						sizes="(max-width: 768px) 100vw, 256px"
 						quality={75}
 						onError={(e) => {
