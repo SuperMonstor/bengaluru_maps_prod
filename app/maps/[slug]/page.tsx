@@ -1,17 +1,16 @@
-import { getMapById } from "@/lib/supabase/mapsService"
+import { getMapBySlug } from "@/lib/supabase/mapsService"
 import { createClient } from "@/lib/supabase/api/supabaseServer"
 import { Suspense } from "react"
-import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
-import { redirect } from "next/navigation"
-import { slugify } from "@/lib/utils/slugify"
 import ClientMapPageContent from "./ClientMapPageComponent"
 import type { Metadata, ResolvingMetadata } from "next"
+import { notFound } from "next/navigation"
+import { isReservedSlug } from "@/lib/utils/slugify"
 
 // Add revalidate for ISR
 export const revalidate = 60
 
 interface MapPageProps {
-	params: Promise<{ slug: string; id: string }>
+	params: Promise<{ slug: string }>
 	searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
@@ -27,7 +26,7 @@ export async function generateMetadata(
 
 	// Await params since it's a Promise
 	const resolvedParams = await params
-	const { data: map } = await getMapById(resolvedParams.id, user?.id)
+	const { data: map } = await getMapBySlug(resolvedParams.slug, user?.id)
 
 	if (!map) {
 		return {
@@ -90,30 +89,27 @@ function MapShell() {
 }
 
 async function MapContent({
-	id,
+	slug,
 	searchParams,
 }: {
-	id: string
+	slug: string
 	searchParams: { [key: string]: string | string[] | undefined }
 }) {
+	// Check if slug is reserved
+	if (isReservedSlug(slug)) {
+		notFound()
+	}
+
 	const supabase = await createClient()
 	const {
 		data: { user },
 	} = await supabase.auth.getUser()
 
 	try {
-		const { data: map, error } = await getMapById(id, user?.id)
+		const { data: map, error } = await getMapBySlug(slug, user?.id)
 
 		if (error || !map) {
-			return (
-				<div className="bg-gray-50/50 w-full">
-					<div className="container mx-auto px-4 py-8">
-						<p className="text-red-500">
-							Error loading map: {error || "Map not found"}
-						</p>
-					</div>
-				</div>
-			)
+			notFound()
 		}
 
 		return (
@@ -126,57 +122,14 @@ async function MapContent({
 			</div>
 		)
 	} catch (error) {
-		return (
-			<div className="bg-gray-50/50 w-full">
-				<div className="container mx-auto px-4 py-8">
-					<p className="text-red-500">
-						Error loading map:{" "}
-						{error instanceof Error ? error.message : "Unknown error"}
-					</p>
-				</div>
-			</div>
-		)
+		console.error("Error loading map:", error)
+		notFound()
 	}
-}
-
-// Component to handle slug validation without returning React elements
-function SlugValidator({
-	slug,
-	id,
-	searchParams,
-}: {
-	slug: string
-	id: string
-	searchParams: { [key: string]: string | string[] | undefined }
-}) {
-	// This is a server component that will run on the server
-	// and redirect if needed, but won't render anything
-	const validateSlug = async () => {
-		const supabase = await createClient()
-		const {
-			data: { user },
-		} = await supabase.auth.getUser()
-		const { data: map, error } = await getMapById(id, user?.id)
-
-		if (!error && map) {
-			const correctSlug = map.slug || slugify(map.title)
-			if (slug !== correctSlug) {
-				const expand = searchParams?.expand ? "?expand=true" : ""
-				redirect(`/maps/${correctSlug}/${id}${expand}`)
-			}
-		}
-	}
-
-	// Execute the validation but don't return anything to render
-	validateSlug()
-
-	// Return null to avoid rendering anything
-	return null
 }
 
 export default async function MapPage({ params, searchParams }: MapPageProps) {
 	const resolvedParams = await params
-	const { slug, id } = resolvedParams
+	const { slug } = resolvedParams
 	const resolvedSearchParams = await searchParams
 
 	// Create a lightweight JSON-LD with minimal data that can be rendered immediately
@@ -185,7 +138,7 @@ export default async function MapPage({ params, searchParams }: MapPageProps) {
 		"@type": "Map",
 		name: "Bengaluru Map",
 		description: "A community-driven map of locations in Bengaluru.",
-		url: `https://www.bengalurumaps.com/maps/${slug}/${id}`,
+		url: `https://www.bengalurumaps.com/maps/${slug}`,
 	}
 
 	return (
@@ -224,15 +177,8 @@ export default async function MapPage({ params, searchParams }: MapPageProps) {
 
 			{/* Show a skeleton UI immediately */}
 			<Suspense fallback={<MapShell />}>
-				{/* Check slug validity without rendering the result */}
-				<SlugValidator
-					slug={slug}
-					id={id}
-					searchParams={resolvedSearchParams}
-				/>
-
 				{/* Load the actual content */}
-				<MapContent id={id} searchParams={resolvedSearchParams} />
+				<MapContent slug={slug} searchParams={resolvedSearchParams} />
 			</Suspense>
 		</>
 	)

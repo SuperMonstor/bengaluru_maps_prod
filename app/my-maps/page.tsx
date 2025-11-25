@@ -99,7 +99,7 @@ export default function MyMapsPage() {
 								className="overflow-hidden flex flex-col group hover:shadow-md transition-all duration-200"
 							>
 								<Link
-									href={`/maps/${mapItem.slug || "map"}/${mapItem.id}`}
+									href={`/maps/${mapItem.slug || "map"}`}
 									className="flex-grow flex flex-col"
 								>
 									<div className="relative h-48">

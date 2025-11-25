@@ -62,7 +62,7 @@ async function MapsList({
 				{maps.map((map, index) => (
 					<Link
 						key={map.id}
-						href={`/maps/${map.slug || "map"}/${map.id}`}
+						href={`/maps/${map.slug || "map"}`}
 						// Prefetch only the first 3 maps for better performance
 						prefetch={index < 3}
 						// Add a data attribute to help with transition

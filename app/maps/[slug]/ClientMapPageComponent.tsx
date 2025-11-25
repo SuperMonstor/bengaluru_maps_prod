@@ -289,7 +289,7 @@ function ClientMapPageContentInner({
 								<div className="flex items-center justify-between">
 									<div className="flex-shrink-0">
 										{user && user.id === map.owner_id && (
-											<Link href={`/maps/${map.slug || "map"}/${map.id}/edit`}>
+											<Link href={`/maps/${map.slug || "map"}/edit`}>
 												<Button
 													variant="outline"
 													size="sm"
@@ -308,7 +308,7 @@ function ClientMapPageContentInner({
 								</h1>
 
 								<div className="flex items-center gap-2 mb-4">
-									<Link href={`/maps/${map.slug || "map"}/${map.id}/submit`}>
+									<Link href={`/maps/${map.slug || "map"}/submit`}>
 										<Button variant="default" size="sm">
 											Contribute
 										</Button>
@@ -544,7 +544,7 @@ function ClientMapPageContentInner({
 									)}
 
 									<Link
-										href={`/maps/${map.slug || "map"}/${map.id}/submit`}
+										href={`/maps/${map.slug || "map"}/submit`}
 										className="w-full"
 									>
 										<Button variant="outline" className="w-full">
@@ -650,7 +650,7 @@ function ClientMapPageContentInner({
 									<div className="flex items-center gap-2">
 										{user && user.id === map.owner_id && (
 											<Link
-												href={`/maps/${map.slug || "map"}/${map.id}/edit`}
+												href={`/maps/${map.slug || "map"}/edit`}
 												onClick={(e) => e.stopPropagation()}
 											>
 												<Button
@@ -763,7 +763,7 @@ function ClientMapPageContentInner({
 									<div className="flex items-center gap-2">
 										{user && user.id === map.owner_id && (
 											<Link
-												href={`/maps/${map.slug || "map"}/${map.id}/edit`}
+												href={`/maps/${map.slug || "map"}/edit`}
 												onClick={(e) => e.stopPropagation()}
 											>
 												<Button
@@ -808,7 +808,7 @@ function ClientMapPageContentInner({
 
 										<div className="flex items-center gap-2 mt-3">
 											<Link
-												href={`/maps/${map.slug || "map"}/${map.id}/submit`}
+												href={`/maps/${map.slug || "map"}/submit`}
 												className="flex-1"
 											>
 												<Button variant="default" size="sm" className="w-full">
@@ -1018,7 +1018,7 @@ function ClientMapPageContentInner({
 
 										<div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
 											<Link
-												href={`/maps/${map.slug || "map"}/${map.id}/submit`}
+												href={`/maps/${map.slug || "map"}/submit`}
 												className="flex-1"
 											>
 												<Button variant="default" size="sm" className="w-full">

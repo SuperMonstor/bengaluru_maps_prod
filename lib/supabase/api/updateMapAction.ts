@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "./supabaseServer"
-import { slugify } from "@/lib/utils/slugify"
+import { slugify, validateSlug, isReservedSlug } from "@/lib/utils/slugify"
 import { ImageProcessor, IMAGE_CONFIG } from "@/lib/utils/images"
 
 export async function updateMapAction(formData: FormData) {
@@ -20,18 +20,19 @@ export async function updateMapAction(formData: FormData) {
 		// Get form data
 		const mapId = formData.get("mapId") as string
 		const title = formData.get("title") as string
+		const customSlug = formData.get("slug") as string
 		const shortDescription = formData.get("shortDescription") as string
 		const body = formData.get("body") as string
 		const displayPicture = formData.get("displayPicture") as File | null
 
-		if (!mapId || !title || !shortDescription || !body) {
+		if (!mapId || !title || !customSlug || !shortDescription || !body) {
 			return { success: false, error: "Required fields are missing" }
 		}
 
 		// Check if the user is the owner of the map
 		const { data: mapData, error: mapError } = await supabase
 			.from("maps")
-			.select("owner_id, display_picture")
+			.select("owner_id, display_picture, slug")
 			.eq("id", mapId)
 			.single()
 
@@ -50,13 +51,52 @@ export async function updateMapAction(formData: FormData) {
 			}
 		}
 
+		// Use custom slug if provided and changed
+		let newSlug = mapData.slug
+
+		if (customSlug !== mapData.slug) {
+			// Validate custom slug
+			const validation = validateSlug(customSlug)
+			if (!validation.valid) {
+				return {
+					success: false,
+					error: validation.error || "Invalid URL slug",
+				}
+			}
+
+			// Check if new slug is reserved
+			if (isReservedSlug(customSlug)) {
+				return {
+					success: false,
+					error: "This URL is reserved. Please choose a different one.",
+				}
+			}
+
+			// Check if slug already exists
+			const { data: existingMap } = await supabase
+				.from("maps")
+				.select("slug")
+				.eq("slug", customSlug)
+				.neq("id", mapId)
+				.single()
+
+			if (existingMap) {
+				return {
+					success: false,
+					error: "This URL is already taken. Please choose a different one.",
+				}
+			}
+
+			newSlug = customSlug
+		}
+
 		// Prepare update data
 		const updateData: any = {
 			name: title,
 			short_description: shortDescription,
 			body,
 			updated_at: new Date().toISOString(),
-			slug: slugify(title),
+			slug: newSlug,
 		}
 
 		// If a new image is provided, upload it

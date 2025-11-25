@@ -10,7 +10,7 @@ import {
 } from "@/lib/types/mapTypes"
 import { User } from "@/lib/types/userTypes"
 import { toggleUpvote } from "./votesService"
-import { slugify } from "@/lib/utils/slugify"
+import { slugify, generateUniqueSlug, isReservedSlug, validateSlug } from "@/lib/utils/slugify"
 
 const supabase = createClient()
 
@@ -37,12 +37,14 @@ export async function createMap({
 	body,
 	displayPicture,
 	ownerId,
+	customSlug,
 }: {
 	title: string
 	shortDescription: string
 	body: string
 	displayPicture: File
 	ownerId: string
+	customSlug?: string
 }): Promise<CreateMapResult> {
 	try {
 		if (!title || !shortDescription || !body || !displayPicture || !ownerId) {
@@ -62,7 +64,44 @@ export async function createMap({
 				`Failed to upload image: ${uploadError instanceof Error ? uploadError.message : "Unknown error"}`
 			)
 		}
-		const slug = slugify(title)
+		// Use custom slug if provided, otherwise generate from title
+		let slug: string
+		if (customSlug) {
+			slug = customSlug
+			// Validate custom slug
+			const validation = validateSlug(slug)
+			if (!validation.valid) {
+				throw new Error(validation.error || "Invalid slug")
+			}
+			if (isReservedSlug(slug)) {
+				throw new Error("This URL is reserved. Please choose a different one.")
+			}
+			// Check if slug already exists
+			const { data: existingMap } = await supabase
+				.from("maps")
+				.select("slug")
+				.eq("slug", slug)
+				.single()
+			if (existingMap) {
+				throw new Error("This URL is already taken. Please choose a different one.")
+			}
+		} else {
+			// Fetch all existing slugs to ensure uniqueness
+			const { data: existingMaps } = await supabase
+				.from("maps")
+				.select("slug")
+			const existingSlugs = existingMaps?.map((m) => m.slug) || []
+
+			// Generate unique slug
+			slug = generateUniqueSlug(title, existingSlugs)
+
+			// Check if slug is reserved
+			if (isReservedSlug(slug)) {
+				throw new Error(
+					"This title generates a reserved URL. Please choose a different title."
+				)
+			}
+		}
 
 		const { data, error } = await supabase
 			.from("maps")
@@ -297,6 +336,99 @@ export async function getMapById(mapId: string, userId?: string) {
 		}
 	} catch (error) {
 		console.error("Error in getMapById:", error)
+		return {
+			data: null,
+			error:
+				error instanceof Error ? error.message : "An unexpected error occurred",
+		}
+	}
+}
+
+export async function getMapBySlug(slug: string, userId?: string) {
+	try {
+		const { data, error } = await supabase
+			.from("maps")
+			.select(
+				`
+        id,
+        name,
+        short_description,
+        body,
+        display_picture,
+        owner_id,
+        slug,
+        created_at,
+        users!maps_owner_id_fkey (
+          id,
+          first_name,
+          last_name,
+          picture_url
+        ),
+        locations (
+          id,
+          map_id,
+          creator_id,
+          name,
+          latitude,
+          longitude,
+          google_maps_url,
+          note,
+          created_at,
+          is_approved
+        ),
+        votes (
+          id,
+          user_id
+        )
+      `
+			)
+			.eq("slug", slug)
+			.single()
+
+		if (error) throw error
+
+		const { data: contributorCountsRes, error: contributorError } =
+			await supabase.rpc("get_contributor_counts", { map_ids: [data.id] })
+
+		if (contributorError) throw contributorError
+
+		const contributorCounts = new Map<string, number>(
+			contributorCountsRes?.map(
+				(c: { map_id: string; contributor_count: number }) => [
+					c.map_id,
+					Number(c.contributor_count),
+				]
+			) || []
+		)
+
+		const user = data.users as unknown as User
+		const hasUpvoted = userId
+			? data.votes.some((vote) => vote.user_id === userId)
+			: false
+
+		return {
+			data: {
+				id: data.id,
+				name: data.name,
+				title: data.name,
+				description: data.short_description,
+				body: data.body,
+				image: data.display_picture || "/placeholder.svg",
+				locations: data.locations || [],
+				contributors: contributorCounts.get(data.id) ?? 0,
+				upvotes: data.votes.length,
+				username: user
+					? `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim()
+					: "Unknown User",
+				userProfilePicture: user?.picture_url || null,
+				owner_id: data.owner_id,
+				hasUpvoted,
+				slug: data.slug || slugify(data.name),
+			},
+			error: null,
+		}
+	} catch (error) {
+		console.error("Error in getMapBySlug:", error)
 		return {
 			data: null,
 			error:

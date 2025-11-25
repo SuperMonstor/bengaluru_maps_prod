@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/context/AuthContext"
-import { getMapById } from "@/lib/supabase/mapsService"
+import { getMapBySlug } from "@/lib/supabase/mapsService"
 import { updateMapAction } from "@/lib/supabase/api/updateMapAction"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,17 +12,17 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/lib/hooks/use-toast"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 import Image from "next/image"
-import { slugify } from "@/lib/utils/slugify"
+import { slugify, isReservedSlug, validateSlug } from "@/lib/utils/slugify"
 import { use } from "react"
 
 interface EditMapPageProps {
-	params: Promise<{ slug: string; id: string }>
+	params: Promise<{ slug: string }>
 }
 
 export default function EditMapPage({ params }: EditMapPageProps) {
 	// Unwrap the params Promise
 	const resolvedParams = use(params)
-	const mapId = resolvedParams.id
+	const mapSlug = resolvedParams.slug
 
 	const { user, isLoading: authLoading } = useAuth()
 	const router = useRouter()
@@ -33,17 +33,31 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 	const [error, setError] = useState<string | null>(null)
 	const [formData, setFormData] = useState({
 		title: "",
+		slug: "",
 		shortDescription: "",
 		body: "",
 	})
 	const [imageFile, setImageFile] = useState<File | null>(null)
 	const [previewImage, setPreviewImage] = useState<string | null>(null)
+	const [slugStatus, setSlugStatus] = useState<{
+		checking: boolean
+		available: boolean | null
+		message: string
+	}>({ checking: false, available: null, message: "" })
+	const [originalSlug, setOriginalSlug] = useState<string>("")
 
 	// Fetch map data
 	useEffect(() => {
+		// Check if slug is reserved
+		if (isReservedSlug(mapSlug)) {
+			setError("Invalid map URL")
+			setLoading(false)
+			return
+		}
+
 		async function fetchMap() {
 			try {
-				const { data, error } = await getMapById(mapId, user?.id)
+				const { data, error } = await getMapBySlug(mapSlug, user?.id)
 				if (error || !data) {
 					setError(error || "Map not found")
 					return
@@ -56,8 +70,11 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 				}
 
 				setMap(data)
+				const currentSlug = data.slug || slugify(data.title)
+				setOriginalSlug(currentSlug)
 				setFormData({
 					title: data.title,
+					slug: currentSlug,
 					shortDescription: data.description,
 					body: data.body,
 				})
@@ -75,7 +92,73 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 		} else if (!authLoading) {
 			router.push("/login")
 		}
-	}, [mapId, user, authLoading, router])
+	}, [mapSlug, user, authLoading, router])
+
+	// Check slug availability with debounce
+	useEffect(() => {
+		const currentSlug = formData.slug
+
+		// If slug is empty or unchanged, clear status
+		if (!currentSlug || currentSlug === originalSlug) {
+			setSlugStatus({ checking: false, available: null, message: "" })
+			return
+		}
+
+		// Validate format first
+		const validation = validateSlug(currentSlug)
+		if (!validation.valid) {
+			setSlugStatus({
+				checking: false,
+				available: false,
+				message: validation.error || "Invalid slug format",
+			})
+			return
+		}
+
+		// Check if reserved
+		if (isReservedSlug(currentSlug)) {
+			setSlugStatus({
+				checking: false,
+				available: false,
+				message: "This URL is reserved",
+			})
+			return
+		}
+
+		setSlugStatus({ checking: true, available: null, message: "Checking..." })
+
+		const timer = setTimeout(async () => {
+			try {
+				const response = await fetch(
+					`/api/check-slug?slug=${encodeURIComponent(currentSlug)}`
+				)
+				const data = await response.json()
+
+				if (data.available) {
+					setSlugStatus({
+						checking: false,
+						available: true,
+						message: "Available!",
+					})
+				} else {
+					setSlugStatus({
+						checking: false,
+						available: false,
+						message: "This URL is already taken",
+					})
+				}
+			} catch (error) {
+				console.error("Error checking slug:", error)
+				setSlugStatus({
+					checking: false,
+					available: null,
+					message: "",
+				})
+			}
+		}, 500) // Debounce 500ms
+
+		return () => clearTimeout(timer)
+	}, [formData.slug, originalSlug])
 
 	// Handle form input changes
 	const handleInputChange = (
@@ -113,6 +196,7 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 			const formDataObj = new FormData()
 			formDataObj.append("mapId", map.id)
 			formDataObj.append("title", formData.title)
+			formDataObj.append("slug", formData.slug)
 			formDataObj.append("shortDescription", formData.shortDescription)
 			formDataObj.append("body", formData.body)
 
@@ -130,7 +214,7 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 
 				// Redirect to the updated map page
 				const newSlug = result.data.slug || slugify(result.data.title)
-				router.push(`/maps/${newSlug}/${result.data.id}`)
+				router.push(`/maps/${newSlug}`)
 				router.refresh()
 			} else {
 				toast({
@@ -193,6 +277,59 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 								placeholder="Map title"
 								className="w-full"
 							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="slug">URL Slug</Label>
+							<p className="text-xs text-gray-500">
+								This will be the URL for your map: bengalurumaps.com/maps/
+								<span className="font-semibold">{formData.slug || "your-slug"}</span>
+							</p>
+							<div className="relative">
+								<Input
+									id="slug"
+									name="slug"
+									value={formData.slug}
+									onChange={handleInputChange}
+									required
+									placeholder="your-map-slug"
+									className={`w-full pr-10 ${
+										slugStatus.available === true
+											? "border-green-500 focus:border-green-500 focus:ring-green-500"
+											: slugStatus.available === false
+												? "border-red-500 focus:border-red-500 focus:ring-red-500"
+												: ""
+									}`}
+								/>
+								{slugStatus.checking && (
+									<div className="absolute right-3 top-1/2 -translate-y-1/2">
+										<div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full"></div>
+									</div>
+								)}
+								{!slugStatus.checking && slugStatus.available === true && (
+									<div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">
+										✓
+									</div>
+								)}
+								{!slugStatus.checking && slugStatus.available === false && (
+									<div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600">
+										✗
+									</div>
+								)}
+							</div>
+							{slugStatus.message && (
+								<p
+									className={`text-sm ${
+										slugStatus.available === true
+											? "text-green-600"
+											: slugStatus.available === false
+												? "text-red-500"
+												: "text-gray-500"
+									}`}
+								>
+									{slugStatus.message}
+								</p>
+							)}
 						</div>
 
 						<div className="space-y-2">

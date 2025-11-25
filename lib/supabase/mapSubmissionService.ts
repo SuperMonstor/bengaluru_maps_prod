@@ -84,7 +84,7 @@ export async function approveLocation(locationId: string) {
 
 				console.log("Using baseUrl for email links:", baseUrl)
 
-				const mapUrl = `${baseUrl}/maps/${mapSlug}/${data.maps.id}`
+				const mapUrl = `${baseUrl}/maps/${mapSlug}`
 
 				console.log("Final mapUrl for approval email:", mapUrl)
 

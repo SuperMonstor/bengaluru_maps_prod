@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/api/supabaseServer"
-import { slugify } from "@/lib/utils/slugify"
+import { slugify, generateUniqueSlug } from "@/lib/utils/slugify"
 
 export async function PUT(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> }
+	{ params }: { params: Promise<{ slug: string }> }
 ) {
 	try {
 		// Unwrap the params Promise
 		const resolvedParams = await params
-		const mapId = resolvedParams.id
+		const mapSlug = resolvedParams.slug
 
 		const supabase = await createClient()
 
@@ -33,11 +33,11 @@ export async function PUT(
 			)
 		}
 
-		// Check if the user is the owner of the map
+		// Check if the user is the owner of the map by slug
 		const { data: mapData, error: mapError } = await supabase
 			.from("maps")
-			.select("owner_id")
-			.eq("id", mapId)
+			.select("id, owner_id, slug")
+			.eq("slug", mapSlug)
 			.single()
 
 		if (mapError) {
@@ -55,6 +55,18 @@ export async function PUT(
 			)
 		}
 
+		// Generate new slug if title changed
+		let newSlug = mapData.slug
+		if (title !== mapData.slug) {
+			// Get all existing slugs except current map
+			const { data: existingMaps } = await supabase
+				.from("maps")
+				.select("slug")
+				.neq("id", mapData.id)
+			const existingSlugs = existingMaps?.map((m) => m.slug) || []
+			newSlug = generateUniqueSlug(title, existingSlugs)
+		}
+
 		// Update the map
 		const { data, error } = await supabase
 			.from("maps")
@@ -63,9 +75,9 @@ export async function PUT(
 				short_description: shortDescription,
 				body: mapBody,
 				updated_at: new Date().toISOString(),
-				slug: slugify(title),
+				slug: newSlug,
 			})
-			.eq("id", mapId)
+			.eq("id", mapData.id)
 			.select()
 			.single()
 

@@ -1,12 +1,8 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
-import Header from "../components/custom-ui/Header"
-import { AuthProvider } from "@/lib/context/AuthContext"
-import { Toaster } from "@/components/ui/toaster"
-import { PendingCountProvider } from "@/lib/context/PendingCountContext"
-import FeedbackButton from "@/components/custom-ui/FeedbackButton"
-import { RouteTransition } from "@/components/custom-ui/RouteTransition"
+import { getUser } from "@/lib/auth/getUser"
+import { LayoutClient } from "@/components/layout/LayoutClient"
 
 // Optimize font loading with display: swap
 const geistSans = Geist({

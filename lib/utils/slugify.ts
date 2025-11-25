@@ -9,10 +9,10 @@ export function slugify(text: string): string {
 	if (!text) return "map"
 
 	return slugifyLib(text, {
-		lower: true, // Convert to lowercase
-		strict: true, // Strip special characters
-		remove: /[*+~.()'"!:@]/g, // Remove specific characters
-		replacement: "-", // Replace spaces with hyphens
+		lower: true,
+		strict: true,
+		locale: "en",
+		trim: true,
 	})
 }
 
@@ -42,4 +42,56 @@ export function generateUniqueSlug(
 	}
 
 	return uniqueSlug
+}
+
+/**
+ * List of reserved slugs that cannot be used for maps
+ */
+const RESERVED_SLUGS = [
+	"create-map",
+	"api",
+	"new",
+	"edit",
+	"submit",
+	"pending",
+	"admin",
+	"settings",
+]
+
+/**
+ * Validates a slug format
+ * @param slug The slug to validate
+ * @returns Object with validation result and optional error message
+ */
+export function validateSlug(slug: string): { valid: boolean; error?: string } {
+	if (!slug || slug.length === 0) {
+		return { valid: false, error: "Slug cannot be empty" }
+	}
+
+	if (slug.length > 100) {
+		return { valid: false, error: "Slug must be less than 100 characters" }
+	}
+
+	if (!/^[a-z0-9-]+$/.test(slug)) {
+		return {
+			valid: false,
+			error:
+				"Slug can only contain lowercase letters, numbers, and hyphens",
+		}
+	}
+
+	if (slug.startsWith("-") || slug.endsWith("-")) {
+		return { valid: false, error: "Slug cannot start or end with a hyphen" }
+	}
+
+	return { valid: true }
+}
+
+/**
+ * Checks if a slug is reserved
+ * @param slug The slug to check
+ * @returns True if the slug is reserved
+ */
+export function isReservedSlug(slug: string): boolean {
+	return RESERVED_SLUGS.includes(slug.toLowerCase())
 }

@@ -58,7 +58,7 @@ export default function ShareButton({
   }, [])
 
   const getShareUrl = () => {
-    return `${window.location.origin}/maps/${slug || "map"}/${mapId}`
+    return `${window.location.origin}/maps/${slug || "map"}`
   }
 
   const handleCopyLink = async () => {

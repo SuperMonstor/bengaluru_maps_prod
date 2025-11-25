@@ -18,10 +18,10 @@ import {
 } from "@/components/ui/combobox"
 import { useToast } from "@/lib/hooks/use-toast"
 import { LocationSuggestion, SubmitLocationProps } from "@/lib/types/mapTypes"
-import { getMapById } from "@/lib/supabase/mapsService"
+import { getMapBySlug } from "@/lib/supabase/mapsService"
 import { createLocation } from "@/lib/supabase/mapsService"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
-import { slugify } from "@/lib/utils/slugify"
+import { slugify, isReservedSlug } from "@/lib/utils/slugify"
 import { use } from "react"
 
 // Make geometry and other fields optional in LocationSuggestion for initial suggestions
@@ -34,7 +34,7 @@ type PartialLocationSuggestion = Partial<LocationSuggestion> & {
 export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 	// Unwrap the params Promise
 	const resolvedParams = use(params)
-	const mapId = resolvedParams.id
+	const mapSlug = resolvedParams.slug
 
 	const { toast } = useToast()
 	const { user, isLoading: authLoading } = useAuth()
@@ -75,9 +75,15 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 	const location = watch("location")
 
 	useEffect(() => {
+		// Check if slug is reserved
+		if (isReservedSlug(mapSlug)) {
+			setError("Invalid map URL")
+			return
+		}
+
 		async function fetchMap() {
 			try {
-				const result = await getMapById(mapId)
+				const result = await getMapBySlug(mapSlug)
 				if (result.error || !result.data) {
 					setError(result.error || "Map not found")
 				} else {
@@ -90,7 +96,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 		}
 
 		fetchMap()
-	}, [mapId])
+	}, [mapSlug])
 
 	// Fetch suggestions with debounce
 	useEffect(() => {
@@ -196,7 +202,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 			return
 		}
 
-		if (isSubmitting || !mapId) return
+		if (isSubmitting || !map) return
 
 		try {
 			setIsSubmitting(true)
@@ -212,7 +218,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 				: { location: data.location }
 
 			const result = await createLocation({
-				mapId,
+				mapId: map.id,
 				creatorId: user.id,
 				...locationData,
 				description: data.description,
@@ -251,9 +257,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 								mapTitle: map.title,
 								locationName: locationData.location,
 								submitterName: `${user.first_name} ${user.last_name}`,
-								mapUrl: `${window.location.origin}/maps/${
-									map.slug || slugify(map.title)
-								}/${mapId}/pending`,
+								mapUrl: `${window.location.origin}/my-maps/${map.id}/pending`,
 							}),
 						})
 
@@ -273,7 +277,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 						: "Your location has been submitted and is pending approval.",
 				})
 
-				router.push(`/maps/${map.slug || slugify(map.title)}/${mapId}`)
+				router.push(`/maps/${map.slug || slugify(map.title)}`)
 				router.refresh()
 			}
 		} catch (error) {
@@ -307,8 +311,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 		)
 	}
 
-	if (!map || !mapId) {
-		// Added !mapId to handle unresolved state
+	if (!map) {
 		return <LoadingIndicator />
 	}
 

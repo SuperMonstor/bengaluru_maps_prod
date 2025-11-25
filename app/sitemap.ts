@@ -36,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 			maps?.map((map) => {
 				const slug = map.slug || slugify(map.title)
 				return {
-					url: `https://www.bengalurumaps.com/maps/${slug}/${map.id}`,
+					url: `https://www.bengalurumaps.com/maps/${slug}`,
 					lastModified: new Date(),
 					changeFrequency: "weekly" as const,
 					priority: 0.9,
