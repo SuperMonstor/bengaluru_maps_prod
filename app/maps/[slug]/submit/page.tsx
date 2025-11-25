@@ -292,10 +292,6 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 		}
 	}
 
-	if (authLoading) {
-		return <LoadingIndicator />
-	}
-
 	if (!user) {
 		router.push("/login")
 		return null
@@ -456,7 +452,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 					<Button
 						type="submit"
 						className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-md py-2"
-						disabled={isSubmitting || authLoading}
+						disabled={isSubmitting}
 					>
 						{isSubmitting ? (
 							<>

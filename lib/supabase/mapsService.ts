@@ -242,7 +242,7 @@ export async function getMaps(
 			username: map.username || "Unknown User",
 			userProfilePicture: map.user_picture || null,
 			owner_id: map.owner_id,
-			slug: slugify(map.name),
+			slug: map.slug || slugify(map.name),
 		}))
 
 		return { data: maps, total: count || 0, page, limit, error: null }
@@ -263,6 +263,7 @@ export async function getMapById(mapId: string, userId?: string) {
         body,
         display_picture,
         owner_id,
+        slug,
         created_at,
         users!maps_owner_id_fkey (
           id,
@@ -330,7 +331,7 @@ export async function getMapById(mapId: string, userId?: string) {
 				userProfilePicture: user?.picture_url || null,
 				owner_id: data.owner_id,
 				hasUpvoted,
-				slug: slugify(data.name),
+				slug: data.slug || slugify(data.name),
 			},
 			error: null,
 		}
@@ -987,7 +988,6 @@ export async function updateMap({
 			short_description: shortDescription,
 			body,
 			updated_at: new Date().toISOString(),
-			slug: slugify(title),
 		}
 
 		// If a new image is provided, upload it
