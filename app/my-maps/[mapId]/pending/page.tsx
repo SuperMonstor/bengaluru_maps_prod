@@ -14,7 +14,7 @@ import {
 import React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Submission } from "@/lib/types/mapTypes"
 import { useToast } from "@/lib/hooks/use-toast"
@@ -359,16 +359,20 @@ export default function PendingSubmissionsPage({
 											<div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-0 mb-2">
 												<div className="flex items-center gap-2 text-xs text-gray-600">
 													<Avatar className="h-5 w-5 border border-gray-200">
-														<AvatarImage
-															src={
-																submission.submitted_by.picture_url ||
-																"/placeholder.svg"
-															}
-														/>
-														<AvatarFallback className="text-[10px]">
-															{submission.submitted_by.first_name?.[0]?.toUpperCase() ||
-																"U"}
-														</AvatarFallback>
+														{submission.submitted_by.picture_url ? (
+															<Image
+																src={submission.submitted_by.picture_url}
+																alt={`${submission.submitted_by.first_name} ${submission.submitted_by.last_name}`}
+																fill
+																className="object-cover rounded-full"
+																sizes="20px"
+															/>
+														) : (
+															<AvatarFallback className="text-[10px]">
+																{submission.submitted_by.first_name?.[0]?.toUpperCase() ||
+																	"U"}
+															</AvatarFallback>
+														)}
 													</Avatar>
 													<span>
 														Submitted by{" "}

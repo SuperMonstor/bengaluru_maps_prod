@@ -3,7 +3,7 @@
 // components/CafeCard.tsx
 import Image from "next/image"
 import { MapPin, Users } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { cn } from "@/lib/utils/utils"
 import { UpvoteButton } from "./UpvoteButton"
@@ -104,14 +104,23 @@ export const CafeCard = memo(function CafeCard({
 			<CardFooter className="border-t border-border/50 px-4 py-3 md:px-6 md:py-4">
 				<div className="flex items-center gap-2.5 text-sm text-muted-foreground/90">
 					<Avatar className="h-6 w-6 border border-border/50">
-						<AvatarImage src={userProfilePicture || "/placeholder.svg"} />
-						<AvatarFallback>
-							{username
-								.split(" ")
-								.map((n) => n[0])
-								.join("")
-								.toUpperCase()}
-						</AvatarFallback>
+						{userProfilePicture ? (
+							<Image
+								src={userProfilePicture}
+								alt={username}
+								fill
+								className="object-cover rounded-full"
+								sizes="24px"
+							/>
+						) : (
+							<AvatarFallback>
+								{username
+									.split(" ")
+									.map((n) => n[0])
+									.join("")
+									.toUpperCase()}
+							</AvatarFallback>
+						)}
 					</Avatar>
 					<span className="text-muted-foreground/75">
 						Started by{" "}

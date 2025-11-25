@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Markdown } from "@/components/markdown/MarkdownRenderer"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
 	MapPin,
 	Users,
@@ -329,16 +329,23 @@ function ClientMapPageContentInner({
 								</div>
 								<div className="flex items-center gap-2 text-sm text-muted-foreground">
 									<Avatar className="h-8 w-8 border border-border/50">
-										<AvatarImage
-											src={map.userProfilePicture || "/placeholder.svg"}
-										/>
-										<AvatarFallback>
-											{map.username
-												.split(" ")
-												.map((n) => n[0])
-												.join("")
-												.toUpperCase()}
-										</AvatarFallback>
+										{map.userProfilePicture ? (
+											<Image
+												src={map.userProfilePicture}
+												alt={map.username}
+												fill
+												className="object-cover rounded-full"
+												sizes="32px"
+											/>
+										) : (
+											<AvatarFallback>
+												{map.username
+													.split(" ")
+													.map((n) => n[0])
+													.join("")
+													.toUpperCase()}
+											</AvatarFallback>
+										)}
 									</Avatar>
 									<span>
 										Started by{" "}
@@ -402,16 +409,23 @@ function ClientMapPageContentInner({
 
 								<div className="flex items-center gap-2 text-sm text-muted-foreground">
 									<Avatar className="h-8 w-8 border border-border/50">
-										<AvatarImage
-											src={userInfo.profilePicture || "/placeholder.svg"}
-										/>
-										<AvatarFallback>
-											{userInfo.username
-												.split(" ")
-												.map((n) => n[0])
-												.join("")
-												.toUpperCase()}
-										</AvatarFallback>
+										{userInfo.profilePicture ? (
+											<Image
+												src={userInfo.profilePicture}
+												alt={userInfo.username}
+												fill
+												className="object-cover rounded-full"
+												sizes="32px"
+											/>
+										) : (
+											<AvatarFallback>
+												{userInfo.username
+													.split(" ")
+													.map((n) => n[0])
+													.join("")
+													.toUpperCase()}
+											</AvatarFallback>
+										)}
 									</Avatar>
 									<span>
 										Added by{" "}
@@ -790,9 +804,12 @@ function ClientMapPageContentInner({
 										<div className="flex items-center gap-3 mt-3">
 											<Avatar className="h-8 w-8">
 												{map.userProfilePicture ? (
-													<AvatarImage
+													<Image
 														src={map.userProfilePicture}
 														alt={map.username}
+														fill
+														className="object-cover rounded-full"
+														sizes="32px"
 													/>
 												) : (
 													<AvatarFallback>
@@ -829,9 +846,12 @@ function ClientMapPageContentInner({
 										<div className="flex items-center gap-3 mt-3">
 											<Avatar className="h-8 w-8">
 												{userInfo.profilePicture ? (
-													<AvatarImage
+													<Image
 														src={userInfo.profilePicture}
 														alt={userInfo.username}
+														fill
+														className="object-cover rounded-full"
+														sizes="32px"
 													/>
 												) : (
 													<AvatarFallback>

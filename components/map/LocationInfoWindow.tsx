@@ -1,6 +1,6 @@
 "use client"
 
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Map, Clock, Star, Calendar, User, Trash2 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -133,16 +133,23 @@ export default function LocationInfoWindow({
 				>
 					<div className="flex items-center gap-2 mb-3 info-section">
 						<Avatar className="h-7 w-7 border border-border/50">
-							<AvatarImage
-								src={userInfo.profilePicture || "/placeholder.svg"}
-							/>
-							<AvatarFallback>
-								{userInfo.username
-									.split(" ")
-									.map((n) => n[0])
-									.join("")
-									.toUpperCase()}
-							</AvatarFallback>
+							{userInfo.profilePicture ? (
+								<Image
+									src={userInfo.profilePicture}
+									alt={userInfo.username}
+									fill
+									className="object-cover rounded-full"
+									sizes="28px"
+								/>
+							) : (
+								<AvatarFallback>
+									{userInfo.username
+										.split(" ")
+										.map((n) => n[0])
+										.join("")
+										.toUpperCase()}
+								</AvatarFallback>
+							)}
 						</Avatar>
 						<div className="flex flex-col">
 							<span className="text-xs text-muted-foreground">Added by</span>

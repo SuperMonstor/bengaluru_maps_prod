@@ -18,7 +18,7 @@ import Link from "next/link"
 import { MapPin, Users, ThumbsUp, Clock } from "lucide-react"
 import { UserMap } from "@/lib/types/mapTypes"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 
 export default function MyMapsPage() {
@@ -166,9 +166,12 @@ export default function MyMapsPage() {
 									<div className="flex items-center gap-2 flex-grow">
 										<Avatar className="h-6 w-6">
 											{mapItem.userProfilePicture ? (
-												<AvatarImage
+												<Image
 													src={mapItem.userProfilePicture}
 													alt={mapItem.username}
+													fill
+													className="object-cover rounded-full"
+													sizes="24px"
 												/>
 											) : (
 												<AvatarFallback>
