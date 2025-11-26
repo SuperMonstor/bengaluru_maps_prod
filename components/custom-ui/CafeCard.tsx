@@ -45,93 +45,103 @@ export const CafeCard = memo(function CafeCard({
 	return (
 		<Card
 			className={cn(
-				"group w-full transition-all duration-300 hover:shadow-lg bg-card",
+				"group w-full transition-all duration-300 bg-card overflow-hidden",
 				"border border-border/50 hover:border-border/100 cursor-pointer",
+				"rounded-[16px] shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:scale-[1.01]",
 				className
 			)}
 		>
-			<CardHeader className="p-4 md:p-6 space-y-4 md:flex md:flex-row md:items-start md:gap-6 md:space-y-0">
-				{/* Image Container */}
-				<div className="relative w-full md:w-64 aspect-[16/10] overflow-hidden rounded-md shrink-0 bg-gray-100">
-					<Image
-						src={imageSrc}
-						alt={title}
-						fill
-						className="object-cover transition-transform duration-300 group-hover:scale-105"
-						priority={priority}
-						loading={priority ? "eager" : "lazy"}
-						sizes="(max-width: 768px) 100vw, 256px"
-						quality={75}
-						onError={(e) => {
-							// Fallback to placeholder if image fails to load
-							const target = e.target as HTMLImageElement
-							if (target.src !== "/placeholder.svg") {
-								target.src = "/placeholder.svg"
-							}
-						}}
+			<div className="flex">
+				{/* Voting Column - Reddit Style */}
+				<div className="w-14 bg-gray-50/50 flex items-start justify-center pt-6 border-r border-border/30">
+					<UpvoteButton
+						mapId={mapId}
+						initialUpvotes={upvotes}
+						initialIsUpvoted={initialIsUpvoted}
+						variant="reddit"
 					/>
 				</div>
 
-				{/* Content Container */}
-				<div className="flex-1 space-y-2.5">
-					<div className="space-y-1">
-						<h3 className="font-semibold text-lg md:text-xl leading-tight tracking-tight text-foreground/90 group-hover:text-foreground">
-							{title}
-						</h3>
-						<p className="text-sm text-muted-foreground/90 line-clamp-2">
-							{description}
-						</p>
-					</div>
-
-					<div className="flex flex-wrap gap-4">
-						{/* Upvotes - Now first in the row */}
-						<UpvoteButton
-							mapId={mapId}
-							initialUpvotes={upvotes}
-							initialIsUpvoted={initialIsUpvoted}
-							variant="text"
-						/>
-						<div className="flex items-center text-sm text-muted-foreground/75 transition-colors group-hover:text-muted-foreground">
-							<MapPin className="mr-1.5 h-4 w-4" />
-							{locations} locations
-						</div>
-						<div className="flex items-center text-sm text-muted-foreground/75 transition-colors group-hover:text-muted-foreground">
-							<Users className="mr-1.5 h-4 w-4" />
-							{contributors} contributors
-						</div>
-					</div>
-				</div>
-			</CardHeader>
-
-			<CardFooter className="border-t border-border/50 px-4 py-3 md:px-6 md:py-4">
-				<div className="flex items-center gap-2.5 text-sm text-muted-foreground/90">
-					<Avatar className="h-6 w-6 border border-border/50">
-						{userProfilePicture ? (
+				{/* Main Content */}
+				<div className="flex-1">
+					<CardHeader className="p-4 md:p-6 space-y-4 md:flex md:flex-row md:items-start md:gap-6 md:space-y-0">
+						{/* Image Container */}
+						<div className="relative w-full md:w-48 aspect-[16/10] overflow-hidden rounded-xl shrink-0 bg-gray-100">
 							<Image
-								src={userProfilePicture}
-								alt={username}
+								src={imageSrc}
+								alt={title}
 								fill
-								className="object-cover rounded-full"
-								sizes="24px"
+								className="object-cover transition-transform duration-300 group-hover:scale-105"
+								priority={priority}
+								loading={priority ? "eager" : "lazy"}
+								sizes="(max-width: 768px) 100vw, 192px"
+								quality={75}
+								onError={(e) => {
+									// Fallback to placeholder if image fails to load
+									const target = e.target as HTMLImageElement
+									if (target.src !== "/placeholder.svg") {
+										target.src = "/placeholder.svg"
+									}
+								}}
 							/>
-						) : (
-							<AvatarFallback>
-								{username
-									.split(" ")
-									.map((n) => n[0])
-									.join("")
-									.toUpperCase()}
-							</AvatarFallback>
-						)}
-					</Avatar>
-					<span className="text-muted-foreground/75">
-						Started by{" "}
-						<span className="font-medium text-muted-foreground">
-							{username}
-						</span>
-					</span>
+						</div>
+
+						{/* Content Container */}
+						<div className="flex-1 space-y-3">
+							<div className="space-y-1.5">
+								<h3 className="font-semibold text-xl leading-tight tracking-tight text-[#0F172A] group-hover:text-[#FF6A00] transition-colors">
+									{title}
+								</h3>
+								<p className="text-sm text-[#64748B] line-clamp-2 leading-relaxed">
+									{description}
+								</p>
+							</div>
+
+							<div className="flex flex-wrap gap-2">
+								{/* Pill-style metrics */}
+								<div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-full text-xs text-[#64748B] font-medium">
+									<MapPin className="h-3.5 w-3.5" />
+									<span>{locations}</span>
+								</div>
+								<div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-full text-xs text-[#64748B] font-medium">
+									<Users className="h-3.5 w-3.5" />
+									<span>{contributors}</span>
+								</div>
+							</div>
+						</div>
+					</CardHeader>
+
+					<CardFooter className="border-t border-border/40 px-4 py-3 md:px-6">
+						<div className="flex items-center gap-2.5 text-sm">
+							<Avatar className="h-6 w-6 border border-border/50">
+								{userProfilePicture ? (
+									<Image
+										src={userProfilePicture}
+										alt={username}
+										fill
+										className="object-cover rounded-full"
+										sizes="24px"
+									/>
+								) : (
+									<AvatarFallback className="text-xs">
+										{username
+											.split(" ")
+											.map((n) => n[0])
+											.join("")
+											.toUpperCase()}
+									</AvatarFallback>
+								)}
+							</Avatar>
+							<span className="text-[#64748B]">
+								Started by{" "}
+								<span className="font-medium text-[#0F172A]">
+									{username}
+								</span>
+							</span>
+						</div>
+					</CardFooter>
 				</div>
-			</CardFooter>
+			</div>
 		</Card>
 	)
 })

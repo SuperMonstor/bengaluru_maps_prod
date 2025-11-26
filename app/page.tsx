@@ -58,7 +58,7 @@ async function MapsList({
 
 	return (
 		<>
-			<div className="grid gap-6 max-w-5xl mx-auto">
+			<div className="grid gap-8 max-w-5xl mx-auto">
 				{maps.map((map, index) => (
 					<Link
 						key={map.id}
@@ -143,7 +143,7 @@ export default async function Home({ searchParams }: HomeProps) {
 	}
 
 	return (
-		<main className="min-h-screen bg-gray-50/50">
+		<main className="min-h-screen bg-[#FAFAF9]">
 			{/* Add JSON-LD structured data */}
 			<script
 				type="application/ld+json"
@@ -193,28 +193,30 @@ export default async function Home({ searchParams }: HomeProps) {
 				}}
 			/>
 
-			<div className="container mx-auto px-4 py-8">
-				<div className="flex flex-col items-center justify-center mb-12">
-					<h1 className="text-4xl font-bold text-center mb-4">
+			<div className="container mx-auto px-4 py-8 max-w-6xl">
+				<div className="flex flex-col items-center justify-center mb-10">
+					<h1 className="text-[44px] font-bold text-center mb-3 tracking-tight text-[#0F172A] leading-tight">
 						Discover Bengaluru&apos;s Best Places
 					</h1>
-					<p className="text-xl text-center text-gray-600 max-w-2xl mb-8">
+					<p className="text-[19px] text-center text-[#64748B] max-w-2xl mb-8 leading-relaxed">
 						Explore community-driven maps of Bengaluru&apos;s best cafes,
 						restaurants, and hangout spots.
 					</p>
 					<Link href="/create-map" prefetch={false}>
-						<Button size="lg">Create Your Own Map</Button>
+						<Button size="lg" className="bg-[#FF6A00] hover:bg-[#E55F00] text-white px-8 py-6 text-base rounded-xl shadow-md hover:shadow-lg transition-all">
+							Create Your Own Map
+						</Button>
 					</Link>
 				</div>
 
-				<div className="flex items-center justify-center mb-6">
-					<div className="flex items-center bg-gray-100 rounded-full px-4 py-1.5 text-sm text-gray-600">
+				<div className="flex items-center justify-center mb-8">
+					<div className="flex items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-2 text-sm text-[#64748B] hover:bg-gray-100 transition-colors cursor-pointer">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
-							className="w-4 h-4 mr-2 text-gray-500"
+							className="w-4 h-4 mr-2 text-[#64748B]"
 							aria-hidden="true"
 						>
 							<path
@@ -224,7 +226,22 @@ export default async function Home({ searchParams }: HomeProps) {
 								d="M5 15l7-7 7 7"
 							/>
 						</svg>
-						<span>Maps sorted by most upvoted</span>
+						<span className="font-medium">Maps sorted by most upvoted</span>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							className="w-4 h-4 ml-2 text-[#64748B]"
+							aria-hidden="true"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth="2"
+								d="M19 9l-7 7-7-7"
+							/>
+						</svg>
 					</div>
 				</div>
 

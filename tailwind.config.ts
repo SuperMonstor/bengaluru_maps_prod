@@ -50,6 +50,18 @@ export default {
 					"4": "hsl(var(--chart-4))",
 					"5": "hsl(var(--chart-5))",
 				},
+				// Brand colors - warm orange accent
+				brand: {
+					orange: {
+						DEFAULT: "#FF6A00",
+						hover: "#E55F00",
+						light: "#FFF4E6",
+					},
+					slate: {
+						DEFAULT: "#0F172A",
+						light: "#64748B",
+					},
+				},
 			},
 			borderRadius: {
 				lg: "var(--radius)",

@@ -1,6 +1,6 @@
 "use client"
 
-import { ThumbsUp } from "lucide-react"
+import { ThumbsUp, ChevronUp, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils/utils"
 import { useState, useEffect, memo, useCallback } from "react"
 import { toggleUpvote, hasUserUpvoted } from "@/lib/supabase/votesService"
@@ -13,12 +13,20 @@ interface UpvoteButtonProps {
 	initialUpvotes: number
 	initialIsUpvoted?: boolean
 	className?: string
-	variant?: "icon" | "text" | "pill"
+	variant?: "icon" | "text" | "pill" | "reddit"
 }
 
-// Memoized ThumbsUp icon to prevent re-renders
+// Memoized icons to prevent re-renders
 const ThumbsUpIcon = memo(({ className }: { className?: string }) => (
 	<ThumbsUp className={className} />
+))
+
+const ChevronUpIcon = memo(({ className }: { className?: string }) => (
+	<ChevronUp className={className} />
+))
+
+const ChevronDownIcon = memo(({ className }: { className?: string }) => (
+	<ChevronDown className={className} />
 ))
 
 export const UpvoteButton = memo(function UpvoteButton({
@@ -101,6 +109,51 @@ export const UpvoteButton = memo(function UpvoteButton({
 		[isLoading, isUpvoted, mapId, router, toast, user]
 	)
 
+	// Reddit-style vertical voting
+	if (variant === "reddit") {
+		return (
+			<div className={cn("flex flex-col items-center gap-0.5", className)}>
+				<button
+					type="button"
+					className={cn(
+						"p-1.5 rounded transition-colors",
+						isUpvoted
+							? "text-[#FF6A00] hover:bg-orange-50"
+							: "text-[#A7A7A7] hover:text-[#5A5A5A] hover:bg-gray-50",
+						"disabled:opacity-50 disabled:cursor-not-allowed"
+					)}
+					onClick={handleUpvote}
+					disabled={isLoading}
+					aria-label={isUpvoted ? "Remove upvote" : "Upvote"}
+				>
+					<ChevronUpIcon
+						className={cn(
+							"h-6 w-6",
+							isAnimating && isUpvoted && "animate-bounce"
+						)}
+					/>
+				</button>
+				<span
+					className={cn(
+						"text-sm font-bold tabular-nums",
+						isUpvoted ? "text-[#FF6A00]" : "text-[#5A5A5A]",
+						isAnimating && "animate-pulse"
+					)}
+				>
+					{upvotes}
+				</span>
+				<button
+					type="button"
+					className="p-1.5 rounded transition-colors text-[#A7A7A7] hover:text-[#5A5A5A] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+					disabled
+					aria-label="Downvote (disabled)"
+				>
+					<ChevronDownIcon className="h-6 w-6" />
+				</button>
+			</div>
+		)
+	}
+
 	if (variant === "pill") {
 		return (
 			<button
@@ -108,7 +161,7 @@ export const UpvoteButton = memo(function UpvoteButton({
 				className={cn(
 					"flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors",
 					isUpvoted
-						? "bg-green-100 text-green-600"
+						? "bg-orange-100 text-[#FF6A00]"
 						: "bg-gray-100 text-muted-foreground hover:bg-gray-200",
 					isAnimating && "animate-pulse",
 					"disabled:opacity-50 disabled:cursor-not-allowed",
@@ -118,7 +171,7 @@ export const UpvoteButton = memo(function UpvoteButton({
 				disabled={isLoading}
 			>
 				<ThumbsUpIcon
-					className={cn("h-3.5 w-3.5", isUpvoted && "fill-green-500")}
+					className={cn("h-3.5 w-3.5", isUpvoted && "fill-[#FF6A00]")}
 				/>
 				<span
 					className={cn("text-sm font-medium", isAnimating && "animate-bounce")}
@@ -137,7 +190,7 @@ export const UpvoteButton = memo(function UpvoteButton({
 					className={cn(
 						"h-8 w-8 rounded-full transition-colors flex items-center justify-center",
 						isUpvoted
-							? "text-green-500 hover:bg-green-50"
+							? "text-[#FF6A00] hover:bg-orange-50"
 							: "text-muted-foreground hover:bg-primary/10 hover:text-primary",
 						isAnimating && "animate-pulse",
 						"disabled:opacity-50 disabled:cursor-not-allowed"
@@ -146,13 +199,13 @@ export const UpvoteButton = memo(function UpvoteButton({
 					disabled={isLoading}
 				>
 					<ThumbsUpIcon
-						className={cn("h-4 w-4", isUpvoted && "fill-green-500")}
+						className={cn("h-4 w-4", isUpvoted && "fill-[#FF6A00]")}
 					/>
 				</button>
 				<span
 					className={cn(
 						"text-sm font-medium",
-						isUpvoted ? "text-green-500" : "text-muted-foreground",
+						isUpvoted ? "text-[#FF6A00]" : "text-muted-foreground",
 						isAnimating && "animate-bounce"
 					)}
 				>
@@ -171,7 +224,7 @@ export const UpvoteButton = memo(function UpvoteButton({
 				className={cn(
 					"mr-1.5 h-4 w-4",
 					isUpvoted
-						? "text-green-500 fill-green-500"
+						? "text-[#FF6A00] fill-[#FF6A00]"
 						: "text-muted-foreground/75 group-hover:text-muted-foreground",
 					isAnimating && "animate-pulse"
 				)}
@@ -179,7 +232,7 @@ export const UpvoteButton = memo(function UpvoteButton({
 			<span
 				className={cn(
 					isUpvoted
-						? "text-green-500"
+						? "text-[#FF6A00]"
 						: "text-muted-foreground/75 group-hover:text-muted-foreground",
 					isAnimating && "animate-bounce"
 				)}

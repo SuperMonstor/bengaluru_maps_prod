@@ -96,11 +96,11 @@ const Header = memo(function Header() {
 	}
 
 	return (
-		<header className="flex items-center justify-between p-3 md:p-4 w-full bg-white">
+		<header className="flex items-center justify-between px-4 py-[18px] md:px-6 w-full bg-white border-b border-gray-100/80 shadow-sm">
 			{/* Left Section: Title and Byline */}
 			<div className="flex flex-col min-w-0">
 				<Link href="/" className="inline-block">
-					<span className="text-lg sm:text-xl md:text-2xl font-semibold hover:opacity-80">
+					<span className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-[#0F172A] hover:text-[#FF6A00] transition-colors">
 						Bengaluru Maps
 					</span>
 				</Link>
@@ -108,7 +108,7 @@ const Header = memo(function Header() {
 					href="https://x.com/realsudarshansk"
 					target="_blank"
 					rel="noopener noreferrer"
-					className="text-xs text-gray-500 hover:text-blue-500 transition-colors flex items-center gap-1 mt-1"
+					className="text-xs text-[#64748B] hover:text-[#FF6A00] transition-colors flex items-center gap-1 mt-0.5"
 				>
 					<span>By Sudarshan S</span>
 					<ExternalLinkIcon />
@@ -160,7 +160,7 @@ const Header = memo(function Header() {
 						<Button
 							variant="outline"
 							size="sm"
-							className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-2"
+							className="border-gray-200 text-[#64748B] hover:text-[#0F172A] hover:bg-gray-50 hover:border-gray-300 flex items-center gap-2 rounded-lg transition-all"
 						>
 							<HeartHandshake className="h-4 w-4" />
 							Request Feature/Fix
@@ -176,7 +176,7 @@ const Header = memo(function Header() {
 							<Button
 								variant="default"
 								size="sm"
-								className="flex items-center gap-2"
+								className="flex items-center gap-2 bg-[#FF6A00] hover:bg-[#E55F00] text-white rounded-lg shadow-sm hover:shadow-md transition-all"
 							>
 								<PlusIcon />
 								Create Map
