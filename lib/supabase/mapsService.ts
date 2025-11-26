@@ -86,14 +86,8 @@ export async function createMap({
 				throw new Error("This URL is already taken. Please choose a different one.")
 			}
 		} else {
-			// Fetch all existing slugs to ensure uniqueness
-			const { data: existingMaps } = await supabase
-				.from("maps")
-				.select("slug")
-			const existingSlugs = existingMaps?.map((m) => m.slug) || []
-
-			// Generate unique slug
-			slug = generateUniqueSlug(title, existingSlugs)
+			// Generate unique slug by checking database directly
+			slug = await generateUniqueSlug(title, supabase)
 
 			// Check if slug is reserved
 			if (isReservedSlug(slug)) {
@@ -118,7 +112,13 @@ export async function createMap({
 			.select()
 			.single()
 
-		if (error) throw new Error(`Failed to create map: ${error.message}`)
+		if (error) {
+			// Check if it's a unique constraint violation on slug
+			if (error.code === '23505' && error.message.includes('slug')) {
+				throw new Error("This URL is already taken. Please try again or use a different custom URL.")
+			}
+			throw new Error(`Failed to create map: ${error.message}`)
+		}
 
 		// Auto-upvote the map for the creator using the votesService
 		if (data) {

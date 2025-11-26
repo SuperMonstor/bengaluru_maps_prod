@@ -17,31 +17,46 @@ export function slugify(text: string): string {
 }
 
 /**
- * Generates a unique slug based on a title and a list of existing slugs
+ * Generates a unique slug by checking the database directly
  * @param title The title to generate a slug from
- * @param existingSlugs An array of existing slugs to check against
+ * @param supabaseClient Supabase client to query the database
  * @returns A unique slug
  */
-export function generateUniqueSlug(
+export async function generateUniqueSlug(
 	title: string,
-	existingSlugs: string[] = []
-): string {
-	let slug = slugify(title)
+	supabaseClient: any
+): Promise<string> {
+	const baseSlug = slugify(title)
 
-	if (!existingSlugs.includes(slug)) {
-		return slug
+	// Check if base slug exists
+	const { data: existingMap } = await supabaseClient
+		.from("maps")
+		.select("slug")
+		.eq("slug", baseSlug)
+		.maybeSingle()
+
+	if (!existingMap) {
+		return baseSlug
 	}
 
-	// If the slug already exists, append a number
+	// If slug exists, try numbered variants
 	let counter = 1
-	let uniqueSlug = `${slug}-${counter}`
+	while (counter < 100) { // Safety limit
+		const numberedSlug = `${baseSlug}-${counter}`
+		const { data: existingNumbered } = await supabaseClient
+			.from("maps")
+			.select("slug")
+			.eq("slug", numberedSlug)
+			.maybeSingle()
 
-	while (existingSlugs.includes(uniqueSlug)) {
+		if (!existingNumbered) {
+			return numberedSlug
+		}
 		counter++
-		uniqueSlug = `${slug}-${counter}`
 	}
 
-	return uniqueSlug
+	// Fallback: append timestamp if we somehow hit 100 variations
+	return `${baseSlug}-${Date.now()}`
 }
 
 /**

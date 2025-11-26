@@ -10,11 +10,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { useUser } from "@/components/layout/LayoutClient"
 import MarkdownEditor from "@/components/markdown/MarkdownEditor"
 import { useRouter } from "next/navigation"
-import { createMap } from "@/lib/supabase/mapsService"
+import { createMapAction } from "@/lib/supabase/api/createMapAction"
 import { Toaster } from "@/components/ui/toaster"
 import { useToast } from "@/lib/hooks/use-toast"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 import { slugify, validateSlug, isReservedSlug } from "@/lib/utils/slugify"
+import { CREATE_MAP_CONTENT } from "@/lib/constants/createMapContent"
 
 const MDXEditorDynamic = dynamic(
 	() => import("@mdxeditor/editor").then((mod) => mod.MDXEditor),
@@ -145,6 +146,9 @@ export default function CreateMapPage() {
 		}
 	}, [shortDescription])
 
+	// Get max length from constants
+	const maxDescriptionLength = CREATE_MAP_CONTENT.form.shortDescription.maxLength
+
 	// Update image preview when file changes
 	useEffect(() => {
 		if (displayPicture?.[0]) {
@@ -168,21 +172,22 @@ export default function CreateMapPage() {
 		setIsSubmitting(true) // Disable the button immediately
 
 		try {
-			const { data: mapData, error } = await createMap({
-				title: data.title,
-				shortDescription: data.shortDescription,
-				body: data.body,
-				displayPicture: data.displayPicture![0],
-				ownerId: user.id,
-				customSlug: data.slug,
-			})
+			// Create FormData for server action
+			const formData = new FormData()
+			formData.append("title", data.title)
+			formData.append("slug", data.slug)
+			formData.append("shortDescription", data.shortDescription)
+			formData.append("body", data.body)
+			formData.append("displayPicture", data.displayPicture![0])
 
-			if (error) {
-				console.error("Error creating map:", error)
+			const result = await createMapAction(formData)
+
+			if (!result.success) {
+				console.error("Error creating map:", result.error)
 				toast({
 					variant: "destructive",
 					title: "Error creating map",
-					description: error,
+					description: result.error || "An error occurred",
 				})
 				setIsSubmitting(false)
 			} else {
@@ -194,9 +199,9 @@ export default function CreateMapPage() {
 				// Increase the delay to ensure the upvote is processed
 				setTimeout(() => {
 					// If we have the map data, redirect to the map page instead of home
-					if (mapData && mapData.slug) {
+					if (result.data && result.data.slug) {
 						router.push(
-							`/maps/${mapData.slug}?expand=true`
+							`/maps/${result.data.slug}?expand=true`
 						)
 					} else {
 						router.push("/")
@@ -226,38 +231,21 @@ export default function CreateMapPage() {
 		<main className="min-h-[calc(100vh-4rem)] p-4 bg-white">
 			<section className="max-w-2xl mx-auto space-y-8">
 				<header>
-					<h1 className="text-2xl font-bold text-gray-900">Create Your Map</h1>
+					<h1 className="text-2xl font-bold text-gray-900">{CREATE_MAP_CONTENT.title}</h1>
 					<p className="text-gray-600 mt-2">
-						Share your favorite places in Bengaluru with the community.
+						{CREATE_MAP_CONTENT.subtitle}
 					</p>
 				</header>
 
 				<div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-					<h2 className="font-semibold text-blue-800 mb-2">Map Ideas</h2>
+					<h2 className="font-semibold text-blue-800 mb-2">{CREATE_MAP_CONTENT.mapIdeas.title}</h2>
 					<p className="text-sm text-blue-700 mb-2">
-						Not sure what to create? Here are some popular map ideas:
+						{CREATE_MAP_CONTENT.mapIdeas.description}
 					</p>
 					<ul className="text-sm text-blue-700 list-disc pl-5 space-y-1">
-						<li>
-							Pet-Friendly Spots – Cafes, parks, and restaurants that welcome
-							pets
-						</li>
-						<li>
-							Startup & Co-Working Spaces – Work-friendly cafes and coworking
-							spaces with strong Wi-Fi
-						</li>
-						<li>
-							First Date Spots – Places perfect for a first date, categorized by
-							vibe
-						</li>
-						<li>
-							Book Lovers' Map – The best bookstores, reading cafés, and quiet
-							nooks
-						</li>
-						<li>
-							Gaming & Esports Hubs – Gaming cafes, VR arcades, and esports
-							lounges
-						</li>
+						{CREATE_MAP_CONTENT.mapIdeas.ideas.map((idea, index) => (
+							<li key={index}>{idea}</li>
+						))}
 					</ul>
 				</div>
 
@@ -267,12 +255,12 @@ export default function CreateMapPage() {
 							htmlFor="title"
 							className="text-sm font-medium text-gray-700"
 						>
-							Title *
+							{CREATE_MAP_CONTENT.form.title.label} *
 						</label>
 						<Input
 							{...register("title", { required: "Title is required" })}
 							id="title"
-							placeholder="e.g., Best Biriyani Spots in Bengaluru"
+							placeholder={CREATE_MAP_CONTENT.form.title.placeholder}
 							className="w-full border border-gray-300 rounded-md shadow-sm text-gray-700 placeholder-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
 							defaultValue=""
 						/>
@@ -286,10 +274,10 @@ export default function CreateMapPage() {
 							htmlFor="slug"
 							className="text-sm font-medium text-gray-700"
 						>
-							URL Slug *
+							{CREATE_MAP_CONTENT.form.slug.label} *
 						</label>
 						<p className="text-xs text-gray-500">
-							This will be the URL for your map: bengalurumaps.com/maps/
+							{CREATE_MAP_CONTENT.form.slug.description}
 							<span className="font-semibold">{slug || "your-slug"}</span>
 						</p>
 						<div className="relative">
@@ -310,7 +298,7 @@ export default function CreateMapPage() {
 									},
 								})}
 								id="slug"
-								placeholder="best-biriyani-spots-in-bengaluru"
+								placeholder={CREATE_MAP_CONTENT.form.slug.placeholder}
 								className={`w-full border rounded-md shadow-sm text-gray-700 placeholder-gray-400 focus:ring-1 pr-10 ${
 									slugStatus.available === true
 										? "border-green-500 focus:border-green-500 focus:ring-green-500"
@@ -359,33 +347,32 @@ export default function CreateMapPage() {
 								htmlFor="shortDescription"
 								className="text-sm font-medium text-gray-700"
 							>
-								Short Description *
+								{CREATE_MAP_CONTENT.form.shortDescription.label} *
 							</label>
 							<span
 								className={`text-xs ${
-									charCount > 60 ? "text-red-500" : "text-gray-500"
+									charCount > maxDescriptionLength ? "text-red-500" : "text-gray-500"
 								}`}
 							>
-								{charCount}/60 characters
+								{charCount}/{maxDescriptionLength} characters
 							</span>
 						</div>
 						<p className="text-xs text-gray-500">
-							A one-liner about the map that will appear in search results and
-							previews.
+							{CREATE_MAP_CONTENT.form.shortDescription.description}
 						</p>
 						<Textarea
 							{...register("shortDescription", {
 								required: "Short description is required",
 								maxLength: {
-									value: 60,
-									message: "Short description must be 60 characters or less",
+									value: maxDescriptionLength,
+									message: `Short description must be ${maxDescriptionLength} characters or less`,
 								},
 							})}
 							id="shortDescription"
-							placeholder="Brief description of your map (max 60 characters)"
+							placeholder={CREATE_MAP_CONTENT.form.shortDescription.placeholder}
 							className="w-full border border-gray-300 rounded-md shadow-sm text-gray-700 placeholder-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500 h-24"
 							defaultValue=""
-							maxLength={60}
+							maxLength={maxDescriptionLength}
 						/>
 						{errors.shortDescription && (
 							<p className="text-sm text-red-500">
@@ -399,7 +386,7 @@ export default function CreateMapPage() {
 							htmlFor="displayPicture"
 							className="text-sm font-medium text-gray-700"
 						>
-							Display Picture (16:9 recommended) *
+							{CREATE_MAP_CONTENT.form.displayPicture.label} *
 						</label>
 						<Input
 							type="file"
@@ -432,24 +419,17 @@ export default function CreateMapPage() {
 
 					<div className="space-y-2">
 						<label htmlFor="body" className="text-sm font-medium text-gray-700">
-							Body (Describe what this map is about in detail)
+							{CREATE_MAP_CONTENT.form.body.label}
 						</label>
 						<div className="text-sm text-gray-500 space-y-2 mb-3">
-							<p>Need help? Copy this prompt for ChatGPT:</p>
+							<p>{CREATE_MAP_CONTENT.chatGPTPrompt.title}</p>
 							<div className="bg-gray-50 p-2 rounded border border-gray-200 text-xs">
-								<p className="font-medium">
-									Write a description for my Bengaluru map about [YOUR MAP
-									TOPIC] in markdown. Include:
+								<p className="font-medium whitespace-pre-line">
+									{CREATE_MAP_CONTENT.chatGPTPrompt.template}
 								</p>
-								<ol className="list-decimal pl-5 mt-1">
-									<li>Brief introduction explaining the purpose of this map</li>
-									<li>What makes a good location for this collection</li>
-									<li>Submission guidelines (photos, details required)</li>
-									<li>Criteria for approving submissions</li>
-								</ol>
 							</div>
 							<p className="text-xs mt-1">
-								Format with: # for headers, * for lists, **bold** for emphasis
+								{CREATE_MAP_CONTENT.chatGPTPrompt.helpText}
 							</p>
 						</div>
 						<MarkdownEditor
@@ -458,7 +438,7 @@ export default function CreateMapPage() {
 								setMarkdownValue(markdown)
 								setValue("body", markdown, { shouldValidate: true })
 							}}
-							placeholder="Describe your map here using Markdown"
+							placeholder={CREATE_MAP_CONTENT.form.body.placeholder}
 							className="mdxeditor"
 						/>
 						{errors.body && (
@@ -467,32 +447,28 @@ export default function CreateMapPage() {
 					</div>
 
 					<div className="bg-amber-50 p-4 rounded-lg border border-amber-100 my-6">
-						<h2 className="font-semibold text-amber-800 mb-2">Map Ownership</h2>
+						<h2 className="font-semibold text-amber-800 mb-2">{CREATE_MAP_CONTENT.ownership.title}</h2>
 						<p className="text-sm text-amber-700">
-							You get some pretty sweet priviliges as a map creator:
+							{CREATE_MAP_CONTENT.ownership.description}
 						</p>
 						<ul className="text-sm text-amber-700 list-disc pl-5 space-y-1 mt-2">
-							<li>Locations will only be added on your approval</li>
-							<li>
-								You get to determine the quality and relevance of locations on
-								your map
-							</li>
-							<li>You set guidelines for what should be included</li>
+							{CREATE_MAP_CONTENT.ownership.privileges.map((privilege, index) => (
+								<li key={index}>{privilege}</li>
+							))}
 						</ul>
 						<p className="text-sm text-amber-700 mt-2">
-							By submitting this form, you agree to take on these
-							responsibilities.
+							{CREATE_MAP_CONTENT.ownership.agreement}
 						</p>
 					</div>
 
 					<Button
 						type="submit"
 						className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-md py-2"
-						disabled={isSubmitting || charCount > 60}
+						disabled={isSubmitting || charCount > maxDescriptionLength}
 					>
 						{isSubmitting ? (
 							<div className="flex items-center justify-center">
-								<span className="mr-2">Creating Map...</span>
+								<span className="mr-2">{CREATE_MAP_CONTENT.buttons.submitting}</span>
 								<svg
 									className="animate-spin h-4 w-4"
 									xmlns="http://www.w3.org/2000/svg"
@@ -515,7 +491,7 @@ export default function CreateMapPage() {
 								</svg>
 							</div>
 						) : (
-							"Submit"
+							CREATE_MAP_CONTENT.buttons.submit
 						)}
 					</Button>
 				</form>
