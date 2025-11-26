@@ -457,12 +457,13 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 
 					<Button
 						type="submit"
-						className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-md py-2"
+						variant="primary"
+						className="w-full"
 						disabled={isSubmitting}
 					>
 						{isSubmitting ? (
 							<>
-								<span className="mr-2">Submitting...</span>
+								<span className="mr-sm">Submitting...</span>
 								<svg
 									className="animate-spin h-4 w-4"
 									xmlns="http://www.w3.org/2000/svg"
