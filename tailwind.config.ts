@@ -62,56 +62,60 @@ export default {
 						light: "#64748B",
 					},
 				},
+				// 5-step grayscale system for consistent UI
+				gray: {
+					900: "#111111", // Primary text, headings
+					700: "#444444", // Secondary text
+					500: "#777777", // Tertiary text, disabled states
+					300: "#dddddd", // Borders, dividers
+					100: "#f5f5f5", // Backgrounds, subtle fills
+				},
 			},
 			borderRadius: {
 				lg: "var(--radius)",
 				md: "calc(var(--radius) - 2px)",
 				sm: "calc(var(--radius) - 4px)",
+				// Design system specific radii
+				card: "12px", // Standard card radius
+				button: "8px", // Button radius
+				image: "8px", // Image radius
+				pill: "9999px", // Pill-shaped elements
 			},
-			// Typography
+			// Typography - Premium scale
 			fontSize: {
-				// Headers
-				display: [
-					"3.75rem",
-					{ lineHeight: "1", letterSpacing: "-0.02em", fontWeight: "700" },
-				],
+				// Headers - consistent scale
 				h1: [
-					"2.5rem",
-					{ lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "700" },
+					"28px",
+					{ lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "600" },
 				],
 				h2: [
-					"2rem",
-					{ lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "600" },
-				],
-				h3: [
-					"1.75rem",
-					{ lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "600" },
-				],
-				h4: [
-					"1.5rem",
-					{ lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "600" },
-				],
-				h5: [
-					"1.25rem",
+					"22px",
 					{ lineHeight: "1.2", letterSpacing: "-0.01em", fontWeight: "600" },
 				],
-				// Body
-				"body-lg": ["1.125rem", { lineHeight: "1.5", fontWeight: "400" }],
-				body: ["1rem", { lineHeight: "1.5", fontWeight: "400" }],
-				"body-sm": ["0.875rem", { lineHeight: "1.5", fontWeight: "400" }],
-				caption: ["0.75rem", { lineHeight: "1.5", fontWeight: "400" }],
-				// Mono (for code and technical content)
-				mono: ["1rem", { lineHeight: "1.5", fontWeight: "400" }],
-				"mono-sm": ["0.875rem", { lineHeight: "1.5", fontWeight: "400" }],
+				h3: [
+					"18px",
+					{ lineHeight: "1.2", letterSpacing: "-0.01em", fontWeight: "500" },
+				],
+				// Body text
+				body: ["15px", { lineHeight: "1.5", fontWeight: "400" }],
+				"body-sm": ["13px", { lineHeight: "1.5", fontWeight: "400" }],
+				caption: ["12px", { lineHeight: "1.4", fontWeight: "400" }],
 			},
 
-			// Spacing
+			// Spacing - Design system scale
 			spacing: {
-				layout: "1.5rem", // 24px
-				"layout-lg": "2rem", // 32px
-				"layout-xl": "3rem", // 48px
-				section: "4rem", // 64px
-				"section-lg": "6rem", // 96px
+				xs: "4px",
+				sm: "8px",
+				md: "12px",
+				lg: "16px",
+				xl: "24px",
+				"2xl": "32px",
+				"3xl": "48px",
+				"4xl": "64px",
+				// Layout-specific
+				"left-panel": "440px", // Fixed left panel width
+				"left-panel-content": "380px", // Max content width in left panel
+				"card-max": "800px", // Max width for homepage cards
 			},
 
 			// Animation
@@ -167,11 +171,12 @@ export default {
 				tooltip: "300",
 			},
 
-			// Box shadows
+			// Box shadows - subtle and intentional
 			boxShadow: {
-				card: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-				dropdown:
-					"0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+				card: "0 1px 3px 0 rgba(0, 0, 0, 0.06)", // Subtle default
+				"card-hover": "0 4px 12px 0 rgba(0, 0, 0, 0.08)", // Hover state
+				dropdown: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
+				button: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", // Subtle button shadow
 			},
 
 			// Max width

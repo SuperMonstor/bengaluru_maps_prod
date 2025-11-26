@@ -54,28 +54,39 @@ function MapController({
     return null
 }
 
-// Custom icons
-const defaultIcon = new L.Icon({
-    iconUrl:
-        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-    shadowUrl:
-        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-})
+// Custom premium circular icons using divIcon for full control
+const createCustomIcon = (isSelected: boolean) => {
+    const size = isSelected ? 40 : 32
+    const backgroundColor = isSelected ? "#3b82f6" : "#FF6A00"
 
-const selectedIcon = new L.Icon({
-    iconUrl:
-        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
-    shadowUrl:
-        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-    iconSize: [30, 49], // Slightly larger
-    iconAnchor: [15, 49],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-})
+    return new L.DivIcon({
+        className: "custom-map-marker",
+        html: `
+            <div style="
+                width: ${size}px;
+                height: ${size}px;
+                background-color: ${backgroundColor};
+                border: 3px solid white;
+                border-radius: 50%;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+                transition: all 200ms ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                <svg width="${size * 0.5}" height="${size * 0.5}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="white"/>
+                </svg>
+            </div>
+        `,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        popupAnchor: [0, -size / 2],
+    })
+}
+
+const defaultIcon = createCustomIcon(false)
+const selectedIcon = createCustomIcon(true)
 
 export default function OSMMap({
     locations,
@@ -96,8 +107,8 @@ export default function OSMMap({
             className="z-0"
         >
             <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             />
             <MapController
                 locations={locations}

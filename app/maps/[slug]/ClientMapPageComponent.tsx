@@ -167,7 +167,7 @@ function ClientMapPageContentInner({
 				{/* Desktop Layout */}
 				<div className="hidden md:flex h-full w-full">
 					<div
-						className={`w-2/5 max-w-[500px] p-4 md:p-8 lg:p-12 space-y-6 overflow-y-auto bg-white ${selectedLocation ? "border-r-4 border-r-blue-500/20" : ""
+						className={`w-left-panel max-w-left-panel p-2xl space-y-xl overflow-y-auto bg-white ${selectedLocation ? "border-r-4 border-r-blue-500/20" : ""
 							}`}
 					>
 						{!selectedLocation ? (
@@ -189,13 +189,13 @@ function ClientMapPageContentInner({
 									</div>
 								</div>
 
-								<h1 className="text-3xl font-bold tracking-tight text-foreground mt-4 mb-4">
+								<h1 className="text-h1 text-gray-900 mt-lg mb-lg">
 									{map.title}
 								</h1>
 
-								<div className="flex items-center gap-2 mb-4">
+								<div className="flex items-center gap-sm mb-lg">
 									<Link href={`/maps/${map.slug || "map"}/submit`}>
-										<Button variant="default" size="sm">
+										<Button variant="primary" size="sm">
 											Contribute
 										</Button>
 									</Link>
@@ -208,13 +208,13 @@ function ClientMapPageContentInner({
 									/>
 								</div>
 
-								<div className="space-y-2">
-									<p className="text-muted-foreground text-sm line-clamp-2">
+								<div className="space-y-sm">
+									<p className="text-body text-gray-500 line-clamp-2">
 										{map.description}
 									</p>
 								</div>
-								<div className="flex items-center gap-2 text-sm text-muted-foreground">
-									<Avatar className="h-8 w-8 border border-border/50">
+								<div className="flex items-center gap-sm text-body-sm text-gray-500">
+									<Avatar className="h-8 w-8 border border-gray-300">
 										{map.userProfilePicture ? (
 											<Image
 												src={map.userProfilePicture}
@@ -235,10 +235,10 @@ function ClientMapPageContentInner({
 									</Avatar>
 									<span>
 										Started by{" "}
-										<span className="font-medium">{map.username}</span>
+										<span className="font-medium text-gray-900">{map.username}</span>
 									</span>
 								</div>
-								<div className="flex gap-4 text-sm text-muted-foreground">
+								<div className="flex gap-lg text-body-sm text-gray-500">
 									<UpvoteButton
 										mapId={map.id}
 										initialUpvotes={map.upvotes}
@@ -254,15 +254,15 @@ function ClientMapPageContentInner({
 										{map.contributors} contributors
 									</span>
 								</div>
-								<div className="relative w-full h-[200px] mt-6">
+								<div className="relative w-full aspect-[16/9] mt-xl">
 									<Image
 										src={map.image}
 										alt={map.title}
 										fill
-										className="object-cover rounded-md"
+										className="object-cover rounded-image"
 									/>
 								</div>
-								<div className="mt-4 pb-24">
+								<div className="mt-lg pb-3xl">
 									<Markdown content={map.body} />
 								</div>
 							</>
@@ -289,12 +289,12 @@ function ClientMapPageContentInner({
 									</div>
 								</div>
 
-								<h1 className="text-2xl font-bold tracking-tight text-foreground mt-4 mb-4">
+								<h1 className="text-h2 text-gray-900 mt-lg mb-lg">
 									{selectedLocation.name}
 								</h1>
 
-								<div className="flex items-center gap-2 text-sm text-muted-foreground">
-									<Avatar className="h-8 w-8 border border-border/50">
+								<div className="flex items-center gap-sm text-body-sm text-gray-500">
+									<Avatar className="h-8 w-8 border border-gray-300">
 										{userInfo.profilePicture ? (
 											<Image
 												src={userInfo.profilePicture}
@@ -315,8 +315,8 @@ function ClientMapPageContentInner({
 									</Avatar>
 									<span>
 										Added by{" "}
-										<span className="font-medium">{userInfo.username}</span>
-										<span className="text-xs text-muted-foreground ml-1">
+										<span className="font-medium text-gray-900">{userInfo.username}</span>
+										<span className="text-caption text-gray-500 ml-1">
 											• {formatDate(selectedLocation.created_at)}
 										</span>
 									</span>
@@ -327,18 +327,18 @@ function ClientMapPageContentInner({
 								{/* Note Section */}
 								{displayNote && (
 									<div>
-										<div className="flex items-center gap-1.5 mb-1">
-											<User className="h-3.5 w-3.5 text-muted-foreground" />
-											<span className="text-xs font-medium text-muted-foreground">
+										<div className="flex items-center gap-sm mb-sm">
+											<User className="h-4 w-4 text-gray-500" />
+											<span className="text-caption font-medium text-gray-500">
 												Note from contributor:
 											</span>
 										</div>
-										<div className="text-sm text-foreground/90 bg-gray-50 p-4 rounded-md">
+										<div className="text-body text-gray-700 bg-gray-100 p-lg rounded-image">
 											<p className="break-words">{displayNote}</p>
 											{noteIsLong && (
 												<button
 													onClick={() => setShowFullNote(!showFullNote)}
-													className="text-xs text-primary mt-1 hover:underline"
+													className="text-caption text-brand-orange mt-sm hover:underline"
 												>
 													{showFullNote ? "Show less" : "Read more"}
 												</button>
@@ -348,7 +348,7 @@ function ClientMapPageContentInner({
 								)}
 
 								{/* Action buttons */}
-								<div className="flex flex-col gap-3">
+								<div className="flex flex-col gap-md">
 									<Link
 										href={
 											selectedLocation.google_maps_url.includes(
@@ -373,7 +373,7 @@ function ClientMapPageContentInner({
 										rel="noopener noreferrer"
 									>
 										<Button
-											variant="default"
+											variant="primary"
 											className="w-full bg-[#E53935] hover:bg-[#D32F2F]"
 										>
 											<ExternalLink className="h-4 w-4 mr-2" />
@@ -383,8 +383,8 @@ function ClientMapPageContentInner({
 
 									{canDelete && (
 										<Button
-											variant="outline"
-											className="flex items-center justify-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 w-full"
+											variant="destructive"
+											className="w-full"
 											onClick={() => setShowDeleteDialog(true)}
 										>
 											<Trash2 className="h-4 w-4" />
@@ -396,7 +396,7 @@ function ClientMapPageContentInner({
 										href={`/maps/${map.slug || "map"}/submit`}
 										className="w-full"
 									>
-										<Button variant="outline" className="w-full">
+										<Button variant="secondary" className="w-full">
 											Add New Location
 										</Button>
 									</Link>

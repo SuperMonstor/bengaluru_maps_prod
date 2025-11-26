@@ -122,6 +122,31 @@
 	}
 }
 
+/* Custom map marker styling */
+.custom-map-marker {
+	background: transparent !important;
+	border: none !important;
+}
+
+/* Hover enhancement for interactive elements */
+@layer components {
+	.interactive-card {
+		@apply transition-all duration-300 ease-out;
+	}
+
+	.interactive-card:hover {
+		@apply shadow-card-hover scale-[1.01];
+	}
+
+	.interactive-button {
+		@apply transition-all duration-200 ease-out;
+	}
+
+	.interactive-button:hover {
+		@apply transform scale-[1.02];
+	}
+}
+
 /* Special styling for pages that come from a map card */
 .from-map-card .map-content {
 	animation: fadeIn 0.5s ease-out forwards;

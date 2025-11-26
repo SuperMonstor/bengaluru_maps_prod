@@ -45,15 +45,14 @@ export const CafeCard = memo(function CafeCard({
 	return (
 		<Card
 			className={cn(
-				"group w-full transition-all duration-300 bg-card overflow-hidden",
-				"border border-border/50 hover:border-border/100 cursor-pointer",
-				"rounded-[16px] shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:scale-[1.01]",
+				"group w-full bg-white overflow-hidden cursor-pointer",
+				"hover:shadow-card-hover hover:scale-[1.01]",
 				className
 			)}
 		>
 			<div className="flex">
 				{/* Voting Column - Reddit Style */}
-				<div className="w-14 bg-gray-50/50 flex items-start justify-center pt-6 border-r border-border/30">
+				<div className="w-14 bg-gray-100 flex items-start justify-center pt-xl border-r border-gray-300">
 					<UpvoteButton
 						mapId={mapId}
 						initialUpvotes={upvotes}
@@ -64,9 +63,9 @@ export const CafeCard = memo(function CafeCard({
 
 				{/* Main Content */}
 				<div className="flex-1">
-					<CardHeader className="p-4 md:p-6 space-y-4 md:flex md:flex-row md:items-start md:gap-6 md:space-y-0">
-						{/* Image Container */}
-						<div className="relative w-full md:w-48 aspect-[16/10] overflow-hidden rounded-xl shrink-0 bg-gray-100">
+					<CardHeader className="p-lg md:p-xl space-y-lg md:flex md:flex-row md:items-start md:gap-xl md:space-y-0">
+						{/* Image Container - 16:9 ratio */}
+						<div className="relative w-full md:w-48 aspect-[16/9] overflow-hidden rounded-image shrink-0 bg-gray-100">
 							<Image
 								src={imageSrc}
 								alt={title}
@@ -87,33 +86,33 @@ export const CafeCard = memo(function CafeCard({
 						</div>
 
 						{/* Content Container */}
-						<div className="flex-1 space-y-3">
-							<div className="space-y-1.5">
-								<h3 className="font-semibold text-xl leading-tight tracking-tight text-[#0F172A] group-hover:text-[#FF6A00] transition-colors">
+						<div className="flex-1 space-y-md">
+							<div className="space-y-sm">
+								<h3 className="text-h3 text-gray-900 group-hover:text-brand-orange transition-colors duration-200">
 									{title}
 								</h3>
-								<p className="text-sm text-[#64748B] line-clamp-2 leading-relaxed">
+								<p className="text-body-sm text-gray-500 line-clamp-2">
 									{description}
 								</p>
 							</div>
 
-							<div className="flex flex-wrap gap-2">
+							<div className="flex flex-wrap gap-sm">
 								{/* Pill-style metrics */}
-								<div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-full text-xs text-[#64748B] font-medium">
-									<MapPin className="h-3.5 w-3.5" />
+								<div className="flex items-center gap-sm px-md py-sm bg-gray-100 rounded-pill text-body-sm text-gray-500 font-medium">
+									<MapPin className="h-4 w-4" />
 									<span>{locations}</span>
 								</div>
-								<div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-full text-xs text-[#64748B] font-medium">
-									<Users className="h-3.5 w-3.5" />
+								<div className="flex items-center gap-sm px-md py-sm bg-gray-100 rounded-pill text-body-sm text-gray-500 font-medium">
+									<Users className="h-4 w-4" />
 									<span>{contributors}</span>
 								</div>
 							</div>
 						</div>
 					</CardHeader>
 
-					<CardFooter className="border-t border-border/40 px-4 py-3 md:px-6">
-						<div className="flex items-center gap-2.5 text-sm">
-							<Avatar className="h-6 w-6 border border-border/50">
+					<CardFooter className="border-t border-gray-300 px-lg py-md md:px-xl">
+						<div className="flex items-center gap-sm text-body-sm">
+							<Avatar className="h-6 w-6 border border-gray-300">
 								{userProfilePicture ? (
 									<Image
 										src={userProfilePicture}
@@ -123,7 +122,7 @@ export const CafeCard = memo(function CafeCard({
 										sizes="24px"
 									/>
 								) : (
-									<AvatarFallback className="text-xs">
+									<AvatarFallback className="text-caption">
 										{username
 											.split(" ")
 											.map((n) => n[0])
@@ -132,9 +131,9 @@ export const CafeCard = memo(function CafeCard({
 									</AvatarFallback>
 								)}
 							</Avatar>
-							<span className="text-[#64748B]">
+							<span className="text-gray-500">
 								Started by{" "}
-								<span className="font-medium text-[#0F172A]">
+								<span className="font-medium text-gray-900">
 									{username}
 								</span>
 							</span>
