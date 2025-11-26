@@ -32,13 +32,15 @@ function MapController({
 
     useEffect(() => {
         if (selectedLocation) {
-            map.flyTo(
-                [selectedLocation.latitude, selectedLocation.longitude],
-                15,
-                {
-                    duration: 1.5,
-                }
-            )
+            const lat = Number(selectedLocation.latitude)
+            const lng = Number(selectedLocation.longitude)
+
+            // Validate coordinates before animating to location
+            if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+                map.setView([lat, lng], 15, {
+                    animate: true,
+                })
+            }
         } else if (center && zoom) {
             map.setView([center.lat, center.lng], zoom)
         } else if (locations.length > 0) {
