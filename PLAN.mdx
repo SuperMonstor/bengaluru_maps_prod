@@ -29,6 +29,13 @@ All critical and major issues have been resolved:
 - **Files**: `lib/constants/createMapContent.ts` (new), `app/create-map/page.tsx`
 - **Impact**: Easier maintenance and future internationalization
 
-## Documentation
-- Created `docs/security-rls-policies.md` with all RLS policies
-- Verified RLS policies exist for both Maps table and Storage bucket
+### 6. Creator ID Security (Critical)
+- **Fixed**: Created server action for `createLocation` that gets `creator_id` from authenticated session
+- **Files**: `lib/supabase/api/createLocationAction.ts` (new), `app/maps/[slug]/submit/page.tsx`
+- **Impact**: Prevents malicious users from submitting locations under other users' IDs
+
+## Security Status
+- ✅ All client-side sensitive operations now use server actions
+- ✅ User IDs are obtained from server-side authenticated sessions
+- ✅ RLS policies verified for both Maps table and Storage bucket
+- ✅ No malicious calls possible from frontend

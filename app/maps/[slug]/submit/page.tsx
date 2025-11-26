@@ -19,7 +19,7 @@ import {
 import { useToast } from "@/lib/hooks/use-toast"
 import { LocationSuggestion, SubmitLocationProps } from "@/lib/types/mapTypes"
 import { getMapBySlug } from "@/lib/supabase/mapsService"
-import { createLocation } from "@/lib/supabase/mapsService"
+import { createLocationAction } from "@/lib/supabase/api/createLocationAction"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 import { slugify, isReservedSlug } from "@/lib/utils/slugify"
 import { use } from "react"
@@ -207,25 +207,31 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 		try {
 			setIsSubmitting(true)
 
+			// Store location name for email notification
+			const locationName = selectedLocation
+				? selectedLocation.name || data.location
+				: data.location
+
+			// Create FormData for server action
+			const formData = new FormData()
+			formData.append("mapId", map.id)
+			formData.append("location", locationName)
+			formData.append("description", data.description || "")
+
 			// If we have a selected location from Google Places, use its data
-			const locationData = selectedLocation
-				? {
-						location: selectedLocation.name || data.location,
-						place_id: selectedLocation.place_id,
-						address: selectedLocation.address || null,
-						geometry: selectedLocation.geometry,
-				  }
-				: { location: data.location }
+			if (selectedLocation) {
+				formData.append("place_id", selectedLocation.place_id || "")
+				formData.append("address", selectedLocation.address || "")
+				if (selectedLocation.geometry) {
+					formData.append("geometryLat", selectedLocation.geometry.lat.toString())
+					formData.append("geometryLng", selectedLocation.geometry.lng.toString())
+				}
+			}
 
-			const result = await createLocation({
-				mapId: map.id,
-				creatorId: user.id,
-				...locationData,
-				description: data.description,
-			})
+			const result = await createLocationAction(formData)
 
-			if (result.error) {
-				if (result.error.includes("already been added")) {
+			if (!result.success) {
+				if (result.error?.includes("already been added")) {
 					toast({
 						variant: "destructive",
 						title: "Duplicate Location",
@@ -236,12 +242,12 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 					toast({
 						variant: "destructive",
 						title: "Error submitting location",
-						description: result.error,
+						description: result.error || "An error occurred",
 					})
 				}
 			} else {
 				// Check if the location was auto-approved (user is the map owner)
-				const isOwner = map.owner_id === user.id
+				const isOwner = result.data?.isOwner || false
 
 				// Send email notification if not auto-approved
 				if (!isOwner && map.owner_email) {
@@ -255,7 +261,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 							body: JSON.stringify({
 								ownerEmail: map.owner_email,
 								mapTitle: map.title,
-								locationName: locationData.location,
+								locationName: locationName,
 								submitterName: `${user.first_name} ${user.last_name}`,
 								mapUrl: `${window.location.origin}/my-maps/${map.id}/pending`,
 							}),
