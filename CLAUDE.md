@@ -1,5 +1,16 @@
 # Bengaluru Maps - Claude Code Instructions
 
+## Workflow: PLAN.mdx (source of truth)
+
+When a task is presented:
+1. Produce a numbered checklist of all checkpoints needed to complete it. Include only necessary context for each checkpoint. Avoid code unless strictly required.
+2. For the next checkpoint, explain the step and suggested approach in one short paragraph. Wait for explicit user approval ("Proceed" or "Approved") before executing.
+3. After implementing a checkpoint, report concise bullet points of what changed and show modified files or commands run. Do not commit.
+4. Only perform commits after explicit user approval ("Commit" or "Approve commit"). Committing without explicit approval is forbidden.
+5. If uncertain, make a best-effort assumption and continue if safe.
+
+Note: Small steps that are self-explanatory (e.g., renaming variables, installing dependencies) can be bundled together and treated as one checkpoint.
+
 ## Git Commit Rules
 
 - Never add "Generated with Claude Code" footer

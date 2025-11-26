@@ -1,68 +1,25 @@
-# Map Migration Plan: Google Maps to OpenStreetMap (Leaflet)
+I've completed the code check for the contribute page (app/create-map/page.tsx) and its dependencies.
 
-## Goal
-Replace the visual Google Maps component on the maps page (`app/maps/[slug]/page.tsx`) with an OpenStreetMap (OSM) implementation using Leaflet, while preserving existing functionality where possible.
+Here are my findings categorized by criticality:
 
-## Current Architecture
-- **Map Component**: `GoogleMap` from `@react-google-maps/api`.
-- **Markers**: `Marker` from `@react-google-maps/api`.
-- **State Management**: `useGoogleMaps` hook handles loading the script, map state, and fetching place details.
-- **Data Dependency**:
-  - `fetchPlaceDetails` uses `google.maps.places.PlacesService` to get photos, ratings, and opening hours.
-  - `submit/page.tsx` uses `google.maps.places.AutocompleteService` for location search.
-
-## Strategy
-We will perform a **Visual Migration** to OpenStreetMap (Leaflet).
-**Important**: Due to Google Maps Platform Terms of Service, we cannot use Google Places API data (Photos, Ratings, Reviews) on a non-Google Map. Therefore, we will **comment out/disable** the `fetchPlaceDetails` logic. The location details panel will only display data stored in our database (Name, Note, User Info).
-
-## Implementation Steps
-
-### Phase 1: Dependencies & Setup
-- [ ] Install required packages:
-  ```bash
-  npm install leaflet react-leaflet leaflet-defaulticon-compatibility
-  npm install -D @types/leaflet
-  ```
-- [ ] Create a new component `components/map/OSMMap.tsx`.
-
-### Phase 2: Create OSM Map Component
-- [ ] Implement `OSMMap.tsx` (New Component):
-  - Use `MapContainer`, `TileLayer`, `Marker`, `Popup`.
-  - Re-implement custom marker icons (Red/Blue).
-  - Handle map bounds and centering.
-
-### Phase 3: Clean Up & Refactor
-- [ ] Move `Location` interface from `lib/hooks/useGoogleMaps.ts` to `lib/types/mapTypes.ts`.
-- [ ] **Delete** `lib/hooks/useGoogleMaps.ts`.
-  - The `selectedLocation` state will be moved directly into `ClientMapPageComponent`.
-  - The `fetchPlaceDetails` logic is being removed (ToS compliance).
-  - The `useLoadScript` logic is not needed for Leaflet.
-
-### Phase 4: Integration (Refactor)
-- [ ] Refactor `app/maps/[slug]/ClientMapPageComponent.tsx`:
-  - Replace `<GoogleMap>` with `<OSMMap>`.
-  - Use local `useState` for `selectedLocation`.
-  - Remove usage of `placeDetails` (photos, ratings, hours).
-  - Update UI to handle missing place details gracefully (cleaner UI without empty gaps).
-
-
-### Phase 5: Verification
-- [ ] Verify map renders with OSM tiles.
-- [ ] Verify all markers appear correctly.
-- [ ] Verify clicking a marker:
-  - Selects the location.
-  - Fetches and displays place details (photos, ratings) - *Crucial check*.
-  - Pans/Zooms map if needed.
-- [ ] Verify "View on Google Maps" links still work (they use URL construction).
-
-## Technical Considerations
-- **Google Places API**: We are **disabling** the Google Maps script on the map view page to comply with ToS.
-- **Styling**: Leaflet requires its CSS to be imported.
-- **Refactor vs Rewrite**:
-  - `OSMMap.tsx`: **Rewrite** (New component).
-  - `ClientMapPageComponent.tsx`: **Refactor** (Swapping components, removing props).
-  - `useGoogleMaps.ts`: **Delete** (Logic moved/removed).
-
-## Future Steps (Optional)
-- Replace `submit/page.tsx` search with an OSM-based geocoder (e.g., Nominatim) to fully remove the Google Maps API dependency.
-- Replace Place Details with another provider or user-generated content.
+🚨 Critical (Must Fix)
+Scalability Issue in Slug Generation:
+File: lib/supabase/mapsService.ts & lib/utils/slugify.ts
+Issue: generateUniqueSlug fetches ALL existing map slugs from the database (.select("slug")) to check for uniqueness. This is O(N) and will become a major performance bottleneck as the number of maps grows.
+Fix: Query the database for the specific slug (and its potential variations) instead of fetching everything. Or better, rely on the database's unique constraint and handle the error.
+Race Condition:
+File: lib/supabase/mapsService.ts
+Issue: The slug uniqueness check happens on the client side before insertion. If two users create a map with the same title simultaneously, both checks might pass, but one insert will fail (or worse, if no DB constraint, both succeed with duplicate slugs).
+Fix: Handle the unique constraint violation error from Supabase during insertion and retry with a modified slug.
+Security / Data Integrity:
+File: lib/supabase/mapsService.ts
+Issue: createMap accepts ownerId as a parameter. A malicious user could potentially call this function with another user's ID.
+Fix: Ensure Row Level Security (RLS) policies on the maps table strictly enforce that owner_id matches auth.uid().
+⚠️ Major (Should Fix)
+Image Upload Security:
+File: lib/utils/images.ts
+Issue: uploadImage is called from the client. You need to ensure the Supabase Storage bucket maps has RLS policies that only allow authenticated users to upload, and ideally only to specific paths or with size limits.
+Hardcoded Values:
+File: app/create-map/page.tsx
+Issue: Placeholder text like "Best Biriyani Spots..." is hardcoded.
+Fix: Move to a configuration file or constants.
