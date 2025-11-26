@@ -118,21 +118,21 @@ export default function LocationInfoWindow({
 		<>
 			<style>{animationStyles}</style>
 			<div
-				className="w-full max-w-[280px] bg-white rounded-lg shadow-md info-window border border-gray-100 overflow-hidden"
+				className="w-full max-w-[280px] bg-white rounded-card shadow-card-hover info-window border border-gray-300 overflow-hidden"
 				style={{ maxHeight: "calc(100vh - 100px)" }}
 			>
-				<div className="bg-white p-3 border-b border-gray-100">
-					<h3 className="text-base font-semibold text-foreground leading-tight">
+				<div className="bg-white p-md border-b border-gray-300">
+					<h3 className="text-h3 text-gray-900 leading-tight">
 						{location.name}
 					</h3>
 				</div>
 
 				<div
-					className="p-3 overflow-y-auto info-window-content"
+					className="p-md overflow-y-auto info-window-content"
 					style={{ maxHeight: "calc(100vh - 150px)" }}
 				>
-					<div className="flex items-center gap-2 mb-3 info-section">
-						<Avatar className="h-7 w-7 border border-border/50">
+					<div className="flex items-center gap-sm mb-md info-section">
+						<Avatar className="h-7 w-7 border border-gray-300">
 							{userInfo.profilePicture ? (
 								<Image
 									src={userInfo.profilePicture}
@@ -152,10 +152,10 @@ export default function LocationInfoWindow({
 							)}
 						</Avatar>
 						<div className="flex flex-col">
-							<span className="text-xs text-muted-foreground">Added by</span>
+							<span className="text-caption text-gray-500">Added by</span>
 							<div className="flex items-center gap-1">
-								<span className="text-sm font-medium">{userInfo.username}</span>
-								<span className="text-xs text-muted-foreground">
+								<span className="text-body-sm font-medium text-gray-900">{userInfo.username}</span>
+								<span className="text-caption text-gray-500">
 									• {formatDate(location.created_at)}
 								</span>
 							</div>
@@ -163,13 +163,13 @@ export default function LocationInfoWindow({
 					</div>
 
 					{placeDetails?.imageUrl ? (
-						<div className="mb-3 info-section-delayed">
+						<div className="mb-md info-section-delayed">
 							<Image
 								src={placeDetails.imageUrl}
 								alt={location.name}
 								width={600}
 								height={400}
-								className="w-full h-32 object-cover rounded-md"
+								className="w-full h-32 object-cover rounded-image"
 								priority
 							/>
 						</div>
@@ -177,11 +177,11 @@ export default function LocationInfoWindow({
 
 					{/* Status and Ratings Section */}
 					{placeDetails && (
-						<div className="mb-3 p-2 bg-gray-50 rounded-md info-section-delayed">
+						<div className="mb-md p-sm bg-gray-100 rounded-image info-section-delayed">
 							<div className="flex justify-between items-center mb-1">
 								{placeDetails.isOpenNow !== null && (
 									<span
-										className={`text-sm font-medium ${
+										className={`text-body-sm font-medium ${
 											placeDetails.isOpenNow ? "text-green-600" : "text-red-600"
 										}`}
 									>
@@ -192,7 +192,7 @@ export default function LocationInfoWindow({
 								{placeDetails.rating && (
 									<div className="flex items-center gap-1">
 										<Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-										<span className="text-sm font-medium">
+										<span className="text-body-sm font-medium text-gray-900">
 											{placeDetails.rating.toFixed(1)}/5
 										</span>
 									</div>
@@ -201,7 +201,7 @@ export default function LocationInfoWindow({
 
 							{/* Today's hours */}
 							{placeDetails.todayHours && (
-								<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+								<div className="flex items-center gap-sm text-caption text-gray-500">
 									<Clock className="h-3 w-3 flex-shrink-0" />
 									<span className="break-words">
 										Today: {placeDetails.todayHours}
@@ -213,19 +213,19 @@ export default function LocationInfoWindow({
 
 					{/* Note Section */}
 					{location.note && (
-						<div className="mb-3 info-section-delayed">
-							<div className="flex items-center gap-1.5 mb-1">
-								<User className="h-3.5 w-3.5 text-muted-foreground" />
-								<span className="text-xs font-medium text-muted-foreground">
+						<div className="mb-md info-section-delayed">
+							<div className="flex items-center gap-sm mb-sm">
+								<User className="h-4 w-4 text-gray-500" />
+								<span className="text-caption font-medium text-gray-500">
 									Note from contributor:
 								</span>
 							</div>
-							<div className="text-sm text-foreground/90 bg-gray-50 p-2 rounded-md">
+							<div className="text-body-sm text-gray-700 bg-gray-100 p-sm rounded-image">
 								<p className="break-words">{displayNote}</p>
 								{noteIsLong && (
 									<button
 										onClick={() => setShowFullNote(!showFullNote)}
-										className="text-xs text-primary mt-1 hover:underline"
+										className="text-caption text-brand-orange mt-sm hover:underline"
 									>
 										{showFullNote ? "Show less" : "Read more"}
 									</button>
@@ -234,7 +234,7 @@ export default function LocationInfoWindow({
 						</div>
 					)}
 
-					<div className="flex flex-col gap-2">
+					<div className="flex flex-col gap-sm">
 						<Link
 							href={
 								location.google_maps_url.includes("place/?q=place_id:")
@@ -253,20 +253,21 @@ export default function LocationInfoWindow({
 							}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="inline-flex items-center justify-center w-full bg-[#E53935] text-white py-2 rounded-md text-sm font-medium hover:bg-[#D32F2F] transition-colors info-section-delayed"
+							className="inline-flex items-center justify-center w-full bg-[#4285f4] text-white py-sm rounded-button text-body-sm font-medium hover:bg-[#3367d6] transition-all duration-200 shadow-button info-section-delayed"
 						>
-							<Map className="w-4 h-4 mr-2" />
+							<Map className="w-4 h-4 mr-sm" />
 							Open in Google Maps
 						</Link>
 
 						{/* Delete button - only shown if user can delete */}
 						{canDelete && (
 							<Button
-								variant="outline"
-								className="w-full mt-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 info-section-delayed"
+								variant="destructive"
+								size="sm"
+								className="w-full info-section-delayed"
 								onClick={handleDeleteClick}
 							>
-								<Trash2 className="w-4 h-4 mr-2" />
+								<Trash2 className="w-4 h-4 mr-sm" />
 								Delete Location
 							</Button>
 						)}

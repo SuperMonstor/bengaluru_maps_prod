@@ -374,7 +374,7 @@ function ClientMapPageContentInner({
 									>
 										<Button
 											variant="primary"
-											className="w-full bg-[#E53935] hover:bg-[#D32F2F]"
+											className="w-full bg-[#4285f4] hover:bg-[#3367d6]"
 										>
 											<ExternalLink className="h-4 w-4 mr-2" />
 											View on Google Maps
@@ -476,9 +476,9 @@ function ClientMapPageContentInner({
 											onClick={(e: React.MouseEvent) => e.stopPropagation()}
 										>
 											<Button
-												variant="default"
+												variant="primary"
 												size="sm"
-												className="w-full bg-[#E53935] hover:bg-[#D32F2F] text-xs h-8"
+												className="w-full bg-[#4285f4] hover:bg-[#3367d6] text-xs h-8"
 											>
 												<ExternalLink className="h-3 w-3 mr-1" />
 												View on Maps
@@ -657,9 +657,9 @@ function ClientMapPageContentInner({
 												className="flex-1"
 											>
 												<Button
-													variant="default"
+													variant="primary"
 													size="sm"
-													className="w-full bg-[#E53935] hover:bg-[#D32F2F]"
+													className="w-full bg-[#4285f4] hover:bg-[#3367d6]"
 												>
 													<ExternalLink className="h-4 w-4 mr-2" />
 													View on Maps
