@@ -184,14 +184,22 @@ export async function getMaps(
 		const mapIds = data.map((map: any) => map.id)
 		const mapsData = data as unknown as MapData[]
 
+		// Get owner IDs to fetch user information
+		const ownerIds = [...new Set(mapsData.map((map) => map.owner_id))]
+
 		// Get additional data needed for the response
-		const [locationCountsRes, contributorCountsRes] = await Promise.all([
+		const [locationCountsRes, contributorCountsRes, usersRes] = await Promise.all([
 			supabase.rpc("get_location_counts", { map_ids: mapIds }),
 			supabase.rpc("get_contributor_counts", { map_ids: mapIds }),
+			supabase
+				.from("users")
+				.select("id, first_name, last_name, picture_url")
+				.in("id", ownerIds),
 		])
 
 		if (locationCountsRes.error) throw locationCountsRes.error
 		if (contributorCountsRes.error) throw contributorCountsRes.error
+		if (usersRes.error) throw usersRes.error
 
 		// Create maps for efficient lookups
 		const locationCounts = new Map<string, number>(
@@ -209,6 +217,15 @@ export async function getMaps(
 					Number(c.contributor_count),
 				]
 			) || []
+		)
+		const usersMap = new Map(
+			usersRes.data?.map((user: any) => [
+				user.id,
+				{
+					username: `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim(),
+					picture_url: user.picture_url || null,
+				},
+			]) || []
 		)
 
 		// Check if the current user has upvoted each map
@@ -230,20 +247,23 @@ export async function getMaps(
 		}
 
 		// Create the response maps array
-		const maps: MapResponse[] = mapsData.map((map) => ({
-			id: map.id,
-			title: map.name,
-			description: map.short_description,
-			image: map.display_picture || "/placeholder.svg",
-			locations: locationCounts.get(map.id) ?? 0,
-			contributors: contributorCounts.get(map.id) ?? 0,
-			upvotes: map.vote_count || 0, // Use the vote_count from the RPC function
-			hasUpvoted: hasUpvotedMap.get(map.id) || false,
-			username: map.username || "Unknown User",
-			userProfilePicture: map.user_picture || null,
-			owner_id: map.owner_id,
-			slug: map.slug || slugify(map.name),
-		}))
+		const maps: MapResponse[] = mapsData.map((map) => {
+			const userInfo = usersMap.get(map.owner_id)
+			return {
+				id: map.id,
+				title: map.name,
+				description: map.short_description,
+				image: map.display_picture || "/placeholder.svg",
+				locations: locationCounts.get(map.id) ?? 0,
+				contributors: contributorCounts.get(map.id) ?? 0,
+				upvotes: map.vote_count || 0, // Use the vote_count from the RPC function
+				hasUpvoted: hasUpvotedMap.get(map.id) || false,
+				username: userInfo?.username || "Unknown User",
+				userProfilePicture: userInfo?.picture_url || null,
+				owner_id: map.owner_id,
+				slug: map.slug || slugify(map.name),
+			}
+		})
 
 		return { data: maps, total: count || 0, page, limit, error: null }
 	} catch (error) {
