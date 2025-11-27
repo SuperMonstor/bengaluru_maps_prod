@@ -4,6 +4,7 @@ export interface MapSchema {
 	body: string
 	displayPicture?: File
 	ownerId: string
+	city?: string
 }
 
 export interface MapDatabase {
@@ -31,6 +32,7 @@ export interface Location {
 	created_at: string
 	is_approved: boolean
 	status: "pending" | "approved" | "rejected"
+	city: string
 }
 
 export interface Submission {
@@ -65,6 +67,7 @@ export interface MapData {
 	vote_count?: number
 	username?: string
 	user_picture?: string | null
+	city: string
 }
 
 export interface MapResponse {
@@ -80,6 +83,7 @@ export interface MapResponse {
 	userProfilePicture: string | null
 	owner_id?: string
 	slug?: string
+	city: string
 }
 
 export interface MapsResult {
@@ -114,6 +118,7 @@ export interface UserMap {
 	pendingCount: number
 	owner_id?: string
 	slug?: string
+	city: string
 }
 
 export interface LocationSuggestion {

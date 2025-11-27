@@ -98,6 +98,7 @@ export async function createMapAction(formData: FormData) {
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
 				slug: slug,
+				city: 'Bangalore',
 			})
 			.select()
 			.single()

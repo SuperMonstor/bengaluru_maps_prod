@@ -165,6 +165,7 @@ export async function createLocationAction(formData: FormData) {
 				updated_at: new Date().toISOString(),
 				is_approved: isOwner,
 				status: isOwner ? "approved" : "pending",
+				city: 'Bangalore',
 			})
 			.select()
 			.single()

@@ -7,6 +7,7 @@ export interface UserSchema {
   picture_url: string | null;
   created_at: string;
   updated_at: string;
+  city?: string | null;
 }
 
 export interface User {
@@ -14,4 +15,5 @@ export interface User {
   first_name: string | null;
   last_name: string | null;
   picture_url: string | null;
+  city?: string | null;
 }

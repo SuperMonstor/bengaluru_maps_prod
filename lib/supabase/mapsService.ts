@@ -108,6 +108,7 @@ export async function createMap({
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
 				slug: slug,
+				city: 'Bangalore',
 			})
 			.select()
 			.single()
@@ -262,6 +263,7 @@ export async function getMaps(
 				userProfilePicture: userInfo?.picture_url || null,
 				owner_id: map.owner_id,
 				slug: map.slug || slugify(map.name),
+				city: map.city || 'Bangalore',
 			}
 		})
 
@@ -352,6 +354,7 @@ export async function getMapById(mapId: string, userId?: string) {
 				owner_id: data.owner_id,
 				hasUpvoted,
 				slug: data.slug || slugify(data.name),
+				city: data.city || 'Bangalore',
 			},
 			error: null,
 		}
@@ -445,6 +448,7 @@ export async function getMapBySlug(slug: string, userId?: string) {
 				owner_id: data.owner_id,
 				hasUpvoted,
 				slug: data.slug || slugify(data.name),
+				city: data.city || 'Bangalore',
 			},
 			error: null,
 		}
@@ -643,6 +647,7 @@ export async function createLocation({
 				updated_at: new Date().toISOString(),
 				is_approved: isOwner, // Auto-approve if the creator is the map owner
 				status: isOwner ? "approved" : "pending",
+				city: 'Bangalore',
 			})
 			.select()
 			.single()
