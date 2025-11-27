@@ -172,6 +172,7 @@ export async function getMaps(
 			{
 				p_limit: limit,
 				p_offset: from,
+				p_city: 'Bangalore',
 			}
 		)
 
@@ -190,8 +191,8 @@ export async function getMaps(
 
 		// Get additional data needed for the response
 		const [locationCountsRes, contributorCountsRes, usersRes] = await Promise.all([
-			supabase.rpc("get_location_counts", { map_ids: mapIds }),
-			supabase.rpc("get_contributor_counts", { map_ids: mapIds }),
+			supabase.rpc("get_location_counts", { map_ids: mapIds, p_city: 'Bangalore' }),
+			supabase.rpc("get_contributor_counts", { map_ids: mapIds, p_city: 'Bangalore' }),
 			supabase
 				.from("users")
 				.select("id, first_name, last_name, picture_url")
@@ -287,6 +288,7 @@ export async function getMapById(mapId: string, userId?: string) {
         owner_id,
         slug,
         created_at,
+        city,
         users!maps_owner_id_fkey (
           id,
           first_name,
@@ -317,7 +319,7 @@ export async function getMapById(mapId: string, userId?: string) {
 		if (error) throw error
 
 		const { data: contributorCountsRes, error: contributorError } =
-			await supabase.rpc("get_contributor_counts", { map_ids: [data.id] })
+			await supabase.rpc("get_contributor_counts", { map_ids: [data.id], p_city: 'Bangalore' })
 
 		if (contributorError) throw contributorError
 
@@ -382,6 +384,7 @@ export async function getMapBySlug(slug: string, userId?: string) {
         owner_id,
         slug,
         created_at,
+        city,
         users!maps_owner_id_fkey (
           id,
           first_name,
@@ -412,7 +415,7 @@ export async function getMapBySlug(slug: string, userId?: string) {
 		if (error) throw error
 
 		const { data: contributorCountsRes, error: contributorError } =
-			await supabase.rpc("get_contributor_counts", { map_ids: [data.id] })
+			await supabase.rpc("get_contributor_counts", { map_ids: [data.id], p_city: 'Bangalore' })
 
 		if (contributorError) throw contributorError
 
