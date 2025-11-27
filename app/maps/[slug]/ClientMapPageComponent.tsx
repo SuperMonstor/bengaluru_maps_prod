@@ -29,6 +29,7 @@ const OSMMap = dynamic(() => import("@/components/map/OSMMap"), {
 	loading: () => <LoadingIndicator message="Loading map..." />,
 })
 import { UpvoteButton } from "@/components/custom-ui/UpvoteButton"
+import { LocationUpvoteButton } from "@/components/map/LocationUpvoteButton"
 import { useSearchParams } from "next/navigation"
 import { useUser } from "@/components/layout/LayoutClient"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
@@ -292,9 +293,17 @@ function ClientMapPageContentInner({
 
 					<div className={`p-4 overflow-y-auto flex-1 ${isMobile ? 'pt-0' : ''}`}>
 						{!isMobile && (
-							<h1 className="text-xl font-bold text-gray-900 mb-3">
-								{selectedLocation.name}
-							</h1>
+							<div className="flex items-start gap-3 mb-3">
+								<h1 className="text-xl font-bold text-gray-900 flex-1">
+									{selectedLocation.name}
+								</h1>
+								<LocationUpvoteButton
+									locationId={selectedLocation.id}
+									initialUpvotes={selectedLocation.upvotes ?? 0}
+									initialIsUpvoted={selectedLocation.hasUpvoted ?? false}
+									variant="compact"
+								/>
+							</div>
 						)}
 
 						<div className="flex items-center gap-3 mb-6 text-sm text-gray-500">
@@ -530,6 +539,15 @@ function ClientMapPageContentInner({
 									</div>
 
 									<div className="flex items-center gap-2 shrink-0">
+										{selectedLocation && (
+											<LocationUpvoteButton
+												locationId={selectedLocation.id}
+												initialUpvotes={selectedLocation.upvotes ?? 0}
+												initialIsUpvoted={selectedLocation.hasUpvoted ?? false}
+												variant="compact"
+											/>
+										)}
+
 										{user && user.id === map.owner_id && (
 											<Link
 												href={`/maps/${map.slug || "map"}/edit`}
