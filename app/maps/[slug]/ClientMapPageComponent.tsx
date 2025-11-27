@@ -35,6 +35,7 @@ import { useUser } from "@/components/layout/LayoutClient"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 import DeleteLocationDialog from "@/components/map/DeleteLocationDialog"
 import { Suspense } from "react"
+import { getLocationDetailsAction } from "@/lib/supabase/api/getLocationDetailsAction"
 
 interface MapData {
 	id: string
@@ -79,6 +80,7 @@ function ClientMapPageContentInner({
 	const [selectedLocation, setSelectedLocation] = useState<Location | null>(
 		null
 	)
+	const [isLoadingLocation, setIsLoadingLocation] = useState(false)
 
 	const { userInfo, fetchUserInfo } = useUserInfo()
 	const { user: authUser } = useUser()
@@ -91,15 +93,29 @@ function ClientMapPageContentInner({
 		}, 300) // Match the animation duration
 	}
 
-	const onMarkerClick = (location: Location) => {
+	const onMarkerClick = async (location: Location) => {
 		// If clicking the same marker, deselect it
 		if (selectedLocation && selectedLocation.id === location.id) {
 			setSelectedLocation(null)
 			return
 		}
 
+		// Set initial location data immediately for fast UI
 		setSelectedLocation(location)
 		fetchUserInfo(location.creator_id)
+
+		// Fetch fresh location details in the background
+		setIsLoadingLocation(true)
+		try {
+			const result = await getLocationDetailsAction(location.id)
+			if (result.success && result.data) {
+				setSelectedLocation(result.data as Location)
+			}
+		} catch (error) {
+			console.error("Error fetching location details:", error)
+		} finally {
+			setIsLoadingLocation(false)
+		}
 
 		// Always open the bottom panel when a location is selected
 		setIsOpen(true)
