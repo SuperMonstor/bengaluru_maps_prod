@@ -15,7 +15,8 @@ import { useUser } from "@/components/layout/LayoutClient"
 import { signOutAction } from "@/lib/actions/auth"
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
-import { HeartHandshake, Menu } from "lucide-react"
+import { useUserLocation } from "@/lib/context/UserLocationContext"
+import { HeartHandshake, Menu, MapPin, Loader2 } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useRouter } from "next/navigation"
 
@@ -81,6 +82,7 @@ const PlusIcon = memo(() => (
 const Header = memo(function Header() {
 	const { user } = useUser()
 	const { pendingCount } = usePendingCount()
+	const { locationName, loading, error } = useUserLocation()
 	const router = useRouter()
 	const [mounted, setMounted] = useState(false)
 
@@ -88,6 +90,13 @@ const Header = memo(function Header() {
 	useEffect(() => {
 		setMounted(true)
 	}, [])
+
+	// Determine location display text
+	const locationText = loading
+		? "Getting location..."
+		: error || !locationName
+		? "Location disabled"
+		: locationName
 
 	const handleSignOut = async () => {
 		await signOutAction()
@@ -152,20 +161,19 @@ const Header = memo(function Header() {
 
 				{/* Desktop Navigation */}
 				<div className="hidden md:flex items-center gap-3">
-					<Link
-						href={REQUEST_FEEDBACK_URL}
-						target="_blank"
-						rel="noopener noreferrer"
+					<Button
+						variant="outline"
+						size="sm"
+						disabled={loading}
+						className="border-gray-200 text-[#64748B] hover:text-[#0F172A] hover:bg-gray-50 hover:border-gray-300 flex items-center gap-2 rounded-lg transition-all"
 					>
-						<Button
-							variant="outline"
-							size="sm"
-							className="border-gray-200 text-[#64748B] hover:text-[#0F172A] hover:bg-gray-50 hover:border-gray-300 flex items-center gap-2 rounded-lg transition-all"
-						>
-							<HeartHandshake className="h-4 w-4" />
-							Request Feature/Fix
-						</Button>
-					</Link>
+						{loading ? (
+							<Loader2 className="h-4 w-4 animate-spin" />
+						) : (
+							<MapPin className="h-4 w-4" />
+						)}
+						<span className="max-w-[150px] truncate">{locationText}</span>
+					</Button>
 				</div>
 
 				{/* Create Map Button and User Menu */}

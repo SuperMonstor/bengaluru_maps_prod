@@ -3,6 +3,7 @@
 import { createContext, useContext, type ReactNode } from "react"
 import { UserSchema } from "@/lib/types/userTypes"
 import { PendingCountProvider } from "@/lib/context/PendingCountContext"
+import { UserLocationProvider } from "@/lib/context/UserLocationContext"
 import { RouteTransition } from "@/components/custom-ui/RouteTransition"
 import Header from "@/components/custom-ui/Header"
 import { Toaster } from "@/components/ui/toaster"
@@ -34,15 +35,17 @@ interface LayoutClientProps {
 export function LayoutClient({ user, children }: LayoutClientProps) {
 	return (
 		<UserContext.Provider value={{ user }}>
-			<PendingCountProvider>
-				<RouteTransition />
-				{/* Create a flex layout with header and main content */}
-				<div className="flex flex-col h-full">
-					<Header />
-					<main className="flex-1 overflow-auto">{children}</main>
-				</div>
-			</PendingCountProvider>
-			<Toaster />
+			<UserLocationProvider>
+				<PendingCountProvider>
+					<RouteTransition />
+					{/* Create a flex layout with header and main content */}
+					<div className="flex flex-col h-full">
+						<Header />
+						<main className="flex-1 overflow-auto">{children}</main>
+					</div>
+				</PendingCountProvider>
+				<Toaster />
+			</UserLocationProvider>
 		</UserContext.Provider>
 	)
 }

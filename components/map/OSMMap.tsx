@@ -14,6 +14,7 @@ interface OSMMapProps {
     onMarkerClick: (location: Location) => void
     center?: { lat: number; lng: number }
     zoom?: number
+    userLocation?: { latitude: number; longitude: number }
 }
 
 // Component to handle map bounds and center updates
@@ -88,12 +89,58 @@ const createCustomIcon = (isSelected: boolean) => {
 const defaultIcon = createCustomIcon(false)
 const selectedIcon = createCustomIcon(true)
 
+// Custom user location icon (blue circle)
+const createUserLocationIcon = () => {
+    const size = 36
+
+    return new L.DivIcon({
+        className: "custom-user-marker",
+        html: `
+            <div style="
+                width: ${size}px;
+                height: ${size}px;
+                background-color: #3b82f6;
+                border: 4px solid white;
+                border-radius: 50%;
+                box-shadow: 0 2px 12px rgba(59, 130, 246, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            ">
+                <div style="
+                    width: 12px;
+                    height: 12px;
+                    background-color: white;
+                    border-radius: 50%;
+                "></div>
+            </div>
+            <style>
+                @keyframes pulse {
+                    0%, 100% {
+                        opacity: 1;
+                    }
+                    50% {
+                        opacity: .7;
+                    }
+                }
+            </style>
+        `,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        popupAnchor: [0, -size / 2],
+    })
+}
+
+const userLocationIcon = createUserLocationIcon()
+
 export default function OSMMap({
     locations,
     selectedLocation,
     onMarkerClick,
     center,
     zoom,
+    userLocation,
 }: OSMMapProps) {
     // Default center (Bengaluru) if no locations or center provided
     const defaultCenter: [number, number] = [12.9716, 77.5946]
@@ -132,6 +179,15 @@ export default function OSMMap({
                         }}
                     />
                 ))}
+            {userLocation && (
+                <Marker
+                    position={[userLocation.latitude, userLocation.longitude]}
+                    icon={userLocationIcon}
+                    zIndexOffset={1000}
+                >
+                    <Popup>Your location</Popup>
+                </Marker>
+            )}
         </MapContainer>
     )
 }
