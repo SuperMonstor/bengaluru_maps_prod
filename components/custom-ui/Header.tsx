@@ -19,6 +19,7 @@ import { useUserLocation } from "@/lib/context/UserLocationContext"
 import { HeartHandshake, Menu, MapPin, Loader2 } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/lib/hooks/use-toast"
 
 // Add URLs for Google Maps feedback
 const REQUEST_FEEDBACK_URL = "https://tally.so/r/nG5Mrk"
@@ -82,8 +83,9 @@ const PlusIcon = memo(() => (
 const Header = memo(function Header() {
 	const { user } = useUser()
 	const { pendingCount } = usePendingCount()
-	const { locationName, loading, error } = useUserLocation()
+	const { locationName, loading, error, requestLocation } = useUserLocation()
 	const router = useRouter()
+	const { toast } = useToast()
 	const [mounted, setMounted] = useState(false)
 
 	// Prevent hydration mismatch by only rendering interactive components after mount
@@ -97,6 +99,18 @@ const Header = memo(function Header() {
 		: error || !locationName
 		? "Location disabled"
 		: locationName
+
+	const handleLocationClick = () => {
+		// If location is disabled or errored, re-request permission
+		if (error || !locationName) {
+			requestLocation()
+			toast({
+				title: "Enable location access",
+				description: "Please allow location access in your browser to sort locations by distance.",
+			})
+		}
+		// Future: Open manual location entry dialog when location is active
+	}
 
 	const handleSignOut = async () => {
 		await signOutAction()
@@ -165,7 +179,8 @@ const Header = memo(function Header() {
 						variant="outline"
 						size="sm"
 						disabled={loading}
-						className="border-gray-200 text-[#64748B] hover:text-[#0F172A] hover:bg-gray-50 hover:border-gray-300 flex items-center gap-2 rounded-lg transition-all"
+						onClick={handleLocationClick}
+						className="border-gray-200 text-[#64748B] hover:text-[#0F172A] hover:bg-gray-50 hover:border-gray-300 flex items-center gap-2 rounded-lg transition-all cursor-pointer"
 					>
 						{loading ? (
 							<Loader2 className="h-4 w-4 animate-spin" />

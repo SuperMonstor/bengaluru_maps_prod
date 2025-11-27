@@ -13,6 +13,7 @@ interface UserLocationContextValue {
 	isManual: boolean
 	setManualLocation: (lat: number, lng: number, name: string) => void
 	clearLocation: () => void
+	requestLocation: () => void
 }
 
 const UserLocationContext = createContext<UserLocationContextValue | undefined>(
@@ -136,6 +137,7 @@ export function UserLocationProvider({ children }: UserLocationProviderProps) {
 				isManual,
 				setManualLocation,
 				clearLocation,
+				requestLocation: getCurrentLocation,
 			}}
 		>
 			{children}
