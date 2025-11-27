@@ -1,41 +1,63 @@
-# Security & Code Quality Improvements - Completed
+# Make Data Model City-Agnostic (Issue #2)
 
-All critical and major issues have been resolved:
+## Objective
+Make the backend and data model city-aware while keeping the UI unchanged. This prevents costly retrofitting later while maintaining the current Bengaluru-focused user experience.
 
-## ✅ Completed Fixes
+## Checkpoints
 
-### 1. Slug Generation Scalability (Critical)
-- **Fixed**: Refactored `generateUniqueSlug` to query specific slugs instead of fetching all
-- **Files**: `lib/utils/slugify.ts`, `lib/supabase/mapsService.ts`
-- **Impact**: Changed from O(N) to O(1) database queries
+### 1. Database Schema Changes
+Add `city` column to relevant tables with default values:
+- **maps table**: Add `city VARCHAR(100) DEFAULT 'Bangalore' NOT NULL`
+- **locations table**: Add `city VARCHAR(100) DEFAULT 'Bangalore' NOT NULL`
+- **users table**: Add `city VARCHAR(100)` (nullable, for user's preferred city)
+- Create indexes on city columns for efficient filtering
+- Backfill existing data with 'Bangalore'
 
-### 2. Slug Race Condition (Critical)
-- **Fixed**: Added unique constraint violation error handling
-- **Files**: `lib/supabase/mapsService.ts`
-- **Impact**: Users get clear error messages if slug collision occurs
+### 2. Update TypeScript Types
+Add city field to all relevant interfaces:
+- `MapData`, `MapResponse`, `MapSchema` in `lib/types/mapTypes.ts`
+- `Location` interface in `lib/types/mapTypes.ts`
+- `UserSchema`, `User` in `lib/types/userTypes.ts`
 
-### 3. Owner ID Security (Critical)
-- **Fixed**: Created server action that gets `owner_id` from authenticated session
-- **Files**: `lib/supabase/api/createMapAction.ts` (new), `app/create-map/page.tsx`
-- **Impact**: Prevents malicious users from spoofing owner IDs
+### 3. Update Service Layer
+Modify service functions to handle city field:
+- `lib/supabase/mapsService.ts`: createMap, getMaps, getMapById, getMapBySlug, createLocation
+- `lib/supabase/locationService.ts`: getLocationDetails
+- `lib/supabase/userService.ts`: upsertUser
+- Default all operations to 'Bangalore' for now
 
-### 4. Image Upload Security (Major)
-- **Fixed**: Image uploads now only happen server-side with authenticated sessions
-- **Files**: Verified RLS policies on Storage bucket, updated documentation
-- **Impact**: Only authenticated users can upload images
+### 4. Update RPC Functions
+Modify PostgreSQL functions to support optional city filtering:
+- `get_maps_sorted_by_upvotes`: Add optional city parameter
+- `get_location_counts`: Add city filtering
+- `get_contributor_counts`: Add city filtering
+- Keep backward compatibility (no city filter = return all)
 
-### 5. Hardcoded Values (Major)
-- **Fixed**: Extracted all UI text to constants file
-- **Files**: `lib/constants/createMapContent.ts` (new), `app/create-map/page.tsx`
-- **Impact**: Easier maintenance and future internationalization
+### 5. Add City Defaulting Logic
+Implement city defaulting throughout the app:
+- All new map creations default to 'Bangalore'
+- All new location submissions default to 'Bangalore'
+- User city preference defaults to 'Bangalore'
+- Keep UI unchanged (no city selection fields visible)
 
-### 6. Creator ID Security (Critical)
-- **Fixed**: Created server action for `createLocation` that gets `creator_id` from authenticated session
-- **Files**: `lib/supabase/api/createLocationAction.ts` (new), `app/maps/[slug]/submit/page.tsx`
-- **Impact**: Prevents malicious users from submitting locations under other users' IDs
+### 6. Update API Routes
+Add city parameter support to API routes:
+- `app/api/maps/[slug]/route.ts`
+- `app/api/check-slug/route.ts`
+- Update sitemap generation in `app/sitemap.ts`
+- Keep default behavior to 'Bangalore'
 
-## Security Status
-- ✅ All client-side sensitive operations now use server actions
-- ✅ User IDs are obtained from server-side authenticated sessions
-- ✅ RLS policies verified for both Maps table and Storage bucket
-- ✅ No malicious calls possible from frontend
+## Implementation Notes
+- **No UI changes**: City selection remains hidden until needed
+- **Backward compatible**: All existing queries default to 'Bangalore'
+- **Future-proof**: Schema ready for multi-city expansion
+- **Low cost now**: Simple VARCHAR fields with indexes
+- **High cost later avoided**: No need to retrofit constraints, URLs, or filtering
+
+## Success Criteria
+- ✅ Database has city columns with appropriate defaults
+- ✅ TypeScript types include city fields
+- ✅ All service functions handle city parameter
+- ✅ RPC functions support city filtering
+- ✅ Existing functionality unchanged (all defaults to 'Bangalore')
+- ✅ Ready for future multi-city expansion without schema changes
