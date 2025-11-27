@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronUp } from "lucide-react"
+import { Heart } from "lucide-react"
 import { cn } from "@/lib/utils/utils"
 import { useState, memo, useCallback } from "react"
 import { toggleLocationUpvote } from "@/lib/supabase/locationVotesService"
@@ -16,8 +16,8 @@ interface LocationUpvoteButtonProps {
 	className?: string
 }
 
-const ChevronUpIcon = memo(({ className }: { className?: string }) => (
-	<ChevronUp className={className} />
+const HeartIcon = memo(({ className }: { className?: string }) => (
+	<Heart className={className} />
 ))
 
 export const LocationUpvoteButton = memo(function LocationUpvoteButton({
@@ -43,7 +43,7 @@ export const LocationUpvoteButton = memo(function LocationUpvoteButton({
 			if (!user) {
 				toast({
 					title: "Authentication required",
-					description: "Please sign in to upvote",
+					description: "Please sign in to like locations",
 					variant: "destructive",
 				})
 				router.push("/login")
@@ -74,7 +74,7 @@ export const LocationUpvoteButton = memo(function LocationUpvoteButton({
 
 					toast({
 						title: "Error",
-						description: result.error || "Failed to upvote",
+						description: result.error || "Failed to like location",
 						variant: "destructive",
 					})
 				}
@@ -98,40 +98,40 @@ export const LocationUpvoteButton = memo(function LocationUpvoteButton({
 		[isLoading, isUpvoted, locationId, router, toast, user]
 	)
 
-	// Compact variant for info window - vertical layout
+	// Compact variant - horizontal layout like X/Twitter
 	if (variant === "compact") {
 		return (
-			<div className={cn("flex flex-col items-center gap-0.5", className)}>
-				<button
-					type="button"
+			<button
+				type="button"
+				className={cn(
+					"flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all",
+					isUpvoted
+						? "text-red-500 hover:bg-red-50"
+						: "text-gray-500 hover:text-red-500 hover:bg-gray-100",
+					"disabled:opacity-50 disabled:cursor-not-allowed",
+					isAnimating && "scale-110",
+					className
+				)}
+				onClick={handleUpvote}
+				disabled={isLoading}
+				aria-label={isUpvoted ? "Unlike location" : "Like location"}
+			>
+				<HeartIcon
 					className={cn(
-						"p-1.5 rounded transition-colors",
-						isUpvoted
-							? "text-[#FF6A00] hover:bg-orange-50"
-							: "text-gray-500 hover:text-gray-700 hover:bg-gray-100",
-						"disabled:opacity-50 disabled:cursor-not-allowed"
+						"h-4 w-4 transition-all",
+						isUpvoted && "fill-current",
+						isAnimating && "animate-pulse"
 					)}
-					onClick={handleUpvote}
-					disabled={isLoading}
-					aria-label={isUpvoted ? "Remove upvote" : "Upvote location"}
-				>
-					<ChevronUpIcon
-						className={cn(
-							"h-5 w-5",
-							isAnimating && isUpvoted && "animate-bounce"
-						)}
-					/>
-				</button>
+				/>
 				<span
 					className={cn(
 						"text-sm font-medium tabular-nums",
-						isUpvoted ? "text-[#FF6A00]" : "text-gray-700",
 						isAnimating && "animate-pulse"
 					)}
 				>
 					{upvotes}
 				</span>
-			</div>
+			</button>
 		)
 	}
 
@@ -140,21 +140,25 @@ export const LocationUpvoteButton = memo(function LocationUpvoteButton({
 		<button
 			type="button"
 			className={cn(
-				"flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors",
+				"flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all",
 				isUpvoted
-					? "bg-orange-100 text-[#FF6A00]"
-					: "bg-gray-100 text-gray-600 hover:bg-gray-200",
-				isAnimating && "animate-pulse",
+					? "bg-red-50 text-red-500"
+					: "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-red-500",
+				isAnimating && "scale-110",
 				"disabled:opacity-50 disabled:cursor-not-allowed",
 				className
 			)}
 			onClick={handleUpvote}
 			disabled={isLoading}
+			aria-label={isUpvoted ? "Unlike location" : "Like location"}
 		>
-			<ChevronUpIcon
-				className={cn("h-4 w-4", isUpvoted && "stroke-[#FF6A00]")}
+			<HeartIcon
+				className={cn(
+					"h-4 w-4 transition-all",
+					isUpvoted && "fill-current"
+				)}
 			/>
-			<span className={cn("text-sm font-medium", isAnimating && "animate-bounce")}>
+			<span className={cn("text-sm font-medium tabular-nums", isAnimating && "animate-pulse")}>
 				{upvotes}
 			</span>
 		</button>
