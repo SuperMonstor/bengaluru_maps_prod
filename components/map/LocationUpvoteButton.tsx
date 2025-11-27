@@ -140,7 +140,7 @@ export const LocationUpvoteButton = memo(function LocationUpvoteButton({
 		<button
 			type="button"
 			className={cn(
-				"flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all",
+				"flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full transition-all",
 				isUpvoted
 					? "bg-red-50 text-red-500"
 					: "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-red-500",

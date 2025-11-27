@@ -297,12 +297,17 @@ function ClientMapPageContentInner({
 								<h1 className="text-xl font-bold text-gray-900 flex-1">
 									{selectedLocation.name}
 								</h1>
-								<LocationUpvoteButton
-									locationId={selectedLocation.id}
-									initialUpvotes={selectedLocation.upvotes ?? 0}
-									initialIsUpvoted={selectedLocation.hasUpvoted ?? false}
-									variant="compact"
-								/>
+								{canDelete && (
+									<Button
+										variant="outline"
+										size="sm"
+										className="text-red-600 hover:bg-red-50 border-red-200 hover:border-red-300 p-2"
+										onClick={() => setShowDeleteDialog(true)}
+										aria-label="Delete location"
+									>
+										<Trash2 className="h-4 w-4" />
+									</Button>
+								)}
 							</div>
 						)}
 
@@ -361,7 +366,14 @@ function ClientMapPageContentInner({
 						)}
 
 						{/* Action buttons */}
-						<div className="flex flex-col gap-3 mt-auto pb-safe">
+						<div className="flex gap-2 mt-auto pb-safe">
+							<LocationUpvoteButton
+								locationId={selectedLocation.id}
+								initialUpvotes={selectedLocation.upvotes ?? 0}
+								initialIsUpvoted={selectedLocation.hasUpvoted}
+								variant="full"
+								className="w-20 h-11 rounded-xl"
+							/>
 							<Link
 								href={
 									selectedLocation.google_maps_url.includes(
@@ -384,32 +396,13 @@ function ClientMapPageContentInner({
 								}
 								target="_blank"
 								rel="noopener noreferrer"
+								className="flex-1"
 							>
 								<Button
 									className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm"
 								>
 									<ExternalLink className="h-4 w-4 mr-2" />
 									View on Google Maps
-								</Button>
-							</Link>
-
-							{canDelete && (
-								<Button
-									variant="outline"
-									className="w-full h-11 rounded-xl text-red-600 hover:bg-red-50 border-red-200 hover:border-red-300"
-									onClick={() => setShowDeleteDialog(true)}
-								>
-									<Trash2 className="h-4 w-4 mr-2" />
-									Delete Location
-								</Button>
-							)}
-
-							<Link
-								href={`/maps/${map.slug || "map"}/submit`}
-								className="w-full"
-							>
-								<Button variant="secondary" className="w-full h-11 rounded-xl bg-white border border-gray-200 text-gray-900 hover:bg-gray-50 font-medium">
-									Add New Location
 								</Button>
 							</Link>
 						</div>
@@ -539,13 +532,18 @@ function ClientMapPageContentInner({
 									</div>
 
 									<div className="flex items-center gap-2 shrink-0">
-										{selectedLocation && (
-											<LocationUpvoteButton
-												locationId={selectedLocation.id}
-												initialUpvotes={selectedLocation.upvotes ?? 0}
-												initialIsUpvoted={selectedLocation.hasUpvoted ?? false}
-												variant="compact"
-											/>
+										{selectedLocation && canDelete && (
+											<Button
+												variant="ghost"
+												size="sm"
+												className="flex items-center gap-1 p-1 h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
+												onClick={(e) => {
+													e.stopPropagation()
+													setShowDeleteDialog(true)
+												}}
+											>
+												<Trash2 className="h-4 w-4" />
+											</Button>
 										)}
 
 										{user && user.id === map.owner_id && (
