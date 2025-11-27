@@ -33,6 +33,8 @@ export interface Location {
 	is_approved: boolean
 	status: "pending" | "approved" | "rejected"
 	city: string
+	upvotes?: number
+	hasUpvoted?: boolean
 }
 
 export interface Submission {

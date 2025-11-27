@@ -10,6 +10,7 @@ import {
 } from "@/lib/types/mapTypes"
 import { User } from "@/lib/types/userTypes"
 import { toggleUpvote } from "./votesService"
+import { toggleLocationUpvote } from "./locationVotesService"
 import { slugify, generateUniqueSlug, isReservedSlug, validateSlug } from "@/lib/utils/slugify"
 
 const supabase = createClient()
@@ -337,6 +338,57 @@ export async function getMapById(mapId: string, userId?: string) {
 			? data.votes.some((vote) => vote.user_id === userId)
 			: false
 
+		// Get location IDs for vote count lookup
+		const locationIds = data.locations?.map((loc) => loc.id) || []
+
+		// Fetch location vote counts
+		let locationVoteCounts = new Map<string, number>()
+		let userLocationVotes = new Set<string>()
+
+		if (locationIds.length > 0) {
+			const { data: voteCountsData, error: voteCountsError } = await supabase.rpc(
+				"get_location_vote_counts",
+				{ location_ids: locationIds }
+			)
+
+			if (voteCountsError) {
+				console.error("Error fetching location vote counts:", voteCountsError)
+			} else {
+				locationVoteCounts = new Map(
+					voteCountsData?.map((v: { location_id: string; vote_count: number }) => [
+						v.location_id,
+						Number(v.vote_count),
+					]) || []
+				)
+			}
+
+			// If user is logged in, check which locations they've upvoted
+			if (userId) {
+				const { data: userVotesData, error: userVotesError } = await supabase
+					.from("location_votes")
+					.select("location_id")
+					.eq("user_id", userId)
+					.in("location_id", locationIds)
+
+				if (userVotesError) {
+					console.error("Error fetching user location votes:", userVotesError)
+				} else {
+					userLocationVotes = new Set(
+						userVotesData?.map((v: { location_id: string }) => v.location_id) || []
+					)
+				}
+			}
+		}
+
+		// Enhance locations with vote data and sort by upvotes
+		const enhancedLocations = (data.locations || [])
+			.map((location) => ({
+				...location,
+				upvotes: locationVoteCounts.get(location.id) ?? 0,
+				hasUpvoted: userLocationVotes.has(location.id),
+			}))
+			.sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
+
 		// Create a consistent data structure that includes both name and title properties
 		return {
 			data: {
@@ -346,7 +398,7 @@ export async function getMapById(mapId: string, userId?: string) {
 				description: data.short_description,
 				body: data.body,
 				image: data.display_picture || "/placeholder.svg",
-				locations: data.locations || [],
+				locations: enhancedLocations,
 				contributors: contributorCounts.get(data.id) ?? 0,
 				upvotes: data.votes.length,
 				username: user
@@ -433,6 +485,57 @@ export async function getMapBySlug(slug: string, userId?: string) {
 			? data.votes.some((vote) => vote.user_id === userId)
 			: false
 
+		// Get location IDs for vote count lookup
+		const locationIds = data.locations?.map((loc) => loc.id) || []
+
+		// Fetch location vote counts
+		let locationVoteCounts = new Map<string, number>()
+		let userLocationVotes = new Set<string>()
+
+		if (locationIds.length > 0) {
+			const { data: voteCountsData, error: voteCountsError } = await supabase.rpc(
+				"get_location_vote_counts",
+				{ location_ids: locationIds }
+			)
+
+			if (voteCountsError) {
+				console.error("Error fetching location vote counts:", voteCountsError)
+			} else {
+				locationVoteCounts = new Map(
+					voteCountsData?.map((v: { location_id: string; vote_count: number }) => [
+						v.location_id,
+						Number(v.vote_count),
+					]) || []
+				)
+			}
+
+			// If user is logged in, check which locations they've upvoted
+			if (userId) {
+				const { data: userVotesData, error: userVotesError } = await supabase
+					.from("location_votes")
+					.select("location_id")
+					.eq("user_id", userId)
+					.in("location_id", locationIds)
+
+				if (userVotesError) {
+					console.error("Error fetching user location votes:", userVotesError)
+				} else {
+					userLocationVotes = new Set(
+						userVotesData?.map((v: { location_id: string }) => v.location_id) || []
+					)
+				}
+			}
+		}
+
+		// Enhance locations with vote data and sort by upvotes
+		const enhancedLocations = (data.locations || [])
+			.map((location) => ({
+				...location,
+				upvotes: locationVoteCounts.get(location.id) ?? 0,
+				hasUpvoted: userLocationVotes.has(location.id),
+			}))
+			.sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
+
 		return {
 			data: {
 				id: data.id,
@@ -441,7 +544,7 @@ export async function getMapBySlug(slug: string, userId?: string) {
 				description: data.short_description,
 				body: data.body,
 				image: data.display_picture || "/placeholder.svg",
-				locations: data.locations || [],
+				locations: enhancedLocations,
 				contributors: contributorCounts.get(data.id) ?? 0,
 				upvotes: data.votes.length,
 				username: user
@@ -656,6 +759,19 @@ export async function createLocation({
 			.single()
 
 		if (error) throw new Error(`Failed to create location: ${error.message}`)
+
+		// Auto-upvote the location for the creator
+		if (data) {
+			try {
+				const upvoteResult = await toggleLocationUpvote(data.id, creatorId)
+				if (!upvoteResult.success) {
+					console.error("Failed to auto-upvote location:", upvoteResult.error)
+				}
+			} catch (upvoteError) {
+				console.error("Error auto-upvoting location:", upvoteError)
+				// Continue even if upvote fails
+			}
+		}
 
 		// If the creator is not the owner, send a notification email to the map owner
 		if (!isOwner) {
