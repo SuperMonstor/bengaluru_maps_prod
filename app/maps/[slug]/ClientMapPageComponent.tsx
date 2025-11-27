@@ -291,7 +291,7 @@ function ClientMapPageContentInner({
 						</div>
 					</div>
 
-					<div className={`p-4 overflow-y-auto flex-1 ${isMobile ? 'pt-0' : ''}`}>
+					<div className={`p-4 overflow-y-auto ${isMobile ? 'pt-0' : 'flex-1'}`}>
 						{!isMobile && (
 							<div className="flex items-start gap-3 mb-3">
 								<h1 className="text-xl font-bold text-gray-900 flex-1">
@@ -366,7 +366,7 @@ function ClientMapPageContentInner({
 						)}
 
 						{/* Action buttons */}
-						<div className="flex gap-2 mt-auto pb-safe">
+						<div className={`flex gap-2 pb-safe ${isMobile ? 'mt-4' : 'mt-auto'}`}>
 							<LocationUpvoteButton
 								locationId={selectedLocation.id}
 								initialUpvotes={selectedLocation.upvotes ?? 0}
@@ -517,9 +517,9 @@ function ClientMapPageContentInner({
 								</div>
 							) : (
 								// Simple Header for Expanded View or Selected Location
-								<div className="p-4 flex items-center justify-between">
-									<div className="flex flex-col flex-1 min-w-0 mr-4">
-										<h1 className="text-lg font-bold tracking-tight truncate text-gray-900">
+								<div className="p-4 flex items-center justify-between gap-2">
+									<div className="flex flex-col flex-1 min-w-0">
+										<h1 className="text-lg font-bold tracking-tight text-gray-900 line-clamp-2">
 											{selectedLocation ? selectedLocation.name : map.title}
 										</h1>
 										{!isOpen && (
@@ -531,7 +531,7 @@ function ClientMapPageContentInner({
 										)}
 									</div>
 
-									<div className="flex items-center gap-2 shrink-0">
+									<div className="flex items-center gap-1 shrink-0">
 										{selectedLocation && canDelete && (
 											<Button
 												variant="ghost"
@@ -594,7 +594,7 @@ function ClientMapPageContentInner({
 
 						{/* Content - Visible when expanded */}
 						<div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[60vh] opacity-100' : 'max-h-0 opacity-0'}`}>
-							<div className="h-[50vh] overflow-y-auto">
+							<div className="overflow-y-auto max-h-[55vh]">
 								<MapContent isMobile={true} />
 							</div>
 						</div>
