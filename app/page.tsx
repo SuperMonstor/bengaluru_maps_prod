@@ -58,7 +58,7 @@ async function MapsList({
 
 	return (
 		<>
-			<div className="grid gap-2xl max-w-card-max mx-auto">
+			<div className="grid gap-8 max-w-5xl mx-auto">
 				{maps.map((map, index) => (
 					<Link
 						key={map.id}
@@ -87,15 +87,15 @@ async function MapsList({
 			</div>
 
 			{totalPages > 1 && (
-				<div className="flex justify-center gap-lg mt-2xl">
-					<Button variant="secondary" disabled={page === 1} asChild={page !== 1}>
+				<div className="flex justify-center gap-4 mt-8">
+					<Button variant="outline" disabled={page === 1} asChild={page !== 1}>
 						<a href={`/?page=${page - 1}`}>Previous</a>
 					</Button>
-					<span className="self-center text-body-sm text-gray-500">
+					<span className="self-center">
 						Page {page} of {totalPages}
 					</span>
 					<Button
-						variant="secondary"
+						variant="outline"
 						disabled={page === totalPages}
 						asChild={page !== totalPages}
 					>
@@ -193,30 +193,30 @@ export default async function Home({ searchParams }: HomeProps) {
 				}}
 			/>
 
-			<div className="container mx-auto px-lg md:px-2xl py-2xl max-w-6xl">
-				<div className="flex flex-col items-center justify-center mb-3xl">
-					<h1 className="text-[44px] font-bold text-center mb-md tracking-tight text-gray-900 leading-tight">
+			<div className="container mx-auto px-4 py-8 max-w-6xl">
+				<div className="flex flex-col items-center justify-center mb-10">
+					<h1 className="text-[44px] font-bold text-center mb-3 tracking-tight text-[#0F172A] leading-tight">
 						Discover Bengaluru&apos;s Best Places
 					</h1>
-					<p className="text-[19px] text-center text-gray-500 max-w-2xl mb-2xl leading-relaxed">
+					<p className="text-[19px] text-center text-[#64748B] max-w-2xl mb-8 leading-relaxed">
 						Explore community-driven maps of Bengaluru&apos;s best cafes,
 						restaurants, and hangout spots.
 					</p>
 					<Link href="/create-map" prefetch={false}>
-						<Button variant="primary" size="lg" className="px-2xl py-xl text-body">
+						<Button size="lg" className="bg-[#FF6A00] hover:bg-[#E55F00] text-white px-8 py-6 text-base rounded-xl shadow-md hover:shadow-lg transition-all">
 							Create Your Own Map
 						</Button>
 					</Link>
 				</div>
 
-				<div className="flex items-center justify-center mb-2xl">
-					<div className="flex items-center bg-gray-100 border border-gray-300 rounded-pill px-lg py-sm text-body-sm text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer">
+				<div className="flex items-center justify-center mb-8">
+					<div className="flex items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-2 text-sm text-[#64748B] hover:bg-gray-100 transition-colors cursor-pointer">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
-							className="w-4 h-4 mr-sm text-gray-500"
+							className="w-4 h-4 mr-2 text-[#64748B]"
 							aria-hidden="true"
 						>
 							<path
@@ -232,7 +232,7 @@ export default async function Home({ searchParams }: HomeProps) {
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
-							className="w-4 h-4 ml-sm text-gray-500"
+							className="w-4 h-4 ml-2 text-[#64748B]"
 							aria-hidden="true"
 						>
 							<path
