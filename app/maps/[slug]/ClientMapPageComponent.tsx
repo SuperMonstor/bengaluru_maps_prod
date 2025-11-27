@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Markdown } from "@/components/markdown/MarkdownRenderer"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -9,8 +9,6 @@ import {
 	ChevronUp,
 	ChevronDown,
 	Edit,
-	Clock,
-	Star,
 	User,
 	ExternalLink,
 	Trash2,
@@ -36,6 +34,8 @@ import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 import DeleteLocationDialog from "@/components/map/DeleteLocationDialog"
 import { Suspense } from "react"
 import { getLocationDetailsAction } from "@/lib/supabase/api/getLocationDetailsAction"
+import { useUserLocation } from "@/lib/context/UserLocationContext"
+import { calculateDistance } from "@/lib/utils/distance"
 
 interface MapData {
 	id: string
@@ -64,7 +64,7 @@ interface ClientMapPageContentProps {
 
 // Component that uses useSearchParams
 function ClientMapPageContentInner({
-	map,
+	map: initialMap,
 	initialIsUpvoted = false,
 	user,
 	searchParams,
@@ -82,8 +82,35 @@ function ClientMapPageContentInner({
 	)
 	const [isLoadingLocation, setIsLoadingLocation] = useState(false)
 
+	// Manage map data in state so we can update it when locations are deleted
+	const [map, setMap] = useState<MapData>(initialMap)
+
 	const { userInfo, fetchUserInfo } = useUserInfo()
 	const { user: authUser } = useUser()
+
+	// Use global location context
+	const { latitude: userLat, longitude: userLng } = useUserLocation()
+
+	// Sort locations by distance when user location is available
+	const sortedLocations = useMemo(() => {
+		if (userLat === null || userLng === null) {
+			// Default sort by upvotes when no user location
+			return [...map.locations].sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
+		}
+
+		// Calculate distance and sort by proximity
+		return [...map.locations]
+			.map((location) => ({
+				...location,
+				distance: calculateDistance(
+					userLat,
+					userLng,
+					location.latitude,
+					location.longitude
+				),
+			}))
+			.sort((a, b) => a.distance! - b.distance!)
+	}, [map.locations, userLat, userLng])
 
 	const handleCollapse = () => {
 		setIsExiting(true)
@@ -128,10 +155,14 @@ function ClientMapPageContentInner({
 		// Don't close the panel on map click, just deselect the location
 	}
 
-	const handleLocationDeleted = () => {
+	const handleLocationDeleted = (deletedLocationId: string) => {
+		// Update map state by filtering out the deleted location
+		setMap((prevMap) => ({
+			...prevMap,
+			locations: prevMap.locations.filter((loc) => loc.id !== deletedLocationId),
+		}))
 		setSelectedLocation(null)
 		setShowDeleteDialog(false)
-		window.location.reload()
 	}
 
 	// Format the date
@@ -475,9 +506,14 @@ function ClientMapPageContentInner({
 				{/* Map Layer - Absolute & Full Screen */}
 				<div className="absolute inset-0 z-0">
 					<OSMMap
-						locations={map.locations}
+						locations={sortedLocations}
 						selectedLocation={selectedLocation}
 						onMarkerClick={onMarkerClick}
+						userLocation={
+							userLat !== null && userLng !== null
+								? { latitude: userLat, longitude: userLng }
+								: undefined
+						}
 					/>
 				</div>
 

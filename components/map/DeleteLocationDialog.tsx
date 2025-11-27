@@ -9,7 +9,7 @@ import { useToast } from "@/lib/hooks/use-toast"
 interface DeleteLocationDialogProps {
 	locationId: string
 	locationName: string
-	onDeleted: () => void
+	onDeleted: (deletedLocationId: string) => void
 	onCancel: () => void
 }
 
@@ -34,7 +34,7 @@ export default function DeleteLocationDialog({
 					title: "Location deleted",
 					description: "The location has been removed from the map.",
 				})
-				onDeleted()
+				onDeleted(locationId)
 			} else {
 				toast({
 					variant: "destructive",
