@@ -440,65 +440,140 @@ function ClientMapPageContentInner({
 					>
 						{/* Header - Always visible and clickable to toggle */}
 						<div
-							className="p-4 border-b border-gray-100 flex items-center justify-between shrink-0 cursor-pointer bg-white rounded-t-2xl"
+							className="bg-white rounded-t-2xl border-b border-gray-100 cursor-pointer"
 							onClick={() => setIsOpen(!isOpen)}
 						>
-							<div className="flex flex-col flex-1 min-w-0 mr-4">
-								<h1 className="text-lg font-bold tracking-tight truncate text-gray-900">
-									{selectedLocation ? selectedLocation.name : map.title}
-								</h1>
-								{!isOpen && (
-									<p className="text-sm text-gray-500 truncate mt-0.5">
-										{selectedLocation
-											? (selectedLocation.note || "Tap to see details")
-											: map.description}
-									</p>
-								)}
-							</div>
+							{!selectedLocation && !isOpen ? (
+								// Rich Header for Collapsed Map Details
+								<div className="p-4 flex gap-4">
+									{/* Thumbnail Image */}
+									<div className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden border border-gray-100">
+										<Image
+											src={map.image}
+											alt={map.title}
+											fill
+											className="object-cover"
+										/>
+									</div>
 
-							<div className="flex items-center gap-2 shrink-0">
-								{user && user.id === map.owner_id && (
-									<Link
-										href={`/maps/${map.slug || "map"}/edit`}
-										onClick={(e) => e.stopPropagation()}
-									>
-										<Button
-											variant="outline"
-											size="sm"
-											className="flex items-center gap-1 p-1 h-8 w-8 rounded-full"
+									{/* Content */}
+									<div className="flex flex-col flex-1 min-w-0 justify-between">
+										<div className="flex justify-between items-start gap-2">
+											<div className="min-w-0">
+												<h1 className="text-lg font-bold tracking-tight truncate text-gray-900 leading-tight">
+													{map.title}
+												</h1>
+												<p className="text-sm text-gray-500 truncate mt-0.5">
+													{map.description}
+												</p>
+											</div>
+											<button
+												className="p-1.5 rounded-full hover:bg-gray-100 transition-colors -mt-1 -mr-1 shrink-0"
+												onClick={(e) => {
+													e.stopPropagation()
+													setIsOpen(true)
+												}}
+											>
+												<ChevronUp className="h-5 w-5 text-gray-500" />
+											</button>
+										</div>
+
+										{/* Metadata */}
+										<div className="flex items-center gap-2 my-1.5">
+											<div onClick={(e) => e.stopPropagation()}>
+												<UpvoteButton
+													mapId={map.id}
+													initialUpvotes={map.upvotes}
+													initialIsUpvoted={map.hasUpvoted}
+													variant="pill"
+													className="h-6 px-2 py-0 text-xs bg-gray-100 hover:bg-gray-200 text-gray-500"
+												/>
+											</div>
+											<div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-500 h-6">
+												<MapPin className="h-3.5 w-3.5" />
+												<span>{approvedLocationsCount}</span>
+											</div>
+											<div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-500 h-6">
+												<Users className="h-3.5 w-3.5" />
+												<span>{map.contributors}</span>
+											</div>
+										</div>
+
+										{/* Contribute Button */}
+										<Link
+											href={`/maps/${map.slug || "map"}/submit`}
+											onClick={(e) => e.stopPropagation()}
 										>
-											<Edit className="h-4 w-4" />
-										</Button>
-									</Link>
-								)}
-								<button
-									className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-									aria-label={
-										selectedLocation
-											? "Dismiss location"
-											: isOpen
-												? "Collapse panel"
-												: "Expand panel"
-									}
-									onClick={(e) => {
-										e.stopPropagation()
-										if (selectedLocation) {
-											setSelectedLocation(null)
-											setIsOpen(false)
-										} else {
-											setIsOpen(!isOpen)
-										}
-									}}
-								>
-									{selectedLocation ? (
-										<X className="h-5 w-5 text-gray-500" />
-									) : isOpen ? (
-										<ChevronDown className="h-5 w-5 text-gray-500" />
-									) : (
-										<ChevronUp className="h-5 w-5 text-gray-500" />
-									)}
-								</button>
-							</div>
+											<Button
+												size="sm"
+												className="w-full h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-sm"
+											>
+												Contribute
+											</Button>
+										</Link>
+									</div>
+								</div>
+							) : (
+								// Simple Header for Expanded View or Selected Location
+								<div className="p-4 flex items-center justify-between">
+									<div className="flex flex-col flex-1 min-w-0 mr-4">
+										<h1 className="text-lg font-bold tracking-tight truncate text-gray-900">
+											{selectedLocation ? selectedLocation.name : map.title}
+										</h1>
+										{!isOpen && (
+											<p className="text-sm text-gray-500 truncate mt-0.5">
+												{selectedLocation
+													? (selectedLocation.note || "Tap to see details")
+													: map.description}
+											</p>
+										)}
+									</div>
+
+									<div className="flex items-center gap-2 shrink-0">
+										{user && user.id === map.owner_id && (
+											<Link
+												href={`/maps/${map.slug || "map"}/edit`}
+												onClick={(e) => e.stopPropagation()}
+											>
+												<Button
+													variant="outline"
+													size="sm"
+													className="flex items-center gap-1 p-1 h-8 w-8 rounded-full"
+												>
+													<Edit className="h-4 w-4" />
+												</Button>
+											</Link>
+										)}
+										<button
+											className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+											aria-label={
+												selectedLocation
+													? "Dismiss location"
+													: isOpen
+														? "Collapse panel"
+														: "Expand panel"
+											}
+											onClick={(e) => {
+												e.stopPropagation()
+												if (selectedLocation) {
+													setSelectedLocation(null)
+													setIsOpen(false)
+												} else {
+													setIsOpen(!isOpen)
+												}
+											}}
+										>
+											{selectedLocation ? (
+												<X className="h-5 w-5 text-gray-500" />
+											) : isOpen ? (
+												<ChevronDown className="h-5 w-5 text-gray-500" />
+											) : (
+												<ChevronUp className="h-5 w-5 text-gray-500" />
+											)}
+										</button>
+									</div>
+								</div>
+							)}
 						</div>
 
 						{/* Content - Visible when expanded */}

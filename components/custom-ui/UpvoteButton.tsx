@@ -170,8 +170,8 @@ export const UpvoteButton = memo(function UpvoteButton({
 				onClick={handleUpvote}
 				disabled={isLoading}
 			>
-				<ThumbsUpIcon
-					className={cn("h-3.5 w-3.5", isUpvoted && "fill-[#FF6A00]")}
+				<ChevronUpIcon
+					className={cn("h-3.5 w-3.5", isUpvoted && "stroke-[#FF6A00]")}
 				/>
 				<span
 					className={cn("text-sm font-medium", isAnimating && "animate-bounce")}
@@ -198,8 +198,8 @@ export const UpvoteButton = memo(function UpvoteButton({
 					onClick={handleUpvote}
 					disabled={isLoading}
 				>
-					<ThumbsUpIcon
-						className={cn("h-4 w-4", isUpvoted && "fill-[#FF6A00]")}
+					<ChevronUpIcon
+						className={cn("h-4 w-4", isUpvoted && "stroke-[#FF6A00]")}
 					/>
 				</button>
 				<span
@@ -220,11 +220,11 @@ export const UpvoteButton = memo(function UpvoteButton({
 			className={cn("flex items-center text-sm cursor-pointer", className)}
 			onClick={handleUpvote}
 		>
-			<ThumbsUpIcon
+			<ChevronUpIcon
 				className={cn(
 					"mr-1.5 h-4 w-4",
 					isUpvoted
-						? "text-[#FF6A00] fill-[#FF6A00]"
+						? "text-[#FF6A00] stroke-[#FF6A00]"
 						: "text-muted-foreground/75 group-hover:text-muted-foreground",
 					isAnimating && "animate-pulse"
 				)}
