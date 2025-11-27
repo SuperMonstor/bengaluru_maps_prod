@@ -9,6 +9,7 @@ import { Location, PlaceDetails } from "@/lib/hooks/useGoogleMaps"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import DeleteLocationDialog from "./DeleteLocationDialog"
+import { LocationUpvoteButton } from "./LocationUpvoteButton"
 
 interface LocationInfoWindowProps {
 	location: Location
@@ -121,10 +122,18 @@ export default function LocationInfoWindow({
 				className="w-full max-w-[280px] bg-white rounded-card shadow-card-hover info-window border border-gray-300 overflow-hidden"
 				style={{ maxHeight: "calc(100vh - 100px)" }}
 			>
-				<div className="bg-white p-md border-b border-gray-300">
-					<h3 className="text-h3 text-gray-900 leading-tight">
-						{location.name}
-					</h3>
+				<div className="bg-white p-md border-b border-gray-300 flex items-start gap-3">
+					<div className="flex-1 min-w-0">
+						<h3 className="text-h3 text-gray-900 leading-tight">
+							{location.name}
+						</h3>
+					</div>
+					<LocationUpvoteButton
+						locationId={location.id}
+						initialUpvotes={location.upvotes ?? 0}
+						initialIsUpvoted={location.hasUpvoted ?? false}
+						variant="compact"
+					/>
 				</div>
 
 				<div

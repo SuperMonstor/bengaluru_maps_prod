@@ -15,12 +15,12 @@ CREATE OR REPLACE FUNCTION get_maps_sorted_by_upvotes(
 )
 RETURNS TABLE (
   id uuid,
-  name text,
-  short_description text,
+  name varchar,
+  short_description varchar,
   body text,
-  display_picture text,
+  display_picture varchar,
   owner_id uuid,
-  slug text,
+  slug varchar,
   created_at timestamp,
   updated_at timestamp,
   city varchar,
