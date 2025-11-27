@@ -61,3 +61,74 @@ Add city parameter support to API routes:
 - ✅ RPC functions support city filtering
 - ✅ Existing functionality unchanged (all defaults to 'Bangalore')
 - ✅ Ready for future multi-city expansion without schema changes
+
+---
+
+# Add 'Use Current Location' Feature (Issue #6)
+
+## Objective
+Enable users to find locations near them by using their current location. Simple one-time coordinate retrieval with distance-based sorting. No persistent tracking or over-engineered location features.
+
+## Rationale
+- Primary use case: "Where should I go near me right now?"
+- Keep it minimal: Get location → Calculate distances → Sort by proximity
+- No live tracking, no persistent permissions
+
+## Checkpoints
+
+### 1. Create distance calculation utility
+Add Haversine formula utility function:
+- Create `/lib/utils/distance.ts`
+- Function to calculate great-circle distance between two coordinates
+- Returns distance in kilometers
+- Pure function, no external dependencies
+
+### 2. Create geolocation hook
+Build `useGeolocation` hook for browser API:
+- Create `/lib/hooks/useGeolocation.ts`
+- Request browser location once (not continuous)
+- Handle loading, error, and permission states
+- Return coordinates, loading flag, error message, and trigger function
+
+### 3. Add UI button and state management
+Integrate "Use Current Location" button:
+- Add button to `/app/maps/[slug]/ClientMapPageComponent.tsx`
+- Show loading state during geolocation request
+- Display error messages if permission denied or unavailable
+- Store user coordinates in component state
+
+### 4. Integrate distance sorting
+Calculate and sort by proximity:
+- When user location is available, calculate distance to each location
+- Sort locations array by distance (nearest first)
+- Display distance in location list (e.g., "1.2 km away")
+- Maintain original sort when user location not active
+
+### 5. Add user location marker
+Show user's position on map:
+- Add blue marker to `/components/map/OSMMap.tsx` for user location
+- Auto-center map on user location when activated
+- Differentiate visually from location markers
+
+### 6. Test the feature
+Verify functionality:
+- Test geolocation permission prompt
+- Validate distance calculations with known coordinates
+- Ensure sorting updates correctly
+- Check mobile and desktop UI
+- Test error states (permission denied, unavailable)
+
+## Implementation Notes
+- **Minimal scope**: Single coordinate retrieval only
+- **No persistence**: Don't store location or maintain permissions
+- **Simple UI**: One button, clear states
+- **Integrate only where needed**: Map detail page only
+- **Distance display**: Optional, only show if helpful
+
+## Success Criteria
+- ✅ User can click button to request current location
+- ✅ Locations sort by distance when user location available
+- ✅ Map shows user location marker
+- ✅ Error states handled gracefully
+- ✅ No over-engineered tracking or persistence
+- ✅ Works on mobile and desktop browsers
