@@ -78,8 +78,7 @@ export const LocationUpvoteButton = memo(function LocationUpvoteButton({
 						variant: "destructive",
 					})
 				}
-
-				router.refresh()
+				// Don't refresh - let optimistic UI stay, actual value will show on next page load
 			} catch (error) {
 				// Revert on error
 				setIsUpvoted(!newUpvotedState)
