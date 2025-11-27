@@ -327,101 +327,138 @@ function ClientMapPageContentInner({
 							</div>
 						)}
 
-						<div className="flex items-center gap-3 mb-6 text-sm text-gray-500">
-							<Avatar className="h-8 w-8 border border-gray-200">
-								{userInfo.profilePicture ? (
-									<Image
-										src={userInfo.profilePicture}
-										alt={userInfo.username}
-										fill
-										className="object-cover rounded-full"
-										sizes="32px"
-									/>
-								) : (
-									<AvatarFallback>
-										{userInfo.username
-											.split(" ")
-											.map((n) => n[0])
-											.join("")
-											.toUpperCase()}
-									</AvatarFallback>
+						{isLoadingLocation || !userInfo ? (
+							// Skeleton loading state
+							<>
+								{/* Avatar skeleton */}
+								<div className="flex items-center gap-3 mb-6">
+									<div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse" />
+									<div className="flex flex-col gap-1.5 flex-1">
+										<div className="h-3 bg-gray-200 rounded w-16 animate-pulse" />
+										<div className="h-4 bg-gray-200 rounded w-40 animate-pulse" />
+									</div>
+								</div>
+
+								{/* Note skeleton */}
+								<div className="mb-6">
+									<div className="flex items-center gap-2 mb-2">
+										<div className="h-3.5 w-3.5 bg-gray-200 rounded animate-pulse" />
+										<div className="h-3 bg-gray-200 rounded w-32 animate-pulse" />
+									</div>
+									<div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+										<div className="space-y-2">
+											<div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+											<div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse" />
+											<div className="h-4 bg-gray-200 rounded w-4/6 animate-pulse" />
+										</div>
+									</div>
+								</div>
+
+								{/* Action buttons skeleton */}
+								<div className={`flex gap-2 pb-safe ${isMobile ? 'mt-4' : 'mt-auto'}`}>
+									<div className="w-20 h-11 bg-gray-200 rounded-xl animate-pulse" />
+									<div className="flex-1 h-11 bg-gray-200 rounded-xl animate-pulse" />
+								</div>
+							</>
+						) : (
+							<>
+								<div className="flex items-center gap-3 mb-6 text-sm text-gray-500">
+									<Avatar className="h-8 w-8 border border-gray-200">
+										{userInfo.profilePicture ? (
+											<Image
+												src={userInfo.profilePicture}
+												alt={userInfo.username}
+												fill
+												className="object-cover rounded-full"
+												sizes="32px"
+											/>
+										) : (
+											<AvatarFallback>
+												{userInfo.username
+													.split(" ")
+													.map((n) => n[0])
+													.join("")
+													.toUpperCase()}
+											</AvatarFallback>
+										)}
+									</Avatar>
+									<div className="flex flex-col">
+										<span className="text-xs text-gray-400">Added by</span>
+										<span className="font-medium text-gray-900">
+											{userInfo.username}
+											<span className="text-gray-400 font-normal ml-1">
+												• {formatDate(selectedLocation.created_at)}
+											</span>
+										</span>
+									</div>
+								</div>
+
+								{/* Note Section */}
+								{displayNote && (
+									<div className="mb-6">
+										<div className="flex items-center gap-2 mb-2">
+											<User className="h-3.5 w-3.5 text-gray-400" />
+											<span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+												Note from contributor
+											</span>
+										</div>
+										<div className="text-sm text-gray-700 bg-gray-50 p-4 rounded-lg border border-gray-100">
+											<p className="break-words leading-relaxed">{displayNote}</p>
+											{noteIsLong && (
+												<button
+													onClick={() => setShowFullNote(!showFullNote)}
+													className="text-xs font-medium text-brand-orange mt-2 hover:text-brand-orange/80 transition-colors"
+												>
+													{showFullNote ? "Show less" : "Read more"}
+												</button>
+											)}
+										</div>
+									</div>
 								)}
-							</Avatar>
-							<div className="flex flex-col">
-								<span className="text-xs text-gray-400">Added by</span>
-								<span className="font-medium text-gray-900">
-									{userInfo.username}
-									<span className="text-gray-400 font-normal ml-1">
-										• {formatDate(selectedLocation.created_at)}
-									</span>
-								</span>
-							</div>
-						</div>
 
-						{/* Note Section */}
-						{displayNote && (
-							<div className="mb-6">
-								<div className="flex items-center gap-2 mb-2">
-									<User className="h-3.5 w-3.5 text-gray-400" />
-									<span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-										Note from contributor
-									</span>
-								</div>
-								<div className="text-sm text-gray-700 bg-gray-50 p-4 rounded-lg border border-gray-100">
-									<p className="break-words leading-relaxed">{displayNote}</p>
-									{noteIsLong && (
-										<button
-											onClick={() => setShowFullNote(!showFullNote)}
-											className="text-xs font-medium text-brand-orange mt-2 hover:text-brand-orange/80 transition-colors"
+								{/* Action buttons */}
+								<div className={`flex gap-2 pb-safe ${isMobile ? 'mt-4' : 'mt-auto'}`}>
+									<LocationUpvoteButton
+										locationId={selectedLocation.id}
+										initialUpvotes={selectedLocation.upvotes ?? 0}
+										initialIsUpvoted={selectedLocation.hasUpvoted}
+										variant="full"
+										className="w-20 h-11 rounded-xl"
+									/>
+									<Link
+										href={
+											selectedLocation.google_maps_url.includes(
+												"place/?q=place_id:"
+											)
+												? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+													selectedLocation.name
+												)}&query_place_id=${selectedLocation.google_maps_url.split(
+													"place_id:"
+												)[1]
+												}`
+												: selectedLocation.google_maps_url.includes(
+													"maps.google.com/?cid="
+												)
+													? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+														selectedLocation.name
+													)}&query_place_id=${selectedLocation.google_maps_url.split("cid=")[1]
+													}`
+													: selectedLocation.google_maps_url
+										}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="flex-1"
+									>
+										<Button
+											className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm"
 										>
-											{showFullNote ? "Show less" : "Read more"}
-										</button>
-									)}
+											<ExternalLink className="h-4 w-4 mr-2" />
+											View on Google Maps
+										</Button>
+									</Link>
 								</div>
-							</div>
+							</>
 						)}
-
-						{/* Action buttons */}
-						<div className={`flex gap-2 pb-safe ${isMobile ? 'mt-4' : 'mt-auto'}`}>
-							<LocationUpvoteButton
-								locationId={selectedLocation.id}
-								initialUpvotes={selectedLocation.upvotes ?? 0}
-								initialIsUpvoted={selectedLocation.hasUpvoted}
-								variant="full"
-								className="w-20 h-11 rounded-xl"
-							/>
-							<Link
-								href={
-									selectedLocation.google_maps_url.includes(
-										"place/?q=place_id:"
-									)
-										? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-											selectedLocation.name
-										)}&query_place_id=${selectedLocation.google_maps_url.split(
-											"place_id:"
-										)[1]
-										}`
-										: selectedLocation.google_maps_url.includes(
-											"maps.google.com/?cid="
-										)
-											? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-												selectedLocation.name
-											)}&query_place_id=${selectedLocation.google_maps_url.split("cid=")[1]
-											}`
-											: selectedLocation.google_maps_url
-								}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="flex-1"
-							>
-								<Button
-									className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm"
-								>
-									<ExternalLink className="h-4 w-4 mr-2" />
-									View on Google Maps
-								</Button>
-							</Link>
-						</div>
 					</div>
 				</>
 			) : (
@@ -534,76 +571,102 @@ function ClientMapPageContentInner({
 							) : (
 								// Simple Header for Expanded View or Selected Location
 								<div className="p-4 flex items-center justify-between gap-2">
-									<div className="flex flex-col flex-1 min-w-0">
-										<h1 className="text-lg font-bold tracking-tight text-gray-900 line-clamp-2">
-											{selectedLocation ? selectedLocation.name : map.title}
-										</h1>
-										{!isOpen && (
-											<p className="text-sm text-gray-500 truncate mt-0.5">
-												{selectedLocation
-													? (selectedLocation.note || "Tap to see details")
-													: map.description}
-											</p>
-										)}
-									</div>
-
-									<div className="flex items-center gap-1 shrink-0">
-										{selectedLocation && canDelete && (
-											<Button
-												variant="ghost"
-												size="sm"
-												className="flex items-center gap-1 p-1 h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
-												onClick={(e) => {
-													e.stopPropagation()
-													setShowDeleteDialog(true)
-												}}
-											>
-												<Trash2 className="h-4 w-4" />
-											</Button>
-										)}
-
-										{user && user.id === map.owner_id && (
-											<Link
-												href={`/maps/${map.slug || "map"}/edit`}
-												onClick={(e) => e.stopPropagation()}
-											>
-												<Button
-													variant="outline"
-													size="sm"
-													className="flex items-center gap-1 p-1 h-8 w-8 rounded-full"
+									{selectedLocation && (isLoadingLocation || !userInfo) ? (
+										// Skeleton for loading state on mobile
+										<>
+											<div className="flex flex-col flex-1 min-w-0 gap-2">
+												<div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse" />
+												{!isOpen && (
+													<div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
+												)}
+											</div>
+											<div className="flex items-center gap-1 shrink-0">
+												<button
+													className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+													onClick={(e) => {
+														e.stopPropagation()
+														setSelectedLocation(null)
+														setIsOpen(false)
+													}}
 												>
-													<Edit className="h-4 w-4" />
-												</Button>
-											</Link>
-										)}
-										<button
-											className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-											aria-label={
-												selectedLocation
-													? "Dismiss location"
-													: isOpen
-														? "Collapse panel"
-														: "Expand panel"
-											}
-											onClick={(e) => {
-												e.stopPropagation()
-												if (selectedLocation) {
-													setSelectedLocation(null)
-													setIsOpen(false)
-												} else {
-													setIsOpen(!isOpen)
-												}
-											}}
-										>
-											{selectedLocation ? (
-												<X className="h-5 w-5 text-gray-500" />
-											) : isOpen ? (
-												<ChevronDown className="h-5 w-5 text-gray-500" />
-											) : (
-												<ChevronUp className="h-5 w-5 text-gray-500" />
-											)}
-										</button>
-									</div>
+													<X className="h-5 w-5 text-gray-500" />
+												</button>
+											</div>
+										</>
+									) : (
+										<>
+											<div className="flex flex-col flex-1 min-w-0">
+												<h1 className="text-lg font-bold tracking-tight text-gray-900 line-clamp-2">
+													{selectedLocation ? selectedLocation.name : map.title}
+												</h1>
+												{!isOpen && (
+													<p className="text-sm text-gray-500 truncate mt-0.5">
+														{selectedLocation
+															? (selectedLocation.note || "Tap to see details")
+															: map.description}
+													</p>
+												)}
+											</div>
+
+											<div className="flex items-center gap-1 shrink-0">
+												{selectedLocation && canDelete && (
+													<Button
+														variant="ghost"
+														size="sm"
+														className="flex items-center gap-1 p-1 h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
+														onClick={(e) => {
+															e.stopPropagation()
+															setShowDeleteDialog(true)
+														}}
+													>
+														<Trash2 className="h-4 w-4" />
+													</Button>
+												)}
+
+												{user && user.id === map.owner_id && !selectedLocation && (
+													<Link
+														href={`/maps/${map.slug || "map"}/edit`}
+														onClick={(e) => e.stopPropagation()}
+													>
+														<Button
+															variant="outline"
+															size="sm"
+															className="flex items-center gap-1 p-1 h-8 w-8 rounded-full"
+														>
+															<Edit className="h-4 w-4" />
+														</Button>
+													</Link>
+												)}
+												<button
+													className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+													aria-label={
+														selectedLocation
+															? "Dismiss location"
+															: isOpen
+																? "Collapse panel"
+																: "Expand panel"
+													}
+													onClick={(e) => {
+														e.stopPropagation()
+														if (selectedLocation) {
+															setSelectedLocation(null)
+															setIsOpen(false)
+														} else {
+															setIsOpen(!isOpen)
+														}
+													}}
+												>
+													{selectedLocation ? (
+														<X className="h-5 w-5 text-gray-500" />
+													) : isOpen ? (
+														<ChevronDown className="h-5 w-5 text-gray-500" />
+													) : (
+														<ChevronUp className="h-5 w-5 text-gray-500" />
+													)}
+												</button>
+											</div>
+										</>
+									)}
 								</div>
 							)}
 						</div>
