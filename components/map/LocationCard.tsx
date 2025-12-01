@@ -3,14 +3,18 @@
 import { Location } from "@/lib/types/mapTypes"
 import { cn } from "@/lib/utils/utils"
 import { LocationUpvoteButton } from "./LocationUpvoteButton"
-import { MapPin } from "lucide-react"
+import { MapPin, User } from "lucide-react"
 import { formatDistance } from "@/lib/utils/distance"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import Image from "next/image"
 
 interface LocationCardProps {
     location: Location
     onClick: (location: Location) => void
     isSelected?: boolean
     distance?: number | null
+    onMouseEnter?: () => void
+    onMouseLeave?: () => void
 }
 
 export function LocationCard({
@@ -18,10 +22,14 @@ export function LocationCard({
     onClick,
     isSelected = false,
     distance,
+    onMouseEnter,
+    onMouseLeave,
 }: LocationCardProps) {
     return (
         <div
             onClick={() => onClick(location)}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
             className={cn(
                 "group relative flex flex-col gap-2 p-4 rounded-xl border transition-all cursor-pointer hover:shadow-md",
                 isSelected
@@ -32,7 +40,7 @@ export function LocationCard({
             <div className="flex justify-between items-start gap-3">
                 <div className="flex-1 min-w-0">
                     <h3 className={cn(
-                        "font-semibold text-gray-900 truncate leading-tight mb-1",
+                        "font-semibold text-gray-900 leading-tight mb-1 line-clamp-2",
                         isSelected && "text-blue-700"
                     )}>
                         {location.name}
@@ -46,7 +54,7 @@ export function LocationCard({
                     )}
                 </div>
 
-                <div onClick={(e) => e.stopPropagation()}>
+                <div onClick={(e) => e.stopPropagation()} className="shrink-0 flex flex-col items-end gap-2">
                     <LocationUpvoteButton
                         locationId={location.id}
                         initialUpvotes={location.upvotes ?? 0}
@@ -58,10 +66,17 @@ export function LocationCard({
             </div>
 
             {location.note && (
-                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-2">
                     {location.note}
                 </p>
             )}
+
+            {/* Submitter Info */}
+            <div className="flex items-center gap-1.5 mt-auto pt-2 border-t border-gray-50">
+                <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                    <span className="font-medium">Added by User</span>
+                </div>
+            </div>
         </div>
     )
 }

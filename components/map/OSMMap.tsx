@@ -15,6 +15,7 @@ interface OSMMapProps {
     center?: { lat: number; lng: number }
     zoom?: number
     userLocation?: { latitude: number; longitude: number }
+    hoveredLocationId?: string | null
 }
 
 // Component to handle map bounds and center updates
@@ -56,9 +57,9 @@ function MapController({
 }
 
 // Custom premium circular icons using divIcon for full control
-const createCustomIcon = (isSelected: boolean) => {
-    const size = isSelected ? 40 : 32
-    const backgroundColor = isSelected ? "#3b82f6" : "#FF6A00"
+const createCustomIcon = (isSelected: boolean, isHovered: boolean) => {
+    const size = isSelected || isHovered ? 40 : 32
+    const backgroundColor = isSelected ? "#3b82f6" : isHovered ? "#FF8C42" : "#FF6A00"
 
     return new L.DivIcon({
         className: "custom-map-marker",
@@ -86,8 +87,9 @@ const createCustomIcon = (isSelected: boolean) => {
     })
 }
 
-const defaultIcon = createCustomIcon(false)
-const selectedIcon = createCustomIcon(true)
+const defaultIcon = createCustomIcon(false, false)
+const selectedIcon = createCustomIcon(true, false)
+const hoveredIcon = createCustomIcon(false, true)
 
 // Custom user location icon (blue circle)
 const createUserLocationIcon = () => {
@@ -141,6 +143,7 @@ export default function OSMMap({
     center,
     zoom,
     userLocation,
+    hoveredLocationId,
 }: OSMMapProps) {
     // Default center (Bengaluru) if no locations or center provided
     const defaultCenter: [number, number] = [12.9716, 77.5946]
@@ -172,7 +175,11 @@ export default function OSMMap({
                         key={location.id}
                         position={[location.latitude, location.longitude]}
                         icon={
-                            selectedLocation?.id === location.id ? selectedIcon : defaultIcon
+                            selectedLocation?.id === location.id
+                                ? selectedIcon
+                                : hoveredLocationId === location.id
+                                    ? hoveredIcon
+                                    : defaultIcon
                         }
                         eventHandlers={{
                             click: () => onMarkerClick(location),

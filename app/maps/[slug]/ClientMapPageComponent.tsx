@@ -71,6 +71,7 @@ function ClientMapPageContentInner({
 	const [selectedLocation, setSelectedLocation] = useState<Location | null>(
 		null
 	)
+	const [hoveredLocationId, setHoveredLocationId] = useState<string | null>(null)
 	const [isLoadingLocation, setIsLoadingLocation] = useState(false)
 	const [sortBy, setSortBy] = useState<"upvotes" | "distance">("upvotes")
 	const [showMapDetails, setShowMapDetails] = useState(false)
@@ -235,6 +236,24 @@ function ClientMapPageContentInner({
 											{map.title}
 										</h1>
 										<div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+											<div className="flex items-center gap-1.5">
+												<Avatar className="h-4 w-4 border border-gray-200">
+													{map.userProfilePicture ? (
+														<Image
+															src={map.userProfilePicture}
+															alt={map.username}
+															fill
+															className="object-cover rounded-full"
+															sizes="16px"
+														/>
+													) : (
+														<AvatarFallback className="text-[8px]">
+															{map.username?.slice(0, 2).toUpperCase()}
+														</AvatarFallback>
+													)}
+												</Avatar>
+												<span className="truncate max-w-[100px]">by {map.username}</span>
+											</div>
 											<span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
 												<MapPin className="h-3 w-3" />
 												{approvedLocationsCount}
@@ -295,6 +314,8 @@ function ClientMapPageContentInner({
 									onClick={onMarkerClick}
 									isSelected={selectedLocation?.id === location.id}
 									distance={location.distance}
+									onMouseEnter={() => setHoveredLocationId(location.id)}
+									onMouseLeave={() => setHoveredLocationId(null)}
 								/>
 							))}
 
@@ -522,6 +543,7 @@ function ClientMapPageContentInner({
 								? { latitude: userLat, longitude: userLng }
 								: undefined
 						}
+						hoveredLocationId={hoveredLocationId}
 					/>
 
 					{/* Map Info Bar - Desktop (Removed as per new design) */}
