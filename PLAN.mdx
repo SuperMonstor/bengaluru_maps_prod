@@ -1,143 +1,151 @@
-# Make Data Model City-Agnostic (Issue #2)
-
-## Objective
-Make the backend and data model city-aware while keeping the UI unchanged. This prevents costly retrofitting later while maintaining the current Bengaluru-focused user experience.
-
-## Checkpoints
-
-### 1. Database Schema Changes
-Add `city` column to relevant tables with default values:
-- **maps table**: Add `city VARCHAR(100) DEFAULT 'Bangalore' NOT NULL`
-- **locations table**: Add `city VARCHAR(100) DEFAULT 'Bangalore' NOT NULL`
-- **users table**: Add `city VARCHAR(100)` (nullable, for user's preferred city)
-- Create indexes on city columns for efficient filtering
-- Backfill existing data with 'Bangalore'
-
-### 2. Update TypeScript Types
-Add city field to all relevant interfaces:
-- `MapData`, `MapResponse`, `MapSchema` in `lib/types/mapTypes.ts`
-- `Location` interface in `lib/types/mapTypes.ts`
-- `UserSchema`, `User` in `lib/types/userTypes.ts`
-
-### 3. Update Service Layer
-Modify service functions to handle city field:
-- `lib/supabase/mapsService.ts`: createMap, getMaps, getMapById, getMapBySlug, createLocation
-- `lib/supabase/locationService.ts`: getLocationDetails
-- `lib/supabase/userService.ts`: upsertUser
-- Default all operations to 'Bangalore' for now
-
-### 4. Update RPC Functions
-Modify PostgreSQL functions to support optional city filtering:
-- `get_maps_sorted_by_upvotes`: Add optional city parameter
-- `get_location_counts`: Add city filtering
-- `get_contributor_counts`: Add city filtering
-- Keep backward compatibility (no city filter = return all)
-
-### 5. Add City Defaulting Logic
-Implement city defaulting throughout the app:
-- All new map creations default to 'Bangalore'
-- All new location submissions default to 'Bangalore'
-- User city preference defaults to 'Bangalore'
-- Keep UI unchanged (no city selection fields visible)
-
-### 6. Update API Routes
-Add city parameter support to API routes:
-- `app/api/maps/[slug]/route.ts`
-- `app/api/check-slug/route.ts`
-- Update sitemap generation in `app/sitemap.ts`
-- Keep default behavior to 'Bangalore'
-
-## Implementation Notes
-- **No UI changes**: City selection remains hidden until needed
-- **Backward compatible**: All existing queries default to 'Bangalore'
-- **Future-proof**: Schema ready for multi-city expansion
-- **Low cost now**: Simple VARCHAR fields with indexes
-- **High cost later avoided**: No need to retrofit constraints, URLs, or filtering
-
-## Success Criteria
-- ✅ Database has city columns with appropriate defaults
-- ✅ TypeScript types include city fields
-- ✅ All service functions handle city parameter
-- ✅ RPC functions support city filtering
-- ✅ Existing functionality unchanged (all defaults to 'Bangalore')
-- ✅ Ready for future multi-city expansion without schema changes
 
 ---
 
-# Add 'Use Current Location' Feature (Issue #6)
+# Implement List View with Upvote and Distance Sorting (Issue #5)
 
 ## Objective
-Enable users to find locations near them by using their current location. Simple one-time coordinate retrieval with distance-based sorting. No persistent tracking or over-engineered location features.
+Transform the left sidebar into a dedicated location browsing list with sortable views. Move map metadata (title, description, contributors) to a compact info bar at the bottom-right of the map. This prioritizes the primary user action (browsing locations) while keeping map context accessible on-demand.
 
 ## Rationale
-- Primary use case: "Where should I go near me right now?"
-- Keep it minimal: Get location → Calculate distances → Sort by proximity
-- No live tracking, no persistent permissions
+- **Correct Priority**: Location browsing is the primary action, gets full sidebar height
+- **Google Maps Pattern**: Left = list, Right = map (proven, intuitive mental model)
+- **Progressive Disclosure**: Map metadata is contextual, shown on-demand via info bar
+- **Maximum Browsing Space**: No scrolling past map info to see locations
+- **Clean Separation**: Sidebar = location list only, Info bar = map metadata
+- **User Testing Signal**: Testers instinctively expected list in the sidebar
 
-## Implementation Status
-- ✅ Global location context integrated
-- ✅ Auto-request device location on app load
-- ✅ Reverse geocoding for location names
-- ✅ Header location indicator (replaces "Request Feature/Fix")
-- ✅ Distance-based sorting on map pages
-- ✅ User location marker on map
-- ⏳ Manual location entry dialog (future enhancement)
+## UI Design
+
+### Layout
+```
+┌────────── Locations List ─────────┐  ┌──────────── Map ─────────────┐
+│ Parties this weekend              │  │                              │
+│ Sort: [Upvotes] [Distance]        │  │                              │
+│                                   │  │      [pins on map]           │
+│ ┌───────────────────────────┐     │  │                              │
+│ │ Castle Party       🔼 42  │     │  │                              │
+│ │ 1.2 km away               │     │  │                              │
+│ │ [photo]                   │     │  │                              │
+│ └───────────────────────────┘     │  │                              │
+│                                   │  │                              │
+│ ┌───────────────────────────┐     │  │                              │
+│ │ Another Party      🔼 38  │     │  │                              │
+│ │ 2.1 km away               │     │  │                              │
+│ └───────────────────────────┘     │  │                              │
+│                                   │  │                              │
+│ ... (scrollable list)             │  │                              │
+│                                   │  │                              │
+└───────────────────────────────────┘  │                              │
+                                       │  ┌────────────────────────┐  │
+                                       │  │ ℹ️ Map Info  [expand] │  │
+                                       │  └────────────────────────┘  │
+                                       └──────────────────────────────┘
+```
+
+### Component Specifications
+
+**Left Sidebar (Location List)**
+- Full height dedicated to location browsing
+- Sort controls at top: "Upvotes" or "Distance"
+- Vertical scrollable list of location cards
+- Each card shows: name, photo, upvotes, distance (if available)
+- Click card → highlight pin on map
+
+**Info Bar (Map Metadata)**
+- Position: Bottom-right of map, floating above map
+- Collapsed state (default): `ℹ️ Parties this weekend · 42 locations · [expand]`
+- Click to expand → modal or slide-out panel
+- Expanded shows: Full description, contributors, photos, "Contribute" button
+- Minimal footprint when collapsed
 
 ## Checkpoints
 
-### 1. Create distance calculation utility
-Add Haversine formula utility function:
-- Create `/lib/utils/distance.ts`
-- Function to calculate great-circle distance between two coordinates
-- Returns distance in kilometers
-- Pure function, no external dependencies
+### 1. Analyze existing sidebar structure
+Review current implementation:
+- Examine sidebar in `app/maps/[slug]/ClientMapPageComponent.tsx`
+- Identify map metadata section (title, description, contributors, images, contribute button)
+- Check location data structure and available fields (upvotes, coordinates, etc.)
+- Review user location context from Issue #6 implementation
+- Map out what moves to info bar vs what stays in sidebar
 
-### 2. Create geolocation hook
-Build `useGeolocation` hook for browser API:
-- Create `/lib/hooks/useGeolocation.ts`
-- Request browser location once (not continuous)
-- Handle loading, error, and permission states
-- Return coordinates, loading flag, error message, and trigger function
+### 2. Create location card component
+Build vertical card component for sidebar list:
+- Create `components/map/LocationCard.tsx`
+- Display: location name, thumbnail photo, upvotes, distance (if available)
+- Include click handler to highlight corresponding map pin
+- Compact vertical layout optimized for sidebar width
+- Responsive design for mobile full-width
 
-### 3. Add UI button and state management
-Integrate "Use Current Location" button:
-- Add button to `/app/maps/[slug]/ClientMapPageComponent.tsx`
-- Show loading state during geolocation request
-- Display error messages if permission denied or unavailable
-- Store user coordinates in component state
+### 3. Restructure sidebar for location list
+Transform sidebar into dedicated location list:
+- Remove map metadata section from sidebar (title, description, etc.)
+- Add sort controls at top: Toggle between "Upvotes" and "Distance"
+- Render vertical scrollable list of `LocationCard` components
+- Implement sort logic: upvotes (descending) or distance (ascending)
+- Disable distance sort if user location unavailable (show tooltip)
+- Handle empty state (no locations)
 
-### 4. Integrate distance sorting
-Calculate and sort by proximity:
-- When user location is available, calculate distance to each location
-- Sort locations array by distance (nearest first)
-- Display distance in location list (e.g., "1.2 km away")
-- Maintain original sort when user location not active
+### 4. Create map info bar component
+Build floating info bar for map metadata:
+- Create `components/map/MapInfoBar.tsx`
+- Collapsed state: Compact bar with map title, location count, expand button
+- Position: Absolute, bottom-right of map area
+- Minimal design: `ℹ️ {mapTitle} · {locationCount} locations · [ChevronUp icon]`
+- Click handler to toggle expanded state
 
-### 5. Add user location marker
-Show user's position on map:
-- Add blue marker to `/components/map/OSMMap.tsx` for user location
-- Auto-center map on user location when activated
-- Differentiate visually from location markers
+### 5. Create map info modal/panel
+Build expanded view for map metadata:
+- Use shadcn Dialog component or create slide-out panel
+- Show full map description, cover images, contributors list
+- Include "Contribute a Location" button
+- Close button to return to collapsed state
+- Responsive: Full-screen on mobile, dialog on desktop
 
-### 6. Test the feature
-Verify functionality:
-- Test geolocation permission prompt
-- Validate distance calculations with known coordinates
-- Ensure sorting updates correctly
-- Check mobile and desktop UI
-- Test error states (permission denied, unavailable)
+### 6. Integrate components into map page
+Wire up new layout in `ClientMapPageComponent.tsx`:
+- Replace sidebar content with location list component
+- Add `MapInfoBar` component to map area (absolute positioned)
+- Pass map metadata to info bar/modal components
+- Manage info bar expanded/collapsed state
+- Pass location selection handler to cards (highlight pins)
+- Ensure no layout overlap or z-index conflicts
+
+### 7. Implement pin-to-card interactions
+Connect map pins with sidebar cards:
+- Clicking a card highlights the corresponding pin on map
+- Optional: Clicking a pin scrolls to the corresponding card in sidebar
+- Add visual highlight state to both card and pin
+- Smooth scrolling to cards when pin clicked
+- Handle edge cases (card not in viewport, etc.)
+
+### 8. Polish and responsive design
+Finalize UI and test across devices:
+- Test location list scrolling with many locations (50+)
+- Verify sort toggle reflects current state visually
+- Test with no user location (distance sort disabled)
+- Ensure info bar works on mobile (responsive positioning)
+- Test info modal on mobile vs desktop
+- Add loading states for location data
+- Ensure accessibility (keyboard navigation, ARIA labels, focus management)
 
 ## Implementation Notes
-- **Minimal scope**: Single coordinate retrieval only
-- **No persistence**: Don't store location or maintain permissions
-- **Simple UI**: One button, clear states
-- **Integrate only where needed**: Map detail page only
-- **Distance display**: Optional, only show if helpful
+- **Reuse existing logic**: Distance calculations and user location context already exist from Issue #6
+- **Sidebar becomes single-purpose**: Dedicated to location browsing only
+- **Info bar is progressive disclosure**: Map metadata accessible but not blocking primary action
+- **State management**: Info bar expanded/collapsed, sort mode, selected location can be local state
+- **Component reuse**: Use shadcn Dialog for info modal, existing card patterns for location cards
+- **Default state**: Info bar collapsed, sorted by upvotes
+- **Mobile adaptation**: Sidebar becomes full-screen list, info bar floats at bottom
 
 ## Success Criteria
-- ✅ User can click button to request current location
-- ✅ Locations sort by distance when user location available
-- ✅ Map shows user location marker
-- ✅ Error states handled gracefully
-- ✅ No over-engineered tracking or persistence
-- ✅ Works on mobile and desktop browsers
+- ✅ Left sidebar shows location list immediately (no map metadata)
+- ✅ Location cards display vertically in scrollable sidebar
+- ✅ Sort toggle switches between upvotes and distance
+- ✅ Distance sort only available when user location exists
+- ✅ Map info bar appears at bottom-right of map (collapsed by default)
+- ✅ Clicking info bar expands to show full map metadata
+- ✅ Clicking a location card highlights the corresponding map pin
+- ✅ Optional: Clicking a pin scrolls to the card in sidebar
+- ✅ No performance degradation with 50+ locations
+- ✅ Works seamlessly on desktop and mobile
+- ✅ Familiar UX pattern (Google Maps style left list)
