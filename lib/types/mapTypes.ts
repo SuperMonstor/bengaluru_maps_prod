@@ -35,6 +35,7 @@ export interface Location {
 	city: string
 	upvotes?: number
 	hasUpvoted?: boolean
+	distance?: number
 }
 
 export interface Submission {
@@ -139,4 +140,20 @@ export interface LocationSuggestion {
 
 export interface SubmitLocationProps {
 	params: Promise<{ slug: string; id: string }>
+}
+
+export interface MapUI {
+	id: string
+	title: string
+	description: string
+	body: string
+	image: string
+	locations: Location[]
+	contributors: number
+	upvotes: number
+	username: string
+	userProfilePicture: string | null
+	owner_id?: string
+	hasUpvoted: boolean
+	slug?: string
 }

@@ -13,13 +13,18 @@ import {
 	ExternalLink,
 	Trash2,
 	X,
+	ArrowUpDown,
+	Info,
 } from "lucide-react"
+import { LocationCard } from "@/components/map/LocationCard"
+import { MapInfoBar } from "@/components/map/MapInfoBar"
+import { MapDetailsDialog } from "@/components/map/MapDetailsDialog"
 import Image from "next/image"
 import ShareButton from "@/components/custom-ui/ShareButton"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import dynamic from "next/dynamic"
-import { Location } from "@/lib/types/mapTypes"
+import { Location, MapUI } from "@/lib/types/mapTypes"
 import { useUserInfo } from "@/lib/hooks/useUserInfo"
 
 const OSMMap = dynamic(() => import("@/components/map/OSMMap"), {
@@ -37,24 +42,10 @@ import { getLocationDetailsAction } from "@/lib/supabase/api/getLocationDetailsA
 import { useUserLocation } from "@/lib/context/UserLocationContext"
 import { calculateDistance, formatDistance } from "@/lib/utils/distance"
 
-interface MapData {
-	id: string
-	title: string
-	description: string
-	body: string
-	image: string
-	locations: Location[]
-	contributors: number
-	upvotes: number
-	username: string
-	userProfilePicture: string | null
-	owner_id?: string
-	hasUpvoted: boolean
-	slug?: string
-}
+
 
 interface ClientMapPageContentProps {
-	map: MapData
+	map: MapUI
 	initialIsUpvoted?: boolean
 	user?: any
 	searchParams?: { [key: string]: string | string[] | undefined }
@@ -81,9 +72,11 @@ function ClientMapPageContentInner({
 		null
 	)
 	const [isLoadingLocation, setIsLoadingLocation] = useState(false)
+	const [sortBy, setSortBy] = useState<"upvotes" | "distance">("upvotes")
+	const [showMapDetails, setShowMapDetails] = useState(false)
 
 	// Manage map data in state so we can update it when locations are deleted
-	const [map, setMap] = useState<MapData>(initialMap)
+	const [map, setMap] = useState<MapUI>(initialMap)
 
 	const { userInfo, fetchUserInfo } = useUserInfo()
 	const { user: authUser } = useUser()
@@ -91,16 +84,13 @@ function ClientMapPageContentInner({
 	// Use global location context
 	const { latitude: userLat, longitude: userLng } = useUserLocation()
 
-	// Sort locations by distance when user location is available
+	// Sort locations
 	const sortedLocations = useMemo(() => {
-		if (userLat === null || userLng === null) {
-			// Default sort by upvotes when no user location
-			return [...map.locations].sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
-		}
+		let locations = [...map.locations]
 
-		// Calculate distance and sort by proximity
-		return [...map.locations]
-			.map((location) => ({
+		// Calculate distance if user location is available
+		if (userLat !== null && userLng !== null) {
+			locations = locations.map((location) => ({
 				...location,
 				distance: calculateDistance(
 					userLat,
@@ -109,8 +99,15 @@ function ClientMapPageContentInner({
 					location.longitude
 				),
 			}))
-			.sort((a, b) => a.distance! - b.distance!)
-	}, [map.locations, userLat, userLng])
+		}
+
+		if (sortBy === "distance" && userLat !== null && userLng !== null) {
+			return locations.sort((a, b) => (a.distance || 0) - (b.distance || 0))
+		}
+
+		// Default sort by upvotes
+		return locations.sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
+	}, [map.locations, userLat, userLng, sortBy])
 
 	// Get distance for selected location from sortedLocations (reuse upfront calculation)
 	const selectedLocationDistance = useMemo(() => {
@@ -219,109 +216,106 @@ function ClientMapPageContentInner({
 		<div className="flex flex-col h-full">
 			{!selectedLocation ? (
 				<>
-					<div className={`flex items-center justify-between p-4 pb-2 ${isMobile ? 'hidden' : ''}`}>
-						<div className="flex-shrink-0">
-							{user && user.id === map.owner_id && (
-								<Link href={`/maps/${map.slug || "map"}/edit`}>
-									<Button
-										variant="outline"
-										size="sm"
-										className="flex items-center gap-1 h-8"
+					<>
+						{/* List View Header */}
+						<div className={`flex flex-col gap-4 p-4 border-b border-gray-100 bg-white sticky top-0 z-20 ${isMobile ? 'hidden' : ''}`}>
+							{/* Map Header Info */}
+							<div className="flex gap-4">
+								<div className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden border border-gray-100">
+									<Image
+										src={map.image}
+										alt={map.title}
+										fill
+										className="object-cover"
+									/>
+								</div>
+								<div className="flex flex-col flex-1 min-w-0 justify-between py-1">
+									<div>
+										<h1 className="text-lg font-bold tracking-tight text-gray-900 leading-tight line-clamp-2">
+											{map.title}
+										</h1>
+										<div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+											<span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
+												<MapPin className="h-3 w-3" />
+												{approvedLocationsCount}
+											</span>
+											<span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
+												<Users className="h-3 w-3" />
+												{map.contributors}
+											</span>
+										</div>
+									</div>
+
+									<button
+										onClick={() => setShowMapDetails(true)}
+										className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-1"
 									>
-										<Edit className="h-3.5 w-3.5" />
-										Edit
-									</Button>
-								</Link>
+										<Info className="h-3 w-3" />
+										More info
+									</button>
+								</div>
+							</div>
+
+							{/* Sort Controls */}
+							<div className="flex items-center justify-between pt-1">
+								<h2 className="font-semibold text-gray-900 text-sm">
+									{map.locations.length} locations
+								</h2>
+								<div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+									<button
+										onClick={() => setSortBy("upvotes")}
+										className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${sortBy === "upvotes"
+											? "bg-white text-gray-900 shadow-sm"
+											: "text-gray-500 hover:text-gray-700"
+											}`}
+									>
+										Top Rated
+									</button>
+									<button
+										onClick={() => setSortBy("distance")}
+										disabled={!userLat || !userLng}
+										className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${sortBy === "distance"
+											? "bg-white text-gray-900 shadow-sm"
+											: "text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+											}`}
+										title={!userLat || !userLng ? "Enable location to sort by distance" : ""}
+									>
+										Nearest
+									</button>
+								</div>
+							</div>
+						</div>
+
+						{/* Location List */}
+						<div className={`flex-1 overflow-y-auto p-4 space-y-3 ${isMobile ? 'pt-0' : ''}`}>
+							{sortedLocations.map((location) => (
+								<LocationCard
+									key={location.id}
+									location={location}
+									onClick={onMarkerClick}
+									isSelected={selectedLocation?.id === location.id}
+									distance={location.distance}
+								/>
+							))}
+
+							{sortedLocations.length === 0 && (
+								<div className="text-center py-12 px-4">
+									<div className="bg-gray-50 rounded-full h-12 w-12 flex items-center justify-center mx-auto mb-3">
+										<MapPin className="h-6 w-6 text-gray-400" />
+									</div>
+									<h3 className="text-gray-900 font-medium mb-1">No locations yet</h3>
+									<p className="text-gray-500 text-sm mb-4">
+										Be the first to add a location to this map!
+									</p>
+									<Link href={`/maps/${map.slug || "map"}/submit`}>
+										<Button className="bg-blue-600 hover:bg-blue-700 text-white">
+											Contribute Location
+										</Button>
+									</Link>
+								</div>
 							)}
 						</div>
-						<div className="flex items-center gap-2">
-							<ShareButton
-								mapId={map.id}
-								slug={map.slug}
-								title={map.title}
-								description={map.description}
-								image={map.image}
-							/>
-						</div>
-					</div>
-
-					<div className={`px-4 pb-4 overflow-y-auto flex-1 ${isMobile ? 'pt-0' : ''}`}>
-						{!isMobile && (
-							<h1 className="text-2xl font-bold text-gray-900 mb-2">
-								{map.title}
-							</h1>
-						)}
-
-						<div className="flex items-center gap-2 mb-4 mt-2">
-							<Link href={`/maps/${map.slug || "map"}/submit`} className="flex-1">
-								<Button className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm">
-									Contribute
-								</Button>
-							</Link>
-						</div>
-
-						<div className="space-y-3 mb-6">
-							<p className="text-sm text-gray-600 leading-relaxed">
-								{map.description}
-							</p>
-						</div>
-
-						<div className="flex items-center gap-3 mb-4 text-sm text-gray-600">
-							<Avatar className="h-8 w-8 border border-gray-200">
-								{map.userProfilePicture ? (
-									<Image
-										src={map.userProfilePicture}
-										alt={map.username}
-										fill
-										className="object-cover rounded-full"
-										sizes="32px"
-									/>
-								) : (
-									<AvatarFallback>
-										{map.username
-											.split(" ")
-											.map((n) => n[0])
-											.join("")
-											.toUpperCase()}
-									</AvatarFallback>
-								)}
-							</Avatar>
-							<span>
-								Started by{" "}
-								<span className="font-medium text-gray-900">{map.username}</span>
-							</span>
-						</div>
-
-						<div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-6">
-							<UpvoteButton
-								mapId={map.id}
-								initialUpvotes={map.upvotes}
-								initialIsUpvoted={map.hasUpvoted}
-								variant="pill"
-							/>
-							<span className="flex items-center bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
-								<MapPin className="inline mr-1 h-3 w-3" />
-								{approvedLocationsCount} locations
-							</span>
-							<span className="flex items-center bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
-								<Users className="inline mr-1 h-3 w-3" />
-								{map.contributors} contributors
-							</span>
-						</div>
-
-						<div className="relative w-full aspect-video mb-6 rounded-lg overflow-hidden border border-gray-100">
-							<Image
-								src={map.image}
-								alt={map.title}
-								fill
-								className="object-cover"
-							/>
-						</div>
-
-						<div className="prose prose-sm max-w-none text-gray-600">
-							<Markdown content={map.body} />
-						</div>
-					</div>
+					</>
 				</>
 			) : userInfo ? (
 				<>
@@ -529,7 +523,19 @@ function ClientMapPageContentInner({
 								: undefined
 						}
 					/>
+
+					{/* Map Info Bar - Desktop (Removed as per new design) */}
+					{/* <div className="hidden md:block absolute bottom-6 right-6 z-[1000]">
+						<MapInfoBar map={map} />
+					</div> */}
 				</div>
+
+				{/* Map Details Dialog */}
+				<MapDetailsDialog
+					map={map}
+					isOpen={showMapDetails}
+					onOpenChange={setShowMapDetails}
+				/>
 
 				{/* Desktop Floating Sidebar */}
 				<div className="hidden md:flex absolute top-4 left-4 bottom-4 w-[400px] z-10 flex-col">
