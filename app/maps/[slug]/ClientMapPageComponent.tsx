@@ -35,7 +35,7 @@ import DeleteLocationDialog from "@/components/map/DeleteLocationDialog"
 import { Suspense } from "react"
 import { getLocationDetailsAction } from "@/lib/supabase/api/getLocationDetailsAction"
 import { useUserLocation } from "@/lib/context/UserLocationContext"
-import { calculateDistance } from "@/lib/utils/distance"
+import { calculateDistance, formatDistance } from "@/lib/utils/distance"
 
 interface MapData {
 	id: string
@@ -111,6 +111,13 @@ function ClientMapPageContentInner({
 			}))
 			.sort((a, b) => a.distance! - b.distance!)
 	}, [map.locations, userLat, userLng])
+
+	// Get distance for selected location from sortedLocations (reuse upfront calculation)
+	const selectedLocationDistance = useMemo(() => {
+		if (!selectedLocation || userLat === null || userLng === null) return null
+		const locationWithDistance = sortedLocations.find(loc => loc.id === selectedLocation.id) as (Location & { distance?: number }) | undefined
+		return locationWithDistance?.distance ?? null
+	}, [selectedLocation, sortedLocations, userLat, userLng])
 
 	const handleCollapse = () => {
 		setIsExiting(true)
@@ -340,22 +347,29 @@ function ClientMapPageContentInner({
 
 					<div className={`p-4 overflow-y-auto ${isMobile ? 'pt-0' : 'flex-1'}`}>
 						{!isMobile && (
-							<div className="flex items-start gap-3 mb-3">
-								<h1 className="text-xl font-bold text-gray-900 flex-1">
-									{selectedLocation.name}
-								</h1>
-								{canDelete && (
-									<Button
-										variant="outline"
-										size="sm"
-										className="text-red-600 hover:bg-red-50 border-red-200 hover:border-red-300 p-2"
-										onClick={() => setShowDeleteDialog(true)}
-										aria-label="Delete location"
-									>
-										<Trash2 className="h-4 w-4" />
-									</Button>
+							<>
+								<div className="flex items-start gap-3 mb-1">
+									<h1 className="text-xl font-bold text-gray-900 flex-1">
+										{selectedLocation.name}
+									</h1>
+									{canDelete && (
+										<Button
+											variant="outline"
+											size="sm"
+											className="text-red-600 hover:bg-red-50 border-red-200 hover:border-red-300 p-2"
+											onClick={() => setShowDeleteDialog(true)}
+											aria-label="Delete location"
+										>
+											<Trash2 className="h-4 w-4" />
+										</Button>
+									)}
+								</div>
+								{selectedLocationDistance !== null && (
+									<p className="text-sm text-gray-500 mb-3">
+										{formatDistance(selectedLocationDistance)} away
+									</p>
 								)}
-							</div>
+							</>
 						)}
 
 						{isLoadingLocation || !userInfo ? (
@@ -635,6 +649,11 @@ function ClientMapPageContentInner({
 												<h1 className="text-lg font-bold tracking-tight text-gray-900 line-clamp-2">
 													{selectedLocation ? selectedLocation.name : map.title}
 												</h1>
+												{selectedLocation && selectedLocationDistance !== null && (
+													<p className="text-sm text-gray-500 mt-0.5">
+														{formatDistance(selectedLocationDistance)} away
+													</p>
+												)}
 												{!isOpen && (
 													<p className="text-sm text-gray-500 truncate mt-0.5">
 														{selectedLocation
