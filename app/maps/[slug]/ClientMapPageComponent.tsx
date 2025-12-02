@@ -17,7 +17,6 @@ import {
 	Info,
 } from "lucide-react"
 import { LocationCard } from "@/components/map/LocationCard"
-import { MapInfoBar } from "@/components/map/MapInfoBar"
 import { MapDetailsDialog } from "@/components/map/MapDetailsDialog"
 import Image from "next/image"
 import ShareButton from "@/components/custom-ui/ShareButton"
@@ -87,11 +86,11 @@ function ClientMapPageContentInner({
 
 	// Sort locations
 	const sortedLocations = useMemo(() => {
-		let locations = [...map.locations]
+		let locations: Location[] = [...map.locations]
 
 		// Calculate distance if user location is available
 		if (userLat !== null && userLng !== null) {
-			locations = locations.map((location) => ({
+			locations = locations.map((location): Location => ({
 				...location,
 				distance: calculateDistance(
 					userLat,
@@ -139,6 +138,7 @@ function ClientMapPageContentInner({
 		// Note: We already have user info in the location object now
 		setIsLoadingLocation(true)
 		try {
+			fetchUserInfo(location.creator_id)
 			const result = await getLocationDetailsAction(location.id)
 			if (result.success && result.data) {
 				// Merge the fresh data but preserve the user info from the list
@@ -313,12 +313,12 @@ function ClientMapPageContentInner({
 
 						{/* Location List */}
 						<div className={`flex-1 overflow-y-auto p-4 space-y-3 ${isMobile ? 'pt-0' : ''}`}>
-							{sortedLocations.map((location) => (
+							{sortedLocations.map((location: Location) => (
 								<LocationCard
 									key={location.id}
 									location={location}
 									onClick={onMarkerClick}
-									isSelected={selectedLocation?.id === location.id}
+									isSelected={false}
 									distance={location.distance}
 									onMouseEnter={() => setHoveredLocationId(location.id)}
 									onMouseLeave={() => setHoveredLocationId(null)}
