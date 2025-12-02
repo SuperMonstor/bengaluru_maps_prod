@@ -306,7 +306,13 @@ export async function getMapById(mapId: string, userId?: string) {
           google_maps_url,
           note,
           created_at,
-          is_approved
+          created_at,
+          is_approved,
+          users!locations_creator_id_fkey (
+            first_name,
+            last_name,
+            picture_url
+          )
         ),
         votes (
           id,
@@ -389,6 +395,17 @@ export async function getMapById(mapId: string, userId?: string) {
 			}))
 			.sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
 
+		// Map user info to flat properties
+		const locationsWithUserInfo = enhancedLocations.map((loc: any) => ({
+			...loc,
+			user_username: loc.users
+				? `${loc.users.first_name || "Unnamed"} ${loc.users.last_name || "User"}`.trim()
+				: "Unknown User",
+			user_avatar: loc.users?.picture_url || null,
+			// Remove the nested users object to match the interface
+			users: undefined,
+		}))
+
 		// Create a consistent data structure that includes both name and title properties
 		return {
 			data: {
@@ -453,7 +470,13 @@ export async function getMapBySlug(slug: string, userId?: string) {
           google_maps_url,
           note,
           created_at,
-          is_approved
+          created_at,
+          is_approved,
+          users!locations_creator_id_fkey (
+            first_name,
+            last_name,
+            picture_url
+          )
         ),
         votes (
           id,
@@ -536,6 +559,17 @@ export async function getMapBySlug(slug: string, userId?: string) {
 			}))
 			.sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
 
+		// Map user info to flat properties
+		const locationsWithUserInfo = enhancedLocations.map((loc: any) => ({
+			...loc,
+			user_username: loc.users
+				? `${loc.users.first_name || "Unnamed"} ${loc.users.last_name || "User"}`.trim()
+				: "Unknown User",
+			user_avatar: loc.users?.picture_url || null,
+			// Remove the nested users object to match the interface
+			users: undefined,
+		}))
+
 		return {
 			data: {
 				id: data.id,
@@ -544,7 +578,7 @@ export async function getMapBySlug(slug: string, userId?: string) {
 				description: data.short_description,
 				body: data.body,
 				image: data.display_picture || "/placeholder.svg",
-				locations: enhancedLocations,
+				locations: locationsWithUserInfo,
 				contributors: contributorCounts.get(data.id) ?? 0,
 				upvotes: data.votes.length,
 				username: user

@@ -134,14 +134,20 @@ function ClientMapPageContentInner({
 
 		// Set initial location data immediately for fast UI
 		setSelectedLocation(location)
-		fetchUserInfo(location.creator_id)
 
-		// Fetch fresh location details in the background
+		// Fetch fresh location details in the background (only for upvotes/hasUpvoted if needed)
+		// Note: We already have user info in the location object now
 		setIsLoadingLocation(true)
 		try {
 			const result = await getLocationDetailsAction(location.id)
 			if (result.success && result.data) {
-				setSelectedLocation(result.data as Location)
+				// Merge the fresh data but preserve the user info from the list
+				setSelectedLocation(prev => prev ? ({
+					...prev,
+					...result.data,
+					user_username: prev.user_username,
+					user_avatar: prev.user_avatar
+				} as Location) : null)
 			}
 		} catch (error) {
 			console.error("Error fetching location details:", error)

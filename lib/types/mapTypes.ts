@@ -36,6 +36,8 @@ export interface Location {
 	upvotes?: number
 	hasUpvoted?: boolean
 	distance?: number
+	user_username?: string
+	user_avatar?: string | null
 }
 
 export interface Submission {

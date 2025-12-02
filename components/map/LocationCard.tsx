@@ -74,7 +74,24 @@ export function LocationCard({
             {/* Submitter Info */}
             <div className="flex items-center gap-1.5 mt-auto pt-2 border-t border-gray-50">
                 <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                    <span className="font-medium">Added by User</span>
+                    <Avatar className="h-4 w-4 border border-gray-200">
+                        {location.user_avatar ? (
+                            <Image
+                                src={location.user_avatar}
+                                alt={location.user_username || "User"}
+                                fill
+                                className="object-cover rounded-full"
+                                sizes="16px"
+                            />
+                        ) : (
+                            <AvatarFallback className="text-[8px]">
+                                {location.user_username?.slice(0, 2).toUpperCase() || "U"}
+                            </AvatarFallback>
+                        )}
+                    </Avatar>
+                    <span className="font-medium truncate max-w-[150px]">
+                        Added by {location.user_username || "Unknown User"}
+                    </span>
                 </div>
             </div>
         </div>
