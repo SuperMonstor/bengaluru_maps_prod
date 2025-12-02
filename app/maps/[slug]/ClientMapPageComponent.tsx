@@ -248,30 +248,41 @@ function ClientMapPageContentInner({
 										<h1 className="text-lg font-bold tracking-tight text-gray-900 leading-tight line-clamp-2">
 											{map.title}
 										</h1>
-										<div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-											<div className="flex items-center gap-1.5">
-												<Avatar className="h-4 w-4 border border-gray-200">
-													{map.userProfilePicture ? (
-														<Image
-															src={map.userProfilePicture}
-															alt={map.username}
-															fill
-															className="object-cover rounded-full"
-															sizes="16px"
-														/>
-													) : (
-														<AvatarFallback className="text-[8px]">
-															{map.username?.slice(0, 2).toUpperCase()}
-														</AvatarFallback>
-													)}
-												</Avatar>
-												<span className="truncate max-w-[100px]">by {map.username}</span>
-											</div>
-											<span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
+
+										{/* User Info Line */}
+										<div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500">
+											<Avatar className="h-4 w-4 border border-gray-200">
+												{map.userProfilePicture ? (
+													<Image
+														src={map.userProfilePicture}
+														alt={map.username}
+														fill
+														className="object-cover rounded-full"
+														sizes="16px"
+													/>
+												) : (
+													<AvatarFallback className="text-[8px]">
+														{map.username?.slice(0, 2).toUpperCase()}
+													</AvatarFallback>
+												)}
+											</Avatar>
+											<span className="truncate max-w-[150px]">by {map.username}</span>
+										</div>
+
+										{/* Stats Line */}
+										<div className="flex items-center gap-2 mt-2">
+											<UpvoteButton
+												mapId={map.id}
+												initialUpvotes={map.upvotes}
+												initialIsUpvoted={map.hasUpvoted}
+												variant="pill"
+												className="h-6 px-2 py-0 text-xs bg-gray-100 hover:bg-gray-200 text-gray-500"
+											/>
+											<span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full border border-gray-100 text-xs text-gray-500 h-6">
 												<MapPin className="h-3 w-3" />
 												{approvedLocationsCount}
 											</span>
-											<span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
+											<span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full border border-gray-100 text-xs text-gray-500 h-6">
 												<Users className="h-3 w-3" />
 												{map.contributors}
 											</span>
@@ -280,7 +291,7 @@ function ClientMapPageContentInner({
 
 									<button
 										onClick={() => setShowMapDetails(true)}
-										className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-1"
+										className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-2"
 									>
 										<Info className="h-3 w-3" />
 										More info
