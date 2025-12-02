@@ -232,9 +232,9 @@ function ClientMapPageContentInner({
 				<>
 					<>
 						{/* List View Header */}
-						<div className={`flex flex-col gap-4 p-4 border-b border-gray-100 bg-white sticky top-0 z-20 ${isMobile ? 'hidden' : ''}`}>
+						<div className="flex flex-col gap-4 p-4 border-b border-gray-100 bg-white sticky top-0 z-20">
 							{/* Map Header Info */}
-							<div className="flex gap-4">
+							<div className={`flex gap-4 ${isMobile ? 'hidden' : ''}`}>
 								<div className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden border border-gray-100">
 									<Image
 										src={map.image}
@@ -590,7 +590,7 @@ function ClientMapPageContentInner({
 				{/* Mobile Layout - Single Expanding Bottom Sheet */}
 				<div className="md:hidden absolute inset-0 pointer-events-none z-10">
 					<div
-						className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'h-[100dvh]' : 'h-auto max-h-[60vh]'}`}
+						className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'h-full' : 'h-auto max-h-[60vh]'}`}
 					>
 						{/* Header - Always visible and clickable to toggle */}
 						<div
