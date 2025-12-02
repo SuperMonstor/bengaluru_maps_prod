@@ -590,15 +590,15 @@ function ClientMapPageContentInner({
 				{/* Mobile Layout - Single Expanding Bottom Sheet */}
 				<div className="md:hidden absolute inset-0 pointer-events-none z-10">
 					<div
-						className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col max-h-[60vh] h-auto transition-all duration-300 ease-in-out"
+						className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'h-[100dvh]' : 'h-auto max-h-[60vh]'}`}
 					>
 						{/* Header - Always visible and clickable to toggle */}
 						<div
-							className="bg-white rounded-t-2xl border-b border-gray-100 cursor-pointer"
-							onClick={() => setIsOpen(!isOpen)}
+							className="bg-white rounded-t-2xl border-b border-gray-100 cursor-pointer shrink-0"
+							onClick={() => !selectedLocation && setIsOpen(!isOpen)}
 						>
-							{!selectedLocation && !isOpen ? (
-								// Rich Header for Collapsed Map Details
+							{!selectedLocation ? (
+								// Rich Header for Map Details (Both Collapsed and Expanded)
 								<div className="p-4 flex gap-4">
 									{/* Thumbnail Image */}
 									<div className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden border border-gray-100">
@@ -621,15 +621,30 @@ function ClientMapPageContentInner({
 													{map.description}
 												</p>
 											</div>
-											<button
-												className="p-1.5 rounded-full hover:bg-gray-100 transition-colors -mt-1 -mr-1 shrink-0"
-												onClick={(e) => {
-													e.stopPropagation()
-													setIsOpen(true)
-												}}
-											>
-												<ChevronUp className="h-5 w-5 text-gray-500" />
-											</button>
+											<div className="flex items-center gap-1 -mt-1 -mr-1 shrink-0">
+												<button
+													className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+													onClick={(e) => {
+														e.stopPropagation()
+														setShowMapDetails(true)
+													}}
+												>
+													<Info className="h-5 w-5 text-gray-500" />
+												</button>
+												<button
+													className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+													onClick={(e) => {
+														e.stopPropagation()
+														setIsOpen(!isOpen)
+													}}
+												>
+													{isOpen ? (
+														<ChevronDown className="h-5 w-5 text-gray-500" />
+													) : (
+														<ChevronUp className="h-5 w-5 text-gray-500" />
+													)}
+												</button>
+											</div>
 										</div>
 
 										{/* Metadata */}
@@ -668,11 +683,10 @@ function ClientMapPageContentInner({
 									</div>
 								</div>
 							) : (
-								// Simple Header for Expanded View or Selected Location
+								// Simple Header for Selected Location
 								<div className="p-4 flex items-center justify-between gap-2">
 									{selectedLocation && (isLoadingLocation && !selectedLocation.user_username) ? (
 										// Skeleton for loading state on mobile
-
 										<>
 											<div className="flex flex-col flex-1 min-w-0 gap-2">
 												<div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse" />
@@ -777,8 +791,8 @@ function ClientMapPageContentInner({
 						</div>
 
 						{/* Content - Visible when expanded */}
-						<div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[60vh] opacity-100' : 'max-h-0 opacity-0'}`}>
-							<div className="overflow-y-auto max-h-[55vh]">
+						<div className={`overflow-hidden flex-1 transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100' : 'max-h-0 opacity-0'}`}>
+							<div className="h-full overflow-y-auto">
 								{renderMapContent(true)}
 							</div>
 						</div>
