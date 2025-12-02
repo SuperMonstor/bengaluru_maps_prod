@@ -46,8 +46,17 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 	}>({ checking: false, available: null, message: "" })
 	const [originalSlug, setOriginalSlug] = useState<string>("")
 
+	// Redirect if no user
+	useEffect(() => {
+		if (!user) {
+			router.push("/login")
+		}
+	}, [user, router])
+
 	// Fetch map data
 	useEffect(() => {
+		if (!user) return
+
 		// Check if slug is reserved
 		if (isReservedSlug(mapSlug)) {
 			setError("Invalid map URL")
@@ -87,12 +96,8 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 			}
 		}
 
-		if (user) {
-			fetchMap()
-		} else if (!authLoading) {
-			router.push("/login")
-		}
-	}, [mapSlug, user, authLoading, router])
+		fetchMap()
+	}, [mapSlug, user, router])
 
 	// Check slug availability with debounce
 	useEffect(() => {
@@ -235,7 +240,11 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 		}
 	}
 
-	if (authLoading || loading) {
+	if (!user) {
+		return null
+	}
+
+	if (loading) {
 		return <LoadingIndicator />
 	}
 
