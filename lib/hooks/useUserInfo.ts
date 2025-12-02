@@ -20,9 +20,8 @@ export function useUserInfo() {
 
 			if (error) throw error
 
-			const username = `${data.first_name || "Unnamed"} ${
-				data.last_name || "User"
-			}`.trim()
+			const username = `${data.first_name || "Unnamed"} ${data.last_name || "User"
+				}`.trim()
 			setUserInfo({
 				username,
 				profilePicture: data.picture_url || null,

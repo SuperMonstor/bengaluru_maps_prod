@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { Markdown } from "@/components/markdown/MarkdownRenderer"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -24,7 +24,6 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { Location, MapUI } from "@/lib/types/mapTypes"
-import { useUserInfo } from "@/lib/hooks/useUserInfo"
 
 const OSMMap = dynamic(() => import("@/components/map/OSMMap"), {
 	ssr: false,
@@ -78,7 +77,6 @@ function ClientMapPageContentInner({
 	// Manage map data in state so we can update it when locations are deleted
 	const [map, setMap] = useState<MapUI>(initialMap)
 
-	const { userInfo, fetchUserInfo } = useUserInfo()
 	const { user: authUser } = useUser()
 
 	// Use global location context
@@ -116,6 +114,15 @@ function ClientMapPageContentInner({
 		return locationWithDistance?.distance ?? null
 	}, [selectedLocation, sortedLocations, userLat, userLng])
 
+	// Stable handlers for hover events to prevent LocationCard re-renders
+	const handleMouseEnter = useCallback((id: string) => {
+		setHoveredLocationId(id)
+	}, [])
+
+	const handleMouseLeave = useCallback(() => {
+		setHoveredLocationId(null)
+	}, [])
+
 	const handleCollapse = () => {
 		setIsExiting(true)
 		setTimeout(() => {
@@ -124,7 +131,7 @@ function ClientMapPageContentInner({
 		}, 300) // Match the animation duration
 	}
 
-	const onMarkerClick = async (location: Location) => {
+	const onMarkerClick = useCallback(async (location: Location) => {
 		// If clicking the same marker, deselect it
 		if (selectedLocation && selectedLocation.id === location.id) {
 			setSelectedLocation(null)
@@ -138,7 +145,6 @@ function ClientMapPageContentInner({
 		// Note: We already have user info in the location object now
 		setIsLoadingLocation(true)
 		try {
-			fetchUserInfo(location.creator_id)
 			const result = await getLocationDetailsAction(location.id)
 			if (result.success && result.data) {
 				// Merge the fresh data but preserve the user info from the list
@@ -157,7 +163,7 @@ function ClientMapPageContentInner({
 
 		// Always open the bottom panel when a location is selected
 		setIsOpen(true)
-	}
+	}, [selectedLocation])
 
 
 
@@ -219,7 +225,8 @@ function ClientMapPageContentInner({
 
 
 	// Unified content for both desktop and mobile
-	const MapContent = ({ isMobile = false }: { isMobile?: boolean }) => (
+	// Unified content for both desktop and mobile
+	const renderMapContent = (isMobile = false) => (
 		<div className="flex flex-col h-full">
 			{!selectedLocation ? (
 				<>
@@ -320,8 +327,8 @@ function ClientMapPageContentInner({
 									onClick={onMarkerClick}
 									isSelected={false}
 									distance={location.distance}
-									onMouseEnter={() => setHoveredLocationId(location.id)}
-									onMouseLeave={() => setHoveredLocationId(null)}
+									onMouseEnter={handleMouseEnter}
+									onMouseLeave={handleMouseLeave}
 								/>
 							))}
 
@@ -344,7 +351,7 @@ function ClientMapPageContentInner({
 						</div>
 					</>
 				</>
-			) : userInfo ? (
+			) : (
 				<>
 					<div className={`flex items-center justify-between p-4 border-b border-gray-100 bg-white sticky top-0 z-20 ${isMobile ? 'hidden' : ''}`}>
 						<button
@@ -393,9 +400,10 @@ function ClientMapPageContentInner({
 							</>
 						)}
 
-						{isLoadingLocation || !userInfo ? (
-							// Skeleton loading state
+						{isLoadingLocation && !selectedLocation.user_username ? (
+							// Skeleton loading state - only if we somehow don't have basic info
 							<>
+
 								{/* Avatar skeleton */}
 								<div className="flex items-center gap-3 mb-6">
 									<div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse" />
@@ -430,17 +438,17 @@ function ClientMapPageContentInner({
 							<>
 								<div className="flex items-center gap-3 mb-6 text-sm text-gray-500">
 									<Avatar className="h-8 w-8 border border-gray-200">
-										{userInfo.profilePicture ? (
+										{selectedLocation.user_avatar ? (
 											<Image
-												src={userInfo.profilePicture}
-												alt={userInfo.username}
+												src={selectedLocation.user_avatar}
+												alt={selectedLocation.user_username || "User"}
 												fill
 												className="object-cover rounded-full"
 												sizes="32px"
 											/>
 										) : (
 											<AvatarFallback>
-												{userInfo.username
+												{(selectedLocation.user_username || "U")
 													.split(" ")
 													.map((n) => n[0])
 													.join("")
@@ -451,7 +459,7 @@ function ClientMapPageContentInner({
 									<div className="flex flex-col">
 										<span className="text-xs text-gray-400">Added by</span>
 										<span className="font-medium text-gray-900">
-											{userInfo.username}
+											{selectedLocation.user_username || "Unknown User"}
 											<span className="text-gray-400 font-normal ml-1">
 												• {formatDate(selectedLocation.created_at)}
 											</span>
@@ -527,10 +535,6 @@ function ClientMapPageContentInner({
 						)}
 					</div>
 				</>
-			) : (
-				<div className="flex items-center justify-center h-full">
-					<LoadingIndicator message="Loading location details..." />
-				</div>
 			)}
 		</div>
 	)
@@ -568,7 +572,7 @@ function ClientMapPageContentInner({
 				{/* Desktop Floating Sidebar */}
 				<div className="hidden md:flex absolute top-4 left-4 bottom-4 w-[400px] z-10 flex-col">
 					<div className="flex-1 bg-white rounded-xl shadow-2xl border border-gray-200/80 overflow-hidden flex flex-col backdrop-blur-sm bg-white/95 supports-[backdrop-filter]:bg-white/80">
-						<MapContent />
+						{renderMapContent()}
 					</div>
 				</div>
 
@@ -655,8 +659,9 @@ function ClientMapPageContentInner({
 							) : (
 								// Simple Header for Expanded View or Selected Location
 								<div className="p-4 flex items-center justify-between gap-2">
-									{selectedLocation && (isLoadingLocation || !userInfo) ? (
+									{selectedLocation && (isLoadingLocation && !selectedLocation.user_username) ? (
 										// Skeleton for loading state on mobile
+
 										<>
 											<div className="flex flex-col flex-1 min-w-0 gap-2">
 												<div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse" />
@@ -763,7 +768,7 @@ function ClientMapPageContentInner({
 						{/* Content - Visible when expanded */}
 						<div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[60vh] opacity-100' : 'max-h-0 opacity-0'}`}>
 							<div className="overflow-y-auto max-h-[55vh]">
-								<MapContent isMobile={true} />
+								{renderMapContent(true)}
 							</div>
 						</div>
 					</div>

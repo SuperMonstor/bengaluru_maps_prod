@@ -8,16 +8,18 @@ import { formatDistance } from "@/lib/utils/distance"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import Image from "next/image"
 
+import { memo } from "react"
+
 interface LocationCardProps {
     location: Location
     onClick: (location: Location) => void
     isSelected?: boolean
     distance?: number | null
-    onMouseEnter?: () => void
+    onMouseEnter?: (id: string) => void
     onMouseLeave?: () => void
 }
 
-export function LocationCard({
+export const LocationCard = memo(function LocationCard({
     location,
     onClick,
     isSelected = false,
@@ -28,7 +30,7 @@ export function LocationCard({
     return (
         <div
             onClick={() => onClick(location)}
-            onMouseEnter={onMouseEnter}
+            onMouseEnter={() => onMouseEnter?.(location.id)}
             onMouseLeave={onMouseLeave}
             className={cn(
                 "group relative flex flex-col gap-2 p-4 rounded-xl border transition-all cursor-pointer hover:shadow-md",
@@ -96,4 +98,4 @@ export function LocationCard({
             </div>
         </div>
     )
-}
+})
