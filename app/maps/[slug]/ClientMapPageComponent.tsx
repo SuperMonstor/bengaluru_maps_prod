@@ -590,15 +590,15 @@ function ClientMapPageContentInner({
 				{/* Mobile Layout - Single Expanding Bottom Sheet */}
 				<div className="md:hidden absolute inset-0 pointer-events-none z-10">
 					<div
-						className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'h-full' : 'h-auto max-h-[60vh]'}`}
+						className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col transition-all duration-300 ease-in-out ${isOpen && !selectedLocation ? 'h-full' : 'h-auto max-h-[60vh]'}`}
 					>
 						{/* Header - Always visible and clickable to toggle */}
 						<div
 							className="bg-white rounded-t-2xl border-b border-gray-100 cursor-pointer shrink-0"
 							onClick={() => !selectedLocation && setIsOpen(!isOpen)}
 						>
-							{!selectedLocation ? (
-								// Rich Header for Map Details (Both Collapsed and Expanded)
+							{!selectedLocation && !isOpen ? (
+								// Rich Header for Collapsed Map Details
 								<div className="p-4 flex gap-4">
 									{/* Thumbnail Image */}
 									<div className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden border border-gray-100">
@@ -635,14 +635,10 @@ function ClientMapPageContentInner({
 													className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
 													onClick={(e) => {
 														e.stopPropagation()
-														setIsOpen(!isOpen)
+														setIsOpen(true)
 													}}
 												>
-													{isOpen ? (
-														<ChevronDown className="h-5 w-5 text-gray-500" />
-													) : (
-														<ChevronUp className="h-5 w-5 text-gray-500" />
-													)}
+													<ChevronUp className="h-5 w-5 text-gray-500" />
 												</button>
 											</div>
 										</div>
@@ -683,7 +679,7 @@ function ClientMapPageContentInner({
 									</div>
 								</div>
 							) : (
-								// Simple Header for Selected Location
+								// Simple Header for Expanded View or Selected Location
 								<div className="p-4 flex items-center justify-between gap-2">
 									{selectedLocation && (isLoadingLocation && !selectedLocation.user_username) ? (
 										// Skeleton for loading state on mobile
@@ -791,7 +787,7 @@ function ClientMapPageContentInner({
 						</div>
 
 						{/* Content - Visible when expanded */}
-						<div className={`overflow-hidden flex-1 transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100' : 'max-h-0 opacity-0'}`}>
+						<div className={`overflow-hidden flex-1 transition-all duration-300 ease-in-out ${isOpen || selectedLocation ? 'opacity-100' : 'max-h-0 opacity-0'}`}>
 							<div className="h-full overflow-y-auto">
 								{renderMapContent(true)}
 							</div>
