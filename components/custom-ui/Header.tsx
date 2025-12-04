@@ -119,7 +119,10 @@ const Header = memo(function Header() {
 	}
 
 	return (
-		<header className="flex items-center justify-between px-4 py-[18px] md:px-6 w-full bg-white border-b border-gray-100/80 shadow-sm">
+		<header
+			className="flex items-center justify-between px-4 py-[18px] md:px-6 w-full bg-white border-b border-gray-100/80 shadow-sm"
+			style={{ paddingTop: 'max(18px, env(safe-area-inset-top))' }}
+		>
 			{/* Left Section: Title and Byline */}
 			<div className="flex flex-col min-w-0">
 				<Link href="/" className="inline-block">

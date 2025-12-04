@@ -440,7 +440,7 @@ function ClientMapPageContentInner({
 								</div>
 
 								{/* Action buttons skeleton */}
-								<div className={`flex gap-2 pb-safe ${isMobile ? 'mt-4' : 'mt-auto'}`}>
+								<div className={`flex gap-2 ${isMobile ? 'mt-4' : 'mt-auto'}`}>
 									<div className="w-20 h-11 bg-gray-200 rounded-xl animate-pulse" />
 									<div className="flex-1 h-11 bg-gray-200 rounded-xl animate-pulse" />
 								</div>
@@ -502,7 +502,7 @@ function ClientMapPageContentInner({
 								)}
 
 								{/* Action buttons */}
-								<div className={`flex gap-2 pb-safe ${isMobile ? 'mt-4' : 'mt-auto'}`}>
+								<div className={`flex gap-2 ${isMobile ? 'mt-4' : 'mt-auto'}`}>
 									<LocationUpvoteButton
 										locationId={selectedLocation.id}
 										initialUpvotes={selectedLocation.upvotes ?? 0}
@@ -590,7 +590,7 @@ function ClientMapPageContentInner({
 				{/* Mobile Layout - Single Expanding Bottom Sheet */}
 				<div className="md:hidden absolute inset-0 pointer-events-none z-10">
 					<div
-						className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col transition-all duration-300 ease-in-out ${isOpen && !selectedLocation ? 'h-full' : 'h-auto max-h-[60vh]'}`}
+						className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col transition-all duration-300 ease-in-out pb-safe ${isOpen && !selectedLocation ? 'h-full' : 'h-auto max-h-[60vh]'}`}
 					>
 						{/* Header - Always visible and clickable to toggle */}
 						<div
