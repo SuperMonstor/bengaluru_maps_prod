@@ -10,7 +10,6 @@ import {
 } from "@/lib/types/mapTypes"
 import { User } from "@/lib/types/userTypes"
 import { toggleUpvote } from "./votesService"
-import { toggleLocationUpvote } from "./locationVotesService"
 import { slugify, generateUniqueSlug, isReservedSlug, validateSlug } from "@/lib/utils/slugify"
 
 const supabase = createClient()
@@ -794,18 +793,8 @@ export async function createLocation({
 
 		if (error) throw new Error(`Failed to create location: ${error.message}`)
 
-		// Auto-upvote the location for the creator
-		if (data) {
-			try {
-				const upvoteResult = await toggleLocationUpvote(data.id, creatorId)
-				if (!upvoteResult.success) {
-					console.error("Failed to auto-upvote location:", upvoteResult.error)
-				}
-			} catch (upvoteError) {
-				console.error("Error auto-upvoting location:", upvoteError)
-				// Continue even if upvote fails
-			}
-		}
+		// NOTE: This function is deprecated. Use createLocationAction server action instead.
+		// Auto-upvote functionality removed - now handled in createLocationAction.
 
 		// If the creator is not the owner, send a notification email to the map owner
 		if (!isOwner) {

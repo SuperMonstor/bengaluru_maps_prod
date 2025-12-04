@@ -3,7 +3,7 @@
 import { Heart } from "lucide-react"
 import { cn } from "@/lib/utils/utils"
 import { useState, memo, useCallback } from "react"
-import { toggleLocationUpvote } from "@/lib/supabase/locationVotesService"
+import { toggleLocationUpvoteAction } from "@/lib/supabase/api/toggleLocationUpvoteAction"
 import { useUser } from "@/components/layout/LayoutClient"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/lib/hooks/use-toast"
@@ -65,7 +65,7 @@ export const LocationUpvoteButton = memo(function LocationUpvoteButton({
 			setIsLoading(true)
 
 			try {
-				const result = await toggleLocationUpvote(locationId, user.id)
+				const result = await toggleLocationUpvoteAction(locationId)
 
 				if (!result.success) {
 					// Revert on failure

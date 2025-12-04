@@ -1,6 +1,6 @@
-import { createClient } from "./api/supabaseClient"
+"use server"
 
-const supabase = createClient()
+import { createClient } from "./supabaseServer"
 
 export interface LocationVoteResult {
 	success: boolean
@@ -9,15 +9,27 @@ export interface LocationVoteResult {
 }
 
 /**
- * Toggle upvote for a location
+ * Toggle upvote for a location (Server Action)
  * If the user has already upvoted, it will remove the upvote
  * If the user hasn't upvoted, it will add an upvote
  */
-export async function toggleLocationUpvote(
-	locationId: string,
-	userId: string
+export async function toggleLocationUpvoteAction(
+	locationId: string
 ): Promise<LocationVoteResult> {
 	try {
+		const supabase = await createClient()
+
+		// Get the current user from server-side auth
+		const {
+			data: { user },
+		} = await supabase.auth.getUser()
+
+		if (!user) {
+			return { success: false, error: "You must be logged in to upvote" }
+		}
+
+		const userId = user.id
+
 		// Check if the user has already upvoted this location
 		const { data: existingVote, error: checkError } = await supabase
 			.from("location_votes")
@@ -60,7 +72,7 @@ export async function toggleLocationUpvote(
 
 		return { success: true, isUpvoted: true }
 	} catch (error) {
-		console.error("Unexpected error in toggleLocationUpvote:", error)
+		console.error("Unexpected error in toggleLocationUpvoteAction:", error)
 		return {
 			success: false,
 			error:
@@ -70,18 +82,28 @@ export async function toggleLocationUpvote(
 }
 
 /**
- * Check if a user has upvoted a specific location
+ * Check if a user has upvoted a specific location (Server Action)
  */
-export async function hasUserUpvotedLocation(
-	locationId: string,
-	userId: string
+export async function hasUserUpvotedLocationAction(
+	locationId: string
 ): Promise<boolean> {
 	try {
+		const supabase = await createClient()
+
+		// Get the current user from server-side auth
+		const {
+			data: { user },
+		} = await supabase.auth.getUser()
+
+		if (!user) {
+			return false
+		}
+
 		const { data, error } = await supabase
 			.from("location_votes")
 			.select("id")
 			.eq("location_id", locationId)
-			.eq("user_id", userId)
+			.eq("user_id", user.id)
 			.single()
 
 		if (error && error.code !== "PGRST116") {
@@ -91,7 +113,7 @@ export async function hasUserUpvotedLocation(
 
 		return !!data
 	} catch (error) {
-		console.error("Unexpected error in hasUserUpvotedLocation:", error)
+		console.error("Unexpected error in hasUserUpvotedLocationAction:", error)
 		return false
 	}
 }

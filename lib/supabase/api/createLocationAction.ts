@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "./supabaseServer"
-import { toggleLocationUpvote } from "../locationVotesService"
+import { toggleLocationUpvoteAction } from "./toggleLocationUpvoteAction"
 
 export async function createLocationAction(formData: FormData) {
 	try {
@@ -181,7 +181,7 @@ export async function createLocationAction(formData: FormData) {
 		// Auto-upvote the location for the creator
 		if (data) {
 			try {
-				const upvoteResult = await toggleLocationUpvote(data.id, user.id)
+				const upvoteResult = await toggleLocationUpvoteAction(data.id)
 				if (!upvoteResult.success) {
 					console.error("Failed to auto-upvote location:", upvoteResult.error)
 				}
