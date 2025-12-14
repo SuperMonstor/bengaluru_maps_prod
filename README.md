@@ -8,13 +8,15 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 Bengaluru Maps is a community-driven project to aggregate cool places in Bengaluru (Bangalore). Discover and share the best spots in the city - from cafes and restaurants to entertainment venues.
 
-### Key Features
+### Features
 
-- **Create Maps**: Create themed maps with detailed descriptions using Markdown
-- **Add Locations**: Submit and contribute locations to existing maps
-- **Review System**: Map owners can review and approve location submissions
-- **Google Maps Integration**: View all locations on an interactive map
-- **User Authentication**: Sign in with Google to create and contribute to maps
+- **Create Maps**: Users can create custom maps of their favorite places in Bengaluru, complete with detailed descriptions using Markdown.
+- **Add Locations**: Anyone can contribute by submitting new locations to existing maps.
+- **Review System**: Map owners have full control over their maps and can review and approve or reject location submissions.
+- **Google Maps Integration**: All locations are displayed on an interactive map, making it easy to visualize and explore the city.
+- **User Authentication**: Simple and secure sign-in with Google to create maps and contribute locations.
+- **Email Notifications**: Map owners receive email notifications when new locations are submitted to their maps.
+- **Upvoting**: Users can upvote their favorite locations on a map.
 
 ## Getting Started
 
@@ -50,27 +52,29 @@ See `.env.example` for more details.
 This project uses Supabase as the database. To set up the database:
 
 1. Create a new Supabase project at [supabase.com](https://supabase.com)
-2. Run the migrations in the `supabase/migrations` folder in order:
-   - `20251127151321_add_city_columns.sql`
-   - `20251127152500_update_rpc_functions_city.sql`
-   - `20251127160000_add_location_votes.sql`
-   - `20251127170000_add_location_votes_rls.sql`
-3. You can run these migrations using the Supabase SQL Editor or the Supabase CLI
-
-Alternatively, if you have the Supabase CLI installed:
+2. Run the migrations in the `supabase/migrations` folder. The easiest way to do this is with the Supabase CLI:
 ```bash
 supabase db push
 ```
+This will run all the migration files in the correct order.
+
+Alternatively, you can run the migrations manually in the Supabase SQL Editor in the following order:
+- `20251127151321_add_city_columns.sql`
+- `20251127152500_update_rpc_functions_city.sql`
+- `20251127160000_add_location_votes.sql`
+- `20251127170000_add_location_votes_rls.sql`
+
 
 ## Tech Stack
 
-- **Framework**: [Next.js 15](https://nextjs.org/)
+- **Framework**: [Next.js 16](https://nextjs.org/)
 - **Authentication**: [Supabase Auth](https://supabase.com/auth)
 - **Database**: [Supabase](https://supabase.com/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) with [shadcn/ui](https://ui.shadcn.com/)
 - **Maps**: [Google Maps API](https://developers.google.com/maps)
 - **Forms**: [React Hook Form](https://react-hook-form.com/) with [Zod](https://github.com/colinhacks/zod)
 - **Markdown**: [React Markdown](https://github.com/remarkjs/react-markdown) and [MDXEditor](https://mdxeditor.dev/)
+- **Server-Only**: [server-only](https://www.npmjs.com/package/server-only)
 - **Fonts**: [Geist](https://vercel.com/font) from Vercel
 
 ## Project Structure
@@ -94,11 +98,13 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deployment
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+For other platforms, you will need to configure your environment variables and build the project using `npm run build`.
 
 ## Contributing
 
@@ -117,6 +123,6 @@ Please ensure your code follows the existing style and passes all checks.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Created By
+## Contact
 
-This project was created by [Sudarshan S](https://x.com/realsudarshansk).
+Created by [Sudarshan S](https://x.com/realsudarshansk).

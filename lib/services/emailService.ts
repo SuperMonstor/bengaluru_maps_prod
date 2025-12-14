@@ -2,51 +2,15 @@
 
 import { Resend } from "resend"
 
-// Initialize Resend with API key - handle both client and server environments
-// In Next.js, process.env might behave differently in server vs client components
-let resendApiKey: string | undefined
-
-// Try to get the API key from different possible sources
-try {
-	// First check if it's directly available
-	resendApiKey = process.env.RESEND_API_KEY
-
-	// If not found and we're in a browser environment, try to load it from window
-	if (!resendApiKey && typeof window !== "undefined") {
-		// This is a fallback for client-side, though env vars should be prefixed with NEXT_PUBLIC_
-		// to be available on the client
-		console.log("Trying to access RESEND_API_KEY from window.__ENV__")
-	}
-
-	// Log the status without revealing the key
-	console.log("RESEND_API_KEY configured:", !!resendApiKey)
-	console.log("RESEND_API_KEY length:", resendApiKey ? resendApiKey.length : 0)
-
-	// Hardcoded fallback for development/testing - REMOVE IN PRODUCTION
-	if (!resendApiKey) {
-		console.log("Using hardcoded API key from .env.local as fallback")
-		resendApiKey = "re_havM8ky6_NNRWjUkSab4FJritye56W8qo"
-	}
-} catch (error) {
-	console.error("Error accessing environment variables:", error)
-}
-
-// Create Resend instance with better error handling
+const resendApiKey = process.env.RESEND_API_KEY
 let resend: Resend | null = null
-try {
-	if (!resendApiKey) {
-		console.error("RESEND_API_KEY is not configured in environment variables")
-	} else {
-		resend = new Resend(resendApiKey)
-		console.log("Resend instance created successfully")
-	}
-} catch (error) {
-	console.error("Error creating Resend instance:", error)
-	if (error instanceof Error) {
-		console.error("Error message:", error.message)
-		console.error("Error stack:", error.stack)
-	}
+
+if (resendApiKey) {
+	resend = new Resend(resendApiKey)
+} else {
+	console.error("RESEND_API_KEY is not configured in environment variables")
 }
+
 
 // Export the resend instance so it can be checked by other modules
 export { resend }
