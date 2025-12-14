@@ -1,5 +1,7 @@
 # Bengaluru Maps
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## About the Project
@@ -41,6 +43,25 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 NEXT_PUBLIC_SITE_URL=your_site_url_for_production
 ```
 
+See `.env.example` for more details.
+
+## Database Setup
+
+This project uses Supabase as the database. To set up the database:
+
+1. Create a new Supabase project at [supabase.com](https://supabase.com)
+2. Run the migrations in the `supabase/migrations` folder in order:
+   - `20251127151321_add_city_columns.sql`
+   - `20251127152500_update_rpc_functions_city.sql`
+   - `20251127160000_add_location_votes.sql`
+   - `20251127170000_add_location_votes_rls.sql`
+3. You can run these migrations using the Supabase SQL Editor or the Supabase CLI
+
+Alternatively, if you have the Supabase CLI installed:
+```bash
+supabase db push
+```
+
 ## Tech Stack
 
 - **Framework**: [Next.js 15](https://nextjs.org/)
@@ -78,6 +99,23 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Contributing
+
+Contributions are welcome! Here's how you can help:
+
+1. Fork the repository
+2. Create a new branch (`git checkout -b feature/your-feature`)
+3. Make your changes
+4. Commit your changes (`git commit -m 'feat: add some feature'`)
+5. Push to the branch (`git push origin feature/your-feature`)
+6. Open a Pull Request
+
+Please ensure your code follows the existing style and passes all checks.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Created By
 
