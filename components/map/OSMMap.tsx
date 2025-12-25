@@ -158,9 +158,16 @@ export default function OSMMap({
             zoomControl={false}
         >
             <ZoomControl position="bottomright" />
+            {/* Base map - CARTO Voyager (no labels) */}
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
+            />
+            {/* Labels overlay with reduced opacity for lighter appearance */}
+            <TileLayer
+                url="https://tiles.stadiamaps.com/tiles/stamen_toner_labels/{z}/{x}/{y}{r}.png"
+                attribution='&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a>'
+                opacity={0.5}
             />
             <MapController
                 locations={locations}
