@@ -15,6 +15,7 @@ import {
 	X,
 	ArrowUpDown,
 	Info,
+	Plus,
 } from "lucide-react"
 import { LocationCard } from "@/components/map/LocationCard"
 import { MapDetailsDialog } from "@/components/map/MapDetailsDialog"
@@ -289,13 +290,22 @@ function ClientMapPageContentInner({
 										</div>
 									</div>
 
-									<button
-										onClick={() => setShowMapDetails(true)}
-										className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-2"
-									>
-										<Info className="h-3 w-3" />
-										More info
-									</button>
+									<div className="flex items-center gap-3 mt-2">
+										<button
+											onClick={() => setShowMapDetails(true)}
+											className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+										>
+											<Info className="h-3 w-3" />
+											More info
+										</button>
+										<Link
+											href={`/maps/${map.slug}/submit`}
+											className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+										>
+											<Plus className="h-3 w-3" />
+											Add location
+										</Link>
+									</div>
 								</div>
 							</div>
 
