@@ -16,6 +16,7 @@ import {
 	ArrowUpDown,
 	Info,
 	Plus,
+	Share2,
 } from "lucide-react"
 import { LocationCard } from "@/components/map/LocationCard"
 import { MapDetailsDialog } from "@/components/map/MapDetailsDialog"
@@ -40,6 +41,7 @@ import { Suspense } from "react"
 import { getLocationDetailsAction } from "@/lib/supabase/api/getLocationDetailsAction"
 import { useUserLocation } from "@/lib/context/UserLocationContext"
 import { calculateDistance, formatDistance } from "@/lib/utils/distance"
+import { useToast } from "@/lib/hooks/use-toast"
 
 
 
@@ -79,6 +81,7 @@ function ClientMapPageContentInner({
 	const [map, setMap] = useState<MapUI>(initialMap)
 
 	const { user: authUser } = useUser()
+	const { toast } = useToast()
 
 	// Use global location context
 	const { latitude: userLat, longitude: userLng } = useUserLocation()
@@ -130,6 +133,25 @@ function ClientMapPageContentInner({
 			setIsOpen(false)
 			setIsExiting(false)
 		}, 300) // Match the animation duration
+	}
+
+	const handleShareMap = async () => {
+		const url = `${window.location.origin}/maps/${map.slug}`
+		try {
+			await navigator.clipboard.writeText(url)
+			toast({
+				title: "Link Copied!",
+				description: "The map URL has been copied to your clipboard.",
+				duration: 3000,
+			})
+		} catch (err) {
+			toast({
+				title: "Failed to Copy",
+				description: "Couldn't copy the URL. Please try again.",
+				variant: "destructive",
+				duration: 3000,
+			})
+		}
 	}
 
 	const onMarkerClick = useCallback(async (location: Location) => {
@@ -290,21 +312,28 @@ function ClientMapPageContentInner({
 										</div>
 									</div>
 
-									<div className="flex items-center gap-3 mt-2">
+									<div className="flex items-center gap-2 mt-2 flex-wrap">
 										<button
 											onClick={() => setShowMapDetails(true)}
-											className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+											className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
 										>
 											<Info className="h-3 w-3" />
 											More info
 										</button>
 										<Link
 											href={`/maps/${map.slug}/submit`}
-											className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+											className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
 										>
 											<Plus className="h-3 w-3" />
 											Add location
 										</Link>
+										<button
+											onClick={handleShareMap}
+											className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
+										>
+											<Share2 className="h-3 w-3" />
+											Share
+										</button>
 									</div>
 								</div>
 							</div>

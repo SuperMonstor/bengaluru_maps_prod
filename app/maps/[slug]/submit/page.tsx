@@ -430,8 +430,8 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 							id="description"
 							{...register("description", {
 								maxLength: {
-									value: 60,
-									message: "Description must be less than 60 characters",
+									value: 120,
+									message: "Description must be less than 120 characters",
 								},
 							})}
 							placeholder="Great sushi, awesome vibes (optional)"
@@ -445,12 +445,12 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 							)}
 							<span
 								className={`text-xs ${
-									(watch("description")?.length || 0) > 60
+									(watch("description")?.length || 0) > 120
 										? "text-destructive"
 										: "text-muted-foreground"
 								}`}
 							>
-								{watch("description")?.length || 0}/60
+								{watch("description")?.length || 0}/120
 							</span>
 						</div>
 					</div>
