@@ -393,7 +393,7 @@ function ClientMapPageContentInner({
 									</p>
 									<Link href={`/maps/${map.slug || "map"}/submit`}>
 										<Button className="bg-blue-600 hover:bg-blue-700 text-white">
-											Contribute Location
+											Add Location
 										</Button>
 									</Link>
 								</div>
@@ -703,18 +703,31 @@ function ClientMapPageContentInner({
 											</div>
 										</div>
 
-										{/* Contribute Button */}
-										<Link
-											href={`/maps/${map.slug || "map"}/submit`}
-											onClick={(e) => e.stopPropagation()}
-										>
+										{/* Action Buttons */}
+										<div className="flex items-center gap-2">
+											<Link
+												href={`/maps/${map.slug || "map"}/submit`}
+												onClick={(e) => e.stopPropagation()}
+												className="flex-1"
+											>
+												<Button
+													size="sm"
+													className="w-full h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-sm"
+												>
+													Add location
+												</Button>
+											</Link>
 											<Button
 												size="sm"
-												className="w-full h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-sm"
+												onClick={(e) => {
+													e.stopPropagation()
+													handleShareMap()
+												}}
+												className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-sm px-3"
 											>
-												Contribute
+												<Share2 className="h-3.5 w-3.5" />
 											</Button>
-										</Link>
+										</div>
 									</div>
 								</div>
 							) : (
