@@ -14,7 +14,7 @@ export async function getLocationDetailsAction(locationId: string) {
 		// Fetch location details
 		const { data: location, error: locationError } = await supabase
 			.from("locations")
-			.select("*")
+			.select("*, maps(owner_id)")
 			.eq("id", locationId)
 			.single()
 
@@ -22,6 +22,18 @@ export async function getLocationDetailsAction(locationId: string) {
 			return {
 				success: false,
 				error: `Failed to fetch location: ${locationError.message}`,
+				data: null,
+			}
+		}
+
+		// Security check: Only show pending locations to map owner or creator
+		const isOwner = user && location.maps?.owner_id === user.id
+		const isCreator = user && location.creator_id === user.id
+
+		if (location.status !== 'approved' && !isOwner && !isCreator) {
+			return {
+				success: false,
+				error: 'This location is not yet approved',
 				data: null,
 			}
 		}

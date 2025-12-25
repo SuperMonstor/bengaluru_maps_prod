@@ -59,7 +59,8 @@ export async function middleware(request: NextRequest) {
 		!user &&
 		(request.nextUrl.pathname.startsWith("/dashboard") ||
 			request.nextUrl.pathname.startsWith("/profile") ||
-			request.nextUrl.pathname.startsWith("/create-map")) // Add other protected routes if needed
+			request.nextUrl.pathname.startsWith("/create-map") ||
+			request.nextUrl.pathname.startsWith("/my-maps")) // Add /my-maps protection
 	) {
 		const url = request.nextUrl.clone()
 		url.pathname = "/login"
@@ -85,5 +86,6 @@ export const config = {
 		"/dashboard/:path*",
 		"/profile/:path*",
 		"/create-map/:path*",
+		"/my-maps/:path*",
 	],
 }

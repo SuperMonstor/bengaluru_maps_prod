@@ -7,10 +7,10 @@ import { useLoadScript } from "@react-google-maps/api"
 import { Check, X, MapPin, Loader2 } from "lucide-react"
 import { getMapById } from "@/lib/supabase/mapsService"
 import {
-	fetchPendingSubmissions,
 	approveLocation,
 	rejectLocation,
 } from "@/lib/supabase/mapSubmissionService"
+import { fetchPendingSubmissionsAction } from "@/lib/supabase/api/fetchPendingSubmissionsAction"
 import React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -61,14 +61,21 @@ export default function PendingSubmissionsPage({
 				setMapName(mapData.name || mapData.title || "Unknown Map")
 			}
 
-			// Fetch pending submissions
-			const { data, error } = await fetchPendingSubmissions(mapId)
+			// Fetch pending submissions using secure server action
+			const result = await fetchPendingSubmissionsAction(mapId)
 
-			if (error) {
-				console.error("Error fetching submissions:", error)
+			if (!result.success || result.error) {
+				console.error("Error fetching submissions:", result.error)
+				toast({
+					title: "Error",
+					description: result.error || "Failed to fetch pending submissions",
+					variant: "destructive",
+				})
 				setLoading(false)
 				return
 			}
+
+			const { data, error } = result
 
 			if (!data) {
 				console.log("No submissions data returned")
