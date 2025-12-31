@@ -82,6 +82,26 @@ export function GoogleMapsListImport({
       setStats(result.stats || null)
       // Select all by default
       setSelectedIndices(new Set(result.locations.map((_, i) => i)))
+
+      // Debug logging for coverage analysis
+      if (result.stats) {
+        const { total, tier1, tier3 } = result.stats
+        const coverage = total > 0 ? ((tier1 / total) * 100).toFixed(1) : 0
+        console.log(`[GoogleMapsListImport] Stats: ${tier1} with /g/ pattern, ${tier3} with CID, Coverage: ${coverage}%`)
+
+        // Log sample links from each tier
+        const tier1Samples = result.locations.filter(l => l.googlePlaceId && !l.googlePlaceId.startsWith('cid:')).slice(0, 2)
+        const cidSamples = result.locations.filter(l => l.googlePlaceId?.startsWith('cid:')).slice(0, 2)
+
+        if (tier1Samples.length > 0) {
+          console.log('[GoogleMapsListImport] Sample /g/ links:')
+          tier1Samples.forEach(l => console.log(`  - ${l.name}: ${l.googleMapsUrl}`))
+        }
+        if (cidSamples.length > 0) {
+          console.log('[GoogleMapsListImport] Sample CID links:')
+          cidSamples.forEach(l => console.log(`  - ${l.name}: ${l.googleMapsUrl}`))
+        }
+      }
     } catch (err) {
       setError("An error occurred while parsing the list")
       console.error(err)
@@ -225,41 +245,33 @@ export function GoogleMapsListImport({
             </Button>
           </div>
 
-          {/* Stats breakdown */}
-          {stats && (
-            <div className="flex gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <ExternalLink className="h-3 w-3" />
-                {stats.tier1} with Google link
-              </span>
-              {stats.tier3 > 0 && (
-                <span>{stats.tier3} custom pins</span>
-              )}
-            </div>
-          )}
 
           <div className="max-h-64 overflow-y-auto border border-border rounded-md divide-y divide-border">
             {locations.map((location, index) => (
-              <label
+              <div
                 key={index}
-                className="flex items-center gap-3 p-3 hover:bg-accent cursor-pointer"
+                className="flex items-center gap-3 p-3 hover:bg-accent"
               >
-                <Checkbox
-                  checked={selectedIndices.has(index)}
-                  onCheckedChange={() => toggleLocation(index)}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-sm truncate">{location.name}</p>
-                    {location.googlePlaceId && (
-                      <ExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                    )}
-                  </div>
-                  {!location.googlePlaceId && (
-                    <p className="text-xs text-muted-foreground">Custom pin</p>
-                  )}
-                </div>
-              </label>
+                <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+                  <Checkbox
+                    checked={selectedIndices.has(index)}
+                    onCheckedChange={() => toggleLocation(index)}
+                  />
+                  <p className="font-medium text-sm truncate">{location.name}</p>
+                </label>
+                {location.googleMapsUrl && (
+                  <a
+                    href={location.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1 hover:bg-accent-foreground/10 rounded flex-shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                    title="Open in Google Maps"
+                  >
+                    <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                  </a>
+                )}
+              </div>
             ))}
           </div>
 

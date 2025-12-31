@@ -95,7 +95,7 @@ export function MapDetailsDialog({ map, isOpen, onOpenChange }: MapDetailsDialog
                     <div className="flex gap-3 pt-2">
                         <Link href={`/maps/${map.slug || "map"}/submit`} className="flex-1">
                             <Button className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm">
-                                Contribute a Location
+                                Suggest Location
                             </Button>
                         </Link>
                     </div>

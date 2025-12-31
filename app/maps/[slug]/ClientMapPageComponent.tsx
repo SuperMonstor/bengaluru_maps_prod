@@ -324,7 +324,7 @@ function ClientMapPageContentInner({
 											className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
 										>
 											<Plus className="h-3 w-3" />
-											Add location
+											Suggest location
 										</Link>
 										<button
 											onClick={handleShareMap}
@@ -714,7 +714,7 @@ function ClientMapPageContentInner({
 													size="sm"
 													className="w-full h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-sm"
 												>
-													Add location
+													Suggest location
 												</Button>
 											</Link>
 											<Button
