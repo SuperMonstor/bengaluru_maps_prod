@@ -51,9 +51,10 @@ function MapController({
                     // Set view first to establish zoom level
                     map.setView([lat, lng], 15, { animate: false })
 
-                    // Calculate offset center and set it immediately
+                    // Calculate offset center - add to y to shift map center down,
+                    // which moves the marker up on screen into the visible area
                     const targetPoint = map.latLngToContainerPoint([lat, lng])
-                    const offsetPoint = L.point(targetPoint.x, targetPoint.y - offsetPixels)
+                    const offsetPoint = L.point(targetPoint.x, targetPoint.y + offsetPixels)
                     const offsetLatLng = map.containerPointToLatLng(offsetPoint)
                     map.setView(offsetLatLng, 15, { animate: false })
                 } else {
