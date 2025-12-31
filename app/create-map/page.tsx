@@ -16,6 +16,9 @@ import { useToast } from "@/lib/hooks/use-toast"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
 import { slugify, validateSlug, isReservedSlug } from "@/lib/utils/slugify"
 import { CREATE_MAP_CONTENT } from "@/lib/constants/createMapContent"
+import { GoogleMapsListImport } from "@/components/map/GoogleMapsListImport"
+import { ParsedLocation } from "@/lib/services/googleMapsListService"
+import { bulkImportLocationsAction } from "@/lib/supabase/api/bulkImportLocationsAction"
 
 const MDXEditorDynamic = dynamic(
 	() => import("@mdxeditor/editor").then((mod) => mod.MDXEditor),
@@ -47,6 +50,7 @@ export default function CreateMapPage() {
 		message: string
 	}>({ checking: false, available: null, message: "" })
 	const [userEditedSlug, setUserEditedSlug] = useState(false)
+	const [locationsToImport, setLocationsToImport] = useState<ParsedLocation[]>([])
 
 	const {
 		register,
@@ -191,10 +195,37 @@ export default function CreateMapPage() {
 				})
 				setIsSubmitting(false)
 			} else {
-				toast({
-					title: "Success!",
-					description: "Your map has been created.",
-				})
+				// If there are locations to import, do it now
+				if (locationsToImport.length > 0 && result.data?.id) {
+					try {
+						const importResult = await bulkImportLocationsAction(
+							result.data.id,
+							locationsToImport
+						)
+						if (importResult.imported > 0) {
+							toast({
+								title: "Success!",
+								description: `Your map has been created with ${importResult.imported} locations imported.`,
+							})
+						} else {
+							toast({
+								title: "Success!",
+								description: "Your map has been created.",
+							})
+						}
+					} catch (importError) {
+						console.error("Error importing locations:", importError)
+						toast({
+							title: "Map Created",
+							description: "Your map was created but some locations failed to import.",
+						})
+					}
+				} else {
+					toast({
+						title: "Success!",
+						description: "Your map has been created.",
+					})
+				}
 
 				// Increase the delay to ensure the upvote is processed
 				setTimeout(() => {
@@ -248,6 +279,12 @@ export default function CreateMapPage() {
 						))}
 					</ul>
 				</div>
+
+				{/* Google Maps List Import */}
+				<GoogleMapsListImport
+					previewMode={true}
+					onLocationsChange={setLocationsToImport}
+				/>
 
 				<form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 					<div className="space-y-2">
