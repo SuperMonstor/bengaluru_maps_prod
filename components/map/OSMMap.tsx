@@ -44,11 +44,11 @@ function MapController({
 
                 if (isMobile) {
                     // On mobile, the bottom sheet covers ~60% of the screen
-                    // Calculate offset position and animate directly to it
+                    // Set view without animation, then offset to position marker in visible area
                     const viewportHeight = window.innerHeight
                     const offsetPixels = viewportHeight * 0.25
 
-                    // Set view first without animation to establish zoom level
+                    // Set view first to establish zoom level
                     map.setView([lat, lng], 15, { animate: false })
 
                     // Calculate offset center - add to y to shift map center down,
@@ -56,11 +56,9 @@ function MapController({
                     const targetPoint = map.latLngToContainerPoint([lat, lng])
                     const offsetPoint = L.point(targetPoint.x, targetPoint.y + offsetPixels)
                     const offsetLatLng = map.containerPointToLatLng(offsetPoint)
-
-                    // Animate smoothly to the offset position
-                    map.setView(offsetLatLng, 15, { animate: true, duration: 0.3 })
+                    map.setView(offsetLatLng, 15, { animate: false })
                 } else {
-                    map.setView([lat, lng], 15, { animate: true, duration: 0.3 })
+                    map.setView([lat, lng], 15, { animate: false })
                 }
             }
         } else if (center && zoom) {
