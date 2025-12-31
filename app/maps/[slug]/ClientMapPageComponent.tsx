@@ -161,8 +161,10 @@ function ClientMapPageContentInner({
 			return
 		}
 
-		// Set initial location data immediately for fast UI
+		// Set initial location data and open panel immediately for fast UI
+		// These are batched together to prevent the note from flashing
 		setSelectedLocation(location)
+		setIsOpen(true)
 
 		// Fetch fresh location details in the background (only for upvotes/hasUpvoted if needed)
 		// Note: We already have user info in the location object now
@@ -183,9 +185,6 @@ function ClientMapPageContentInner({
 		} finally {
 			setIsLoadingLocation(false)
 		}
-
-		// Always open the bottom panel when a location is selected
-		setIsOpen(true)
 	}, [selectedLocation])
 
 
