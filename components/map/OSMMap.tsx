@@ -39,9 +39,30 @@ function MapController({
 
             // Validate coordinates before animating to location
             if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-                map.setView([lat, lng], 15, {
-                    animate: true,
-                })
+                // Check if we're on mobile (viewport width < 768px)
+                const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+
+                if (isMobile) {
+                    // On mobile, the bottom sheet covers ~60% of the screen
+                    // We need to offset the marker to appear in the visible top portion
+                    // Pan down by ~25% of viewport height to center marker in visible area
+                    const viewportHeight = window.innerHeight
+                    const offsetPixels = viewportHeight * 0.25
+
+                    map.setView([lat, lng], 15, {
+                        animate: true,
+                    })
+
+                    // After the view is set, pan to offset for bottom sheet
+                    // Positive y value pans the map down, moving the marker up on screen
+                    setTimeout(() => {
+                        map.panBy([0, offsetPixels], { animate: true, duration: 0.3 })
+                    }, 50)
+                } else {
+                    map.setView([lat, lng], 15, {
+                        animate: true,
+                    })
+                }
             }
         } else if (center && zoom) {
             map.setView([center.lat, center.lng], zoom)

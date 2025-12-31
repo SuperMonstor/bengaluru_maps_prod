@@ -591,7 +591,7 @@ function ClientMapPageContentInner({
 
 	return (
 		<>
-			<div className="relative flex flex-col h-[calc(100vh-72px)] w-full overflow-hidden bg-gray-50">
+			<div className="relative flex flex-col h-[calc(100dvh-72px)] w-full overflow-hidden bg-gray-50">
 				{/* Map Layer - Absolute & Full Screen */}
 				<div className="absolute inset-0 z-0">
 					<OSMMap
@@ -629,7 +629,8 @@ function ClientMapPageContentInner({
 				{/* Mobile Layout - Single Expanding Bottom Sheet */}
 				<div className="md:hidden absolute inset-0 pointer-events-none z-10">
 					<div
-						className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col transition-all duration-300 ease-in-out pb-safe ${isOpen && !selectedLocation ? 'h-full' : 'h-auto max-h-[60vh]'}`}
+						className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col transition-all duration-300 ease-in-out pb-safe ${isOpen && !selectedLocation ? 'h-full' : 'h-auto max-h-[60dvh]'}`}
+						style={{ maxHeight: isOpen && !selectedLocation ? undefined : 'min(60dvh, calc(60vh - env(safe-area-inset-bottom)))' }}
 					>
 						{/* Header - Always visible and clickable to toggle */}
 						<div
