@@ -12,8 +12,8 @@ import { MapPin, Loader2, CheckCircle2, XCircle, Link2, ExternalLink } from "luc
 
 interface ParseStats {
   total: number
-  tier1: number
-  tier3: number
+  withCid: number
+  withoutCid: number
 }
 
 interface GoogleMapsListImportProps {
@@ -44,8 +44,8 @@ export function GoogleMapsListImport({
   const [importResult, setImportResult] = useState<{
     imported: number
     skipped: number
-    tier1Imported: number
-    tier3Imported: number
+    withCidImported: number
+    withoutCidImported: number
     errors: string[]
   } | null>(null)
 
@@ -85,18 +85,12 @@ export function GoogleMapsListImport({
 
       // Debug logging for coverage analysis
       if (result.stats) {
-        const { total, tier1, tier3 } = result.stats
-        const coverage = total > 0 ? ((tier1 / total) * 100).toFixed(1) : 0
-        console.log(`[GoogleMapsListImport] Stats: ${tier1} with /g/ pattern, ${tier3} with CID, Coverage: ${coverage}%`)
+        const { total, withCid, withoutCid } = result.stats
+        const coverage = total > 0 ? ((withCid / total) * 100).toFixed(1) : 0
+        console.log(`[GoogleMapsListImport] Stats: ${withCid} with CID, ${withoutCid} without CID, Coverage: ${coverage}%`)
 
-        // Log sample links from each tier
-        const tier1Samples = result.locations.filter(l => l.googlePlaceId && !l.googlePlaceId.startsWith('cid:')).slice(0, 2)
-        const cidSamples = result.locations.filter(l => l.googlePlaceId?.startsWith('cid:')).slice(0, 2)
-
-        if (tier1Samples.length > 0) {
-          console.log('[GoogleMapsListImport] Sample /g/ links:')
-          tier1Samples.forEach(l => console.log(`  - ${l.name}: ${l.googleMapsUrl}`))
-        }
+        // Log sample CID links
+        const cidSamples = result.locations.filter(l => l.cid).slice(0, 2)
         if (cidSamples.length > 0) {
           console.log('[GoogleMapsListImport] Sample CID links:')
           cidSamples.forEach(l => console.log(`  - ${l.name}: ${l.googleMapsUrl}`))
@@ -137,8 +131,8 @@ export function GoogleMapsListImport({
       setImportResult({
         imported: result.imported,
         skipped: result.skipped,
-        tier1Imported: result.tier1Imported,
-        tier3Imported: result.tier3Imported,
+        withCidImported: result.withCidImported,
+        withoutCidImported: result.withoutCidImported,
         errors: result.errors,
       })
 

@@ -8,8 +8,8 @@ export interface BulkImportResult {
   success: boolean
   imported: number
   skipped: number
-  tier1Imported: number  // With google_place_id
-  tier3Imported: number  // Without google_place_id
+  withCidImported: number  // With CID (working links)
+  withoutCidImported: number  // Without CID
   errors: string[]
   error?: string
 }
@@ -18,9 +18,9 @@ export interface BulkImportResult {
  * Server action to bulk import locations from a parsed Google Maps list
  *
  * Architecture:
- * - google_place_id is the canonical identifier when available
- * - google_maps_url is derived from google_place_id, never stored as identity
- * - Deduplication uses google_place_id when available, falls back to coords
+ * - CID is the canonical identifier for deduplication
+ * - google_maps_url is derived from CID
+ * - Deduplication uses CID when available, falls back to coords
  */
 export async function bulkImportLocationsAction(
   mapId: string,
@@ -30,8 +30,8 @@ export async function bulkImportLocationsAction(
     success: true,
     imported: 0,
     skipped: 0,
-    tier1Imported: 0,
-    tier3Imported: 0,
+    withCidImported: 0,
+    withoutCidImported: 0,
     errors: [],
   }
 
@@ -82,8 +82,8 @@ export async function bulkImportLocationsAction(
       }
     }
 
-    // Track imported place IDs to prevent duplicates within batch
-    const importedPlaceIds = new Set<string>()
+    // Track imported CIDs to prevent duplicates within batch
+    const importedCids = new Set<string>()
     const importedCoords = new Set<string>()
 
     // Process each location
@@ -103,14 +103,14 @@ export async function bulkImportLocationsAction(
           continue
         }
 
-        // Check for duplicates by google_place_id first (most reliable)
-        if (location.googlePlaceId) {
-          if (importedPlaceIds.has(location.googlePlaceId)) {
+        // Check for duplicates by CID first (most reliable)
+        if (location.cid) {
+          if (importedCids.has(location.cid)) {
             result.skipped++
             continue
           }
 
-          // Check if this place ID's URL already exists
+          // Check if this CID's URL already exists
           const existingByUrl = existingLocations?.some(
             existing => existing.google_maps_url === location.googleMapsUrl
           )
@@ -179,11 +179,11 @@ export async function bulkImportLocationsAction(
 
         // Track success
         result.imported++
-        if (location.googlePlaceId) {
-          result.tier1Imported++
-          importedPlaceIds.add(location.googlePlaceId)
+        if (location.cid) {
+          result.withCidImported++
+          importedCids.add(location.cid)
         } else {
-          result.tier3Imported++
+          result.withoutCidImported++
         }
         importedCoords.add(coordKey)
 

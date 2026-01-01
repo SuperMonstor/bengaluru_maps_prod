@@ -9,8 +9,8 @@ export interface ParseGoogleMapsListResult {
   error?: string
   stats?: {
     total: number
-    tier1: number
-    tier3: number
+    withCid: number
+    withoutCid: number
   }
 }
 

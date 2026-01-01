@@ -2,25 +2,23 @@
  * Google Maps List Import Service
  *
  * Architecture:
- * - google_place_id (/g/XXXXX) is the canonical identifier
- * - URLs are derived, not scraped
- * - Scraping is discovery, not truth
+ * - CID (Customer ID) is the canonical identifier for URLs
+ * - CID is extracted from Feature ID pairs: ["ID1","ID2"] where ID2 is the CID
+ * - All locations use CID-based URLs: https://maps.google.com/?cid=XXX
+ * - Entries without CID are excluded (no valid link possible)
  *
- * Flow:
- * 1. Resolve short URL → full URL
- * 2. Fetch HTML
- * 3. Extract /g/PLACE_ID patterns (Tier 1: ~86% of items)
- * 4. Items without /g/ are marked for potential API fallback (Tier 3: ~14%)
- * 5. Construct Maps URLs from place IDs
+ * Data structure in HTML (verified):
+ * [null,null,LAT,LNG],["ID1","CID"],"/g/PLACE_ID"],"PlaceName"
+ *
+ * Order: Coordinates → Feature ID → /g/ → Name
  */
 
 export interface ParsedLocation {
   name: string
   latitude: number
   longitude: number
-  googlePlaceId: string | null  // The /g/XXXXX identifier
-  googleMapsUrl: string | null  // Derived from googlePlaceId
-  source: 'scraped' | 'api' | 'coords_only'  // Track how we got the data
+  cid: string  // Required - all entries must have CID
+  googleMapsUrl: string  // Derived from CID
 }
 
 export interface ParseListResult {
@@ -30,8 +28,8 @@ export interface ParseListResult {
   error?: string
   stats?: {
     total: number
-    tier1: number  // Have /g/ pattern
-    tier3: number  // No /g/ pattern
+    withCid: number
+    withoutCid: number  // These are excluded from results
   }
 }
 
@@ -66,15 +64,7 @@ export async function resolveGoogleMapsUrl(shortUrl: string): Promise<{ success:
 }
 
 /**
- * Constructs a Google Maps URL from a /g/ place reference
- */
-export function constructGoogleMapsUrl(googlePlaceId: string): string {
-  return `https://www.google.com/maps/place//g/${googlePlaceId}`
-}
-
-/**
  * Constructs a Google Maps URL from a CID (Customer ID)
- * CID is the second number in the Feature ID pair
  */
 export function constructGoogleMapsUrlFromCid(cid: string): string {
   return `https://maps.google.com/?cid=${cid}`
@@ -125,194 +115,101 @@ export async function parseGoogleMapsList(url: string): Promise<ParseListResult>
 
 /**
  * Extracts location data from Google Maps list HTML
- * Primary strategy: Find /g/PLACE_ID patterns and associate with nearby names and coordinates
+ *
+ * Structure: [null,null,LAT,LNG],["ID1","CID"],"/g/PLACE_ID"],"PlaceName"
+ * Order: Coordinates → Feature ID → /g/ → Name
  */
-function extractLocationsFromHtml(html: string): { locations: ParsedLocation[], stats: { total: number, tier1: number, tier3: number } } {
+function extractLocationsFromHtml(html: string): { locations: ParsedLocation[], stats: { total: number, withCid: number, withoutCid: number } } {
   const locations: ParsedLocation[] = []
-  const seenPlaceIds = new Set<string>()
-  const seenCoords = new Set<string>()
+  const seenCids = new Set<string>()
 
-  // Step 1: Find all /g/PLACE_ID patterns with associated names
-  // Pattern: /g/PLACE_ID"],"PlaceName" (handles both escaped and unescaped quotes)
-  const placePatterns = [
-    /\/g\/([A-Za-z0-9_-]+)"\],"([^"]+)"/g,           // Standard format
-    /\/g\/([A-Za-z0-9_-]+)\\"\],\\?"([^"\\]+)\\?"/g, // Escaped quotes
-  ]
+  // Find all /g/ patterns with names: /g/PLACE_ID"],"PlaceName"
+  const placePattern = /\/g\/([A-Za-z0-9_-]+)"\],"([^"]+)"/g
+  let foundCount = 0
+  let withCidCount = 0
+  let withoutCidCount = 0
 
-  const placeMatches: Array<{ placeId: string, name: string, index: number }> = []
-
-  for (const pattern of placePatterns) {
-    pattern.lastIndex = 0
-    let match
-    while ((match = pattern.exec(html)) !== null) {
-      const placeId = match[1]
-      if (!seenPlaceIds.has(placeId)) {
-        seenPlaceIds.add(placeId)
-        placeMatches.push({
-          placeId,
-          name: cleanPlaceName(match[2]),
-          index: match.index
-        })
-      }
-    }
-  }
-
-  // Step 2: Find all coordinates
-  const coordsPattern = /\[null,null,(-?\d+\.?\d*),(-?\d+\.?\d*)\]/g
-  const coordsList: Array<{ lat: number, lng: number, index: number }> = []
   let match
+  while ((match = placePattern.exec(html)) !== null) {
+    foundCount++
+    const name = match[2]
+    const matchIndex = match.index
 
-  while ((match = coordsPattern.exec(html)) !== null) {
-    const lat = parseFloat(match[1])
-    const lng = parseFloat(match[2])
-
-    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-      const key = `${lat.toFixed(6)},${lng.toFixed(6)}`
-      if (!seenCoords.has(key)) {
-        seenCoords.add(key)
-        coordsList.push({ lat, lng, index: match.index })
-      }
-    }
-  }
-
-  // Step 3: Associate each /g/ place with its nearest coordinates
-  for (const place of placeMatches) {
-    // Find the closest coordinate that appears BEFORE this place pattern
-    // (coordinates typically appear before the place ID in the data structure)
-    let closestCoord: { lat: number, lng: number, index: number } | null = null
-    let closestDistance = Infinity
-
-    for (const coord of coordsList) {
-      // Coordinate should be before the place pattern (within 2000 chars)
-      const distance = place.index - coord.index
-      if (distance > 0 && distance < 2000 && distance < closestDistance) {
-        closestDistance = distance
-        closestCoord = coord
-      }
+    // Skip invalid names
+    if (!isValidPlaceName(name)) {
+      continue
     }
 
-    if (closestCoord && isValidPlaceName(place.name)) {
-      locations.push({
-        name: place.name,
-        latitude: closestCoord.lat,
-        longitude: closestCoord.lng,
-        googlePlaceId: place.placeId,
-        googleMapsUrl: constructGoogleMapsUrl(place.placeId),
-        source: 'scraped'
-      })
+    // Look BEFORE this match for coordinates and CID (within 500 chars)
+    const searchStart = Math.max(0, matchIndex - 500)
+    const searchBefore = html.substring(searchStart, matchIndex)
 
-      // Mark this coordinate as used
-      const coordKey = `${closestCoord.lat.toFixed(6)},${closestCoord.lng.toFixed(6)}`
-      seenCoords.delete(coordKey)
+    // Find Feature ID pair BEFORE /g/: ["ID1","ID2"] or [["ID1","ID2"]]
+    // CID is the second number
+    const cidMatch = searchBefore.match(/\[\[?"?(-?\d{15,25})"?,\s*"?(-?\d{15,25})"?\]\]?(?=[^\]]*$)/)
+    if (!cidMatch) {
+      withoutCidCount++
+      console.log(`[extractLocationsFromHtml] No CID found for: ${name}`)
+      continue
     }
-  }
 
-  // Step 4: Handle Tier 3 - Coordinates without /g/ patterns
-  // These entries have numeric Feature ID pairs - we can extract the CID (second number)
-  const tier3Coords = coordsList.filter(coord => {
-    // Check if this coord wasn't used by any Tier 1 location
-    return !locations.some(loc =>
-      Math.abs(loc.latitude - coord.lat) < 0.0001 &&
-      Math.abs(loc.longitude - coord.lng) < 0.0001
-    )
-  })
+    let cid = cidMatch[2]  // Second number is CID
 
-  // For Tier 3 items, find the name and CID from the numeric ID pair
-  for (const coord of tier3Coords) {
-    const name = findNearbyName(html, coord.index)
-    const cid = findNearbyCid(html, coord.index)
-
-    if (name) {
-      locations.push({
-        name,
-        latitude: coord.lat,
-        longitude: coord.lng,
-        googlePlaceId: cid ? `cid:${cid}` : null,  // Store CID with prefix to distinguish from /g/
-        googleMapsUrl: cid ? constructGoogleMapsUrlFromCid(cid) : null,
-        source: cid ? 'scraped' : 'coords_only'
-      })
+    // Convert negative CIDs to unsigned (64-bit)
+    if (cid.startsWith('-')) {
+      // JavaScript BigInt handles this conversion
+      const signedCid = BigInt(cid)
+      const unsignedCid = signedCid < 0n ? signedCid + BigInt('18446744073709551616') : signedCid
+      cid = unsignedCid.toString()
     }
+
+    // Find coordinates BEFORE the Feature ID: [null,null,LAT,LNG]
+    const coordMatch = searchBefore.match(/\[null,null,(-?\d+\.?\d*),(-?\d+\.?\d*)\]/)
+    if (!coordMatch) {
+      withoutCidCount++
+      console.log(`[extractLocationsFromHtml] No coords found for: ${name}`)
+      continue
+    }
+
+    const lat = parseFloat(coordMatch[1])
+    const lng = parseFloat(coordMatch[2])
+
+    // Validate coordinates
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      withoutCidCount++
+      continue
+    }
+
+    // Skip duplicates
+    if (seenCids.has(cid)) {
+      continue
+    }
+    seenCids.add(cid)
+
+    withCidCount++
+    locations.push({
+      name: cleanPlaceName(name),
+      latitude: lat,
+      longitude: lng,
+      cid: cid,
+      googleMapsUrl: constructGoogleMapsUrlFromCid(cid)
+    })
   }
 
   const stats = {
     total: locations.length,
-    tier1: locations.filter(l => l.googlePlaceId !== null).length,
-    tier3: locations.filter(l => l.googlePlaceId === null).length
+    withCid: withCidCount,
+    withoutCid: withoutCidCount
+  }
+
+  // Debug logging
+  console.log(`[extractLocationsFromHtml] Found ${foundCount} /g/ patterns`)
+  console.log(`[extractLocationsFromHtml] Results: ${withCidCount} with CID, ${withoutCidCount} without CID`)
+  if (locations.length > 0) {
+    console.log(`[extractLocationsFromHtml] Sample: ${locations[0].name} -> ${locations[0].googleMapsUrl}`)
   }
 
   return { locations, stats }
-}
-
-/**
- * Finds a potential place name near a coordinate index in the HTML
- */
-function findNearbyName(html: string, coordIndex: number): string | null {
-  // Search 500 chars before the coordinate for quoted strings
-  const searchStart = Math.max(0, coordIndex - 500)
-  const searchArea = html.substring(searchStart, coordIndex)
-
-  // Find quoted strings that look like place names
-  const namePattern = /\\?"([^"\\]{3,80})\\?"/g
-  const candidates: Array<{ name: string, score: number }> = []
-  let match
-
-  while ((match = namePattern.exec(searchArea)) !== null) {
-    const name = match[1]
-    let score = 0
-
-    // Score based on name characteristics
-    if (/[A-Z]/.test(name)) score += 20  // Has capitals
-    if (name.includes(' ')) score += 15   // Multi-word
-    if (name.length >= 5 && name.length <= 50) score += 10  // Good length
-
-    // Penalties
-    if (/^\d/.test(name)) score -= 50     // Starts with number
-    if (/,\s*(Bengaluru|Bangalore|Karnataka)/i.test(name)) score -= 40  // Address
-    if (/\d{6}/.test(name)) score -= 40   // PIN code
-    if (name.includes('null')) score -= 100
-    if (name.startsWith('http') || name.startsWith('/')) score -= 100
-
-    if (score > 0 && isValidPlaceName(name)) {
-      candidates.push({ name: cleanPlaceName(name), score })
-    }
-  }
-
-  // Return highest scoring candidate
-  candidates.sort((a, b) => b.score - a.score)
-  return candidates.length > 0 ? candidates[0].name : null
-}
-
-/**
- * Finds the CID (Customer ID) near a coordinate index in the HTML
- * CID is the second number in Feature ID pairs like ["4300397785175526469","4511808842774827243"]
- */
-function findNearbyCid(html: string, coordIndex: number): string | null {
-  // Search within 1000 chars around the coordinate for Feature ID pairs
-  const searchStart = Math.max(0, coordIndex - 500)
-  const searchEnd = Math.min(html.length, coordIndex + 500)
-  const searchArea = html.substring(searchStart, searchEnd)
-
-  // Pattern for Feature ID pairs: ["ID1","ID2"] or [\"ID1\",\"ID2\"]
-  // The second number is the CID
-  const cidPatterns = [
-    /\["(\d{15,25})","(-?\d{15,25})"\]/g,        // Standard format
-    /\[\\"(\d{15,25})\\",\\"(-?\d{15,25})\\"\]/g, // Escaped format
-  ]
-
-  for (const pattern of cidPatterns) {
-    pattern.lastIndex = 0
-    const match = pattern.exec(searchArea)
-    if (match) {
-      // Return the second ID (CID)
-      const cid = match[2]
-      // Validate it's a positive number (CIDs are positive)
-      if (cid && !cid.startsWith('-') && cid.length >= 15) {
-        return cid
-      }
-    }
-  }
-
-  return null
 }
 
 /**
