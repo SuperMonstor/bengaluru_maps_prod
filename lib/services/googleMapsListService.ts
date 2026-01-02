@@ -237,177 +237,101 @@ function isValidName(s: string): boolean {
 }
 
 /**
- * Extracts location data from a details array
+ * Signals collected during tree walk
  */
-function extractDetailsFromArray(arr: unknown[]): {
-  lat: number | null
-  lng: number | null
-  cid2: string | null
-  placeId: string | null
-} {
-  let lat: number | null = null
-  let lng: number | null = null
-  let cid2: string | null = null
-  let placeId: string | null = null
-
-  for (const value of arr) {
-    // Coordinates: [null, null, lat, lng]
-    if (
-      Array.isArray(value) &&
-      value.length >= 4 &&
-      value[0] === null &&
-      value[1] === null &&
-      typeof value[2] === 'number' &&
-      typeof value[3] === 'number'
-    ) {
-      lat = value[2]
-      lng = value[3]
-    }
-
-    // CID pair: ["CID1", "CID2"]
-    if (
-      Array.isArray(value) &&
-      value.length === 2 &&
-      typeof value[0] === 'string' &&
-      typeof value[1] === 'string' &&
-      /^\d{15,25}$/.test(value[0]) &&
-      /^-?\d{15,25}$/.test(value[1])
-    ) {
-      cid2 = value[1]
-    }
-
-    // Place ID: /g/...
-    if (typeof value === 'string' && value.startsWith('/g/')) {
-      placeId = value
-    }
-  }
-
-  return { lat, lng, cid2, placeId }
+type Signals = {
+  lat?: number
+  lng?: number
+  cid?: string
+  name?: string
 }
 
 /**
- * Step 4: Extract locations from parsed data
+ * Step 4: Signal-based structural extraction
  *
- * Two structure variants exist:
+ * Walks the parsed data tree, collecting signals (lat, lng, cid, name)
+ * as they bubble up from children. Emits a location when all four
+ * signals are present.
  *
- * Variant A (66 entries):
- * - entry[1] contains /g/, coords, CID
- * - entry[2] is name
- *
- * Variant B (13 entries):
- * - entry[1] contains coords (no /g/)
- * - entry[2] is name
- * - entry[8][1] contains CID
- *
- * We handle both by scanning flexibly.
+ * This approach naturally handles structural variants without
+ * hardcoding specific array indices.
  */
 function walkAndExtract(
   node: unknown,
   results: ParsedLocation[],
   seen: Set<string>
-): void {
-  if (!Array.isArray(node)) return
+): Signals {
+  if (!Array.isArray(node)) return {}
 
-  // Try to find location data from children
-  let lat: number | null = null
-  let lng: number | null = null
-  let cid2: string | null = null
-  let placeId: string | null = null
-  let name: string | null = null
+  let signals: Signals = {}
 
-  // Scan all children for data
-  for (const value of node) {
-    // Check for name string
-    if (typeof value === 'string' && isValidName(value) && !name) {
-      name = value
+  for (const v of node) {
+    // Name signal: first valid string
+    if (typeof v === 'string' && isValidName(v) && !signals.name) {
+      signals.name = v
     }
 
-    // Check child arrays for details
-    if (Array.isArray(value)) {
-      // Look for /g/ pattern
-      for (const v of value) {
-        if (typeof v === 'string' && v.startsWith('/g/')) {
-          placeId = v
-        }
-      }
+    // Coordinate signal: [null, null, lat, lng]
+    if (
+      Array.isArray(v) &&
+      v.length >= 4 &&
+      v[0] === null &&
+      v[1] === null &&
+      typeof v[2] === 'number' &&
+      typeof v[3] === 'number'
+    ) {
+      signals.lat = v[2]
+      signals.lng = v[3]
+    }
 
-      // Look for coordinates [null, null, lat, lng]
-      for (const v of value) {
-        if (
-          Array.isArray(v) &&
-          v.length >= 4 &&
-          v[0] === null &&
-          v[1] === null &&
-          typeof v[2] === 'number' &&
-          typeof v[3] === 'number'
-        ) {
-          lat = v[2]
-          lng = v[3]
-        }
-      }
+    // CID signal: ["CID1", "CID2"]
+    if (
+      Array.isArray(v) &&
+      v.length === 2 &&
+      typeof v[0] === 'string' &&
+      typeof v[1] === 'string' &&
+      /^\d{15,25}$/.test(v[0]) &&
+      /^-?\d{15,25}$/.test(v[1])
+    ) {
+      signals.cid = toUnsignedCid(v[1])
+    }
 
-      // Look for CID pair ["CID1", "CID2"]
-      for (const v of value) {
-        if (
-          Array.isArray(v) &&
-          v.length === 2 &&
-          typeof v[0] === 'string' &&
-          typeof v[1] === 'string' &&
-          /^\d{15,25}$/.test(v[0]) &&
-          /^-?\d{15,25}$/.test(v[1])
-        ) {
-          cid2 = v[1]
-        }
-      }
-
-      // Variant B: CID might be in a nested array like entry[8][1]
-      // Look for [[1], ["CID1", "CID2"]] pattern
-      if (
-        value.length === 2 &&
-        Array.isArray(value[1]) &&
-        value[1].length === 2 &&
-        typeof value[1][0] === 'string' &&
-        typeof value[1][1] === 'string' &&
-        /^\d{15,25}$/.test(value[1][0]) &&
-        /^-?\d{15,25}$/.test(value[1][1])
-      ) {
-        cid2 = value[1][1]
+    // Recurse into child arrays and merge signals (first value wins)
+    if (Array.isArray(v)) {
+      const child = walkAndExtract(v, results, seen)
+      signals = {
+        lat: signals.lat ?? child.lat,
+        lng: signals.lng ?? child.lng,
+        cid: signals.cid ?? child.cid,
+        name: signals.name ?? child.name,
       }
     }
   }
 
-  // Emit if we have enough data (name, coords, CID)
-  // placeId is optional for Variant B entries
+  // Emit if we have all four signals with valid coordinates
   if (
-    name &&
-    lat !== null &&
-    lng !== null &&
-    cid2 &&
-    lat >= -90 &&
-    lat <= 90 &&
-    lng >= -180 &&
-    lng <= 180
+    signals.lat !== undefined &&
+    signals.lng !== undefined &&
+    signals.cid &&
+    signals.name &&
+    signals.lat >= -90 &&
+    signals.lat <= 90 &&
+    signals.lng >= -180 &&
+    signals.lng <= 180
   ) {
-    const cid = toUnsignedCid(cid2)
-
-    if (!seen.has(cid)) {
-      seen.add(cid)
+    if (!seen.has(signals.cid)) {
+      seen.add(signals.cid)
       results.push({
-        name: cleanName(name),
-        latitude: lat,
-        longitude: lng,
-        cid,
-        googleMapsUrl: constructGoogleMapsUrlFromCid(cid),
+        name: cleanName(signals.name),
+        latitude: signals.lat,
+        longitude: signals.lng,
+        cid: signals.cid,
+        googleMapsUrl: constructGoogleMapsUrlFromCid(signals.cid),
       })
     }
   }
 
-  // Recurse into child arrays
-  for (const value of node) {
-    if (Array.isArray(value)) {
-      walkAndExtract(value, results, seen)
-    }
-  }
+  return signals
 }
 
 /**
