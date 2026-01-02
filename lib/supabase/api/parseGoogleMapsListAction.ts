@@ -1,18 +1,9 @@
 "use server"
 
-import { parseGoogleMapsList, ParsedLocation } from "@/lib/services/googleMapsListService"
+import { parseGoogleMapsList, ParseListResult } from "@/lib/services/googleMapsListService"
 
-export interface ParseGoogleMapsListResult {
-  success: boolean
-  locations?: ParsedLocation[]
-  listName?: string
-  error?: string
-  stats?: {
-    total: number
-    withCid: number
-    withoutCid: number
-  }
-}
+// Re-export the result type from the service
+export type ParseGoogleMapsListResult = ParseListResult
 
 /**
  * Server action to parse a Google Maps list URL and extract locations

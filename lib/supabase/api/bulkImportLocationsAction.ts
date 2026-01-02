@@ -8,8 +8,6 @@ export interface BulkImportResult {
   success: boolean
   imported: number
   skipped: number
-  withCidImported: number  // With CID (working links)
-  withoutCidImported: number  // Without CID
   errors: string[]
   error?: string
 }
@@ -20,7 +18,7 @@ export interface BulkImportResult {
  * Architecture:
  * - CID is the canonical identifier for deduplication
  * - google_maps_url is derived from CID
- * - Deduplication uses CID when available, falls back to coords
+ * - All locations have CID (guaranteed by parser)
  */
 export async function bulkImportLocationsAction(
   mapId: string,
@@ -30,8 +28,6 @@ export async function bulkImportLocationsAction(
     success: true,
     imported: 0,
     skipped: 0,
-    withCidImported: 0,
-    withoutCidImported: 0,
     errors: [],
   }
 
@@ -103,21 +99,19 @@ export async function bulkImportLocationsAction(
           continue
         }
 
-        // Check for duplicates by CID first (most reliable)
-        if (location.cid) {
-          if (importedCids.has(location.cid)) {
-            result.skipped++
-            continue
-          }
+        // Check for duplicates by CID (most reliable - CID is always present)
+        if (importedCids.has(location.cid)) {
+          result.skipped++
+          continue
+        }
 
-          // Check if this CID's URL already exists
-          const existingByUrl = existingLocations?.some(
-            existing => existing.google_maps_url === location.googleMapsUrl
-          )
-          if (existingByUrl) {
-            result.skipped++
-            continue
-          }
+        // Check if this CID's URL already exists
+        const existingByUrl = existingLocations?.some(
+          existing => existing.google_maps_url === location.googleMapsUrl
+        )
+        if (existingByUrl) {
+          result.skipped++
+          continue
         }
 
         // Check for duplicates by coordinates
@@ -179,12 +173,7 @@ export async function bulkImportLocationsAction(
 
         // Track success
         result.imported++
-        if (location.cid) {
-          result.withCidImported++
-          importedCids.add(location.cid)
-        } else {
-          result.withoutCidImported++
-        }
+        importedCids.add(location.cid)
         importedCoords.add(coordKey)
 
         // Add to existing locations to prevent duplicates

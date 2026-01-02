@@ -1,24 +1,22 @@
 /**
  * Google Maps List Import Service
  *
+ * Extracts locations from Google Maps list pages using structural parsing.
+ *
  * Architecture:
- * - CID (Customer ID) is the canonical identifier for URLs
- * - CID is extracted from Feature ID pairs: ["ID1","ID2"] where ID2 is the CID
- * - All locations use CID-based URLs: https://maps.google.com/?cid=XXX
- * - Entries without CID are excluded (no valid link possible)
- *
- * Data structure in HTML (verified):
- * [null,null,LAT,LNG],["ID1","CID"],"/g/PLACE_ID"],"PlaceName"
- *
- * Order: Coordinates → Feature ID → /g/ → Name
+ * 1. Find the <script> containing location data (anchored by /g/ patterns)
+ * 2. Locate the data array within the script (anchored by coordinate pattern)
+ * 3. Unescape and parse the isolated array as JavaScript
+ * 4. Recursively walk the structure, extracting by invariants not position
+ * 5. Deduplicate by CID and validate coordinates
  */
 
 export interface ParsedLocation {
   name: string
   latitude: number
   longitude: number
-  cid: string  // Required - all entries must have CID
-  googleMapsUrl: string  // Derived from CID
+  cid: string
+  googleMapsUrl: string
 }
 
 export interface ParseListResult {
@@ -26,228 +24,458 @@ export interface ParseListResult {
   locations?: ParsedLocation[]
   listName?: string
   error?: string
-  stats?: {
-    total: number
-    withCid: number
-    withoutCid: number  // These are excluded from results
-  }
 }
 
 /**
- * Resolves a Google Maps short URL to the full URL
- */
-export async function resolveGoogleMapsUrl(shortUrl: string): Promise<{ success: boolean; fullUrl?: string; error?: string }> {
-  try {
-    // Validate it's a Google Maps URL
-    if (!shortUrl.includes('maps.app.goo.gl') && !shortUrl.includes('google.com/maps')) {
-      return { success: false, error: 'Invalid URL. Please provide a Google Maps list URL.' }
-    }
-
-    // If it's already a full URL, return it
-    if (shortUrl.includes('google.com/maps')) {
-      return { success: true, fullUrl: shortUrl }
-    }
-
-    // Resolve the short URL by following redirects
-    const response = await fetch(shortUrl, {
-      method: 'HEAD',
-      redirect: 'follow',
-    })
-
-    const fullUrl = response.url
-
-    return { success: true, fullUrl }
-  } catch (error) {
-    console.error('Error resolving Google Maps URL:', error)
-    return { success: false, error: 'Failed to resolve URL. Please check the link and try again.' }
-  }
-}
-
-/**
- * Constructs a Google Maps URL from a CID (Customer ID)
+ * Constructs a Google Maps URL from a CID
  */
 export function constructGoogleMapsUrlFromCid(cid: string): string {
   return `https://maps.google.com/?cid=${cid}`
 }
 
 /**
- * Fetches and parses a Google Maps list page to extract locations
+ * Fetches and parses a Google Maps list page
  */
 export async function parseGoogleMapsList(url: string): Promise<ParseListResult> {
   try {
-    // Step 1: Resolve URL if needed
-    const resolveResult = await resolveGoogleMapsUrl(url)
-    if (!resolveResult.success || !resolveResult.fullUrl) {
-      return { success: false, error: resolveResult.error }
+    const fullUrl = await resolveUrl(url)
+    if (!fullUrl) {
+      return { success: false, error: 'Invalid URL. Please provide a Google Maps list URL.' }
     }
 
-    // Step 2: Fetch the list page
-    const response = await fetch(resolveResult.fullUrl, {
+    const response = await fetch(fullUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
       },
     })
 
     if (!response.ok) {
-      return { success: false, error: 'Failed to fetch the Google Maps list. It may be private or unavailable.' }
+      return { success: false, error: 'Failed to fetch the Google Maps list.' }
     }
 
     const html = await response.text()
-
-    // Step 3: Extract locations
-    const { locations, stats } = extractLocationsFromHtml(html)
+    const locations = extractLocations(html)
 
     if (locations.length === 0) {
-      return { success: false, error: 'No locations found in this list. It may be empty or private.' }
+      return { success: false, error: 'No locations found. The list may be empty or private.' }
     }
 
-    // Try to extract list name
     const listName = extractListName(html)
 
-    return { success: true, locations, listName, stats }
+    console.log(`[parseGoogleMapsList] Extracted ${locations.length} locations`)
+
+    return { success: true, locations, listName }
   } catch (error) {
     console.error('Error parsing Google Maps list:', error)
-    return { success: false, error: 'Failed to parse the Google Maps list. Please try again.' }
+    return { success: false, error: 'Failed to parse the Google Maps list.' }
   }
 }
 
 /**
- * Extracts location data from Google Maps list HTML
- *
- * Structure: [null,null,LAT,LNG],["ID1","CID"],"/g/PLACE_ID"],"PlaceName"
- * Order: Coordinates → Feature ID → /g/ → Name
+ * Resolves short URLs to full URLs
  */
-function extractLocationsFromHtml(html: string): { locations: ParsedLocation[], stats: { total: number, withCid: number, withoutCid: number } } {
-  const locations: ParsedLocation[] = []
-  const seenCids = new Set<string>()
+async function resolveUrl(url: string): Promise<string | null> {
+  if (!url.includes('maps.app.goo.gl') && !url.includes('google.com/maps')) {
+    return null
+  }
 
-  // Find all /g/ patterns with names: /g/PLACE_ID"],"PlaceName"
-  const placePattern = /\/g\/([A-Za-z0-9_-]+)"\],"([^"]+)"/g
-  let foundCount = 0
-  let withCidCount = 0
-  let withoutCidCount = 0
+  if (url.includes('google.com/maps')) {
+    return url
+  }
+
+  try {
+    const response = await fetch(url, { method: 'HEAD', redirect: 'follow' })
+    return response.url
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Step 1: Find the script tag containing location data
+ *
+ * Anchors on /g/ patterns which are unique to location entries
+ */
+function findLocationScript(html: string): string | null {
+  const scriptPattern = /<script[^>]*>([\s\S]*?)<\/script>/g
+  let bestScript: string | null = null
+  let maxGCount = 0
 
   let match
-  while ((match = placePattern.exec(html)) !== null) {
-    foundCount++
-    const name = match[2]
-    const matchIndex = match.index
+  while ((match = scriptPattern.exec(html)) !== null) {
+    const content = match[1]
+    const gCount = (content.match(/\/g\//g) || []).length
 
-    // Skip invalid names
-    if (!isValidPlaceName(name)) {
-      continue
+    if (gCount > maxGCount) {
+      maxGCount = gCount
+      bestScript = content
     }
-
-    // Look BEFORE this match for coordinates and CID (within 500 chars)
-    const searchStart = Math.max(0, matchIndex - 500)
-    const searchBefore = html.substring(searchStart, matchIndex)
-
-    // Find Feature ID pair BEFORE /g/: ["ID1","ID2"] or [["ID1","ID2"]]
-    // CID is the second number
-    const cidMatch = searchBefore.match(/\[\[?"?(-?\d{15,25})"?,\s*"?(-?\d{15,25})"?\]\]?(?=[^\]]*$)/)
-    if (!cidMatch) {
-      withoutCidCount++
-      console.log(`[extractLocationsFromHtml] No CID found for: ${name}`)
-      continue
-    }
-
-    let cid = cidMatch[2]  // Second number is CID
-
-    // Convert negative CIDs to unsigned (64-bit)
-    if (cid.startsWith('-')) {
-      // JavaScript BigInt handles this conversion
-      const signedCid = BigInt(cid)
-      const unsignedCid = signedCid < 0n ? signedCid + BigInt('18446744073709551616') : signedCid
-      cid = unsignedCid.toString()
-    }
-
-    // Find coordinates BEFORE the Feature ID: [null,null,LAT,LNG]
-    const coordMatch = searchBefore.match(/\[null,null,(-?\d+\.?\d*),(-?\d+\.?\d*)\]/)
-    if (!coordMatch) {
-      withoutCidCount++
-      console.log(`[extractLocationsFromHtml] No coords found for: ${name}`)
-      continue
-    }
-
-    const lat = parseFloat(coordMatch[1])
-    const lng = parseFloat(coordMatch[2])
-
-    // Validate coordinates
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      withoutCidCount++
-      continue
-    }
-
-    // Skip duplicates
-    if (seenCids.has(cid)) {
-      continue
-    }
-    seenCids.add(cid)
-
-    withCidCount++
-    locations.push({
-      name: cleanPlaceName(name),
-      latitude: lat,
-      longitude: lng,
-      cid: cid,
-      googleMapsUrl: constructGoogleMapsUrlFromCid(cid)
-    })
   }
 
-  const stats = {
-    total: locations.length,
-    withCid: withCidCount,
-    withoutCid: withoutCidCount
+  if (maxGCount === 0) {
+    console.error('[findLocationScript] No script with /g/ patterns found')
+    return null
   }
 
-  // Debug logging
-  console.log(`[extractLocationsFromHtml] Found ${foundCount} /g/ patterns`)
-  console.log(`[extractLocationsFromHtml] Results: ${withCidCount} with CID, ${withoutCidCount} without CID`)
-  if (locations.length > 0) {
-    console.log(`[extractLocationsFromHtml] Sample: ${locations[0].name} -> ${locations[0].googleMapsUrl}`)
-  }
-
-  return { locations, stats }
+  console.log(`[findLocationScript] Found script with ${maxGCount} /g/ patterns`)
+  return bestScript
 }
 
 /**
- * Validates that a string looks like a place name
+ * Step 2: Locate the data array within the script
+ *
+ * Anchors on coordinate pattern [null,null,LAT,LNG] which is structurally unique
  */
-function isValidPlaceName(name: string): boolean {
-  if (name.length < 2 || name.length > 100) return false
-  if (/^\d+$/.test(name)) return false  // Just numbers
-  if (/^(No\.?|Plot|Gate|Building|Floor|Block|Sector)\s*#?\d/i.test(name)) return false
-  if (/^\d+[\/\-,\s]/.test(name)) return false  // Starts with address number
-  if (name.startsWith('http') || name.startsWith('/')) return false
-  if (name.includes('null') || name.includes('\\u')) return false
-  return true
-}
+function extractDataArray(script: string): string | null {
+  // Find coordinate pattern as anchor
+  const coordPattern = /\[null,null,\d+\.\d+,\d+\.\d+\]/
+  const coordMatch = script.match(coordPattern)
 
-/**
- * Cleans up a place name
- */
-function cleanPlaceName(name: string): string {
-  // Remove plus code prefix (e.g., "WH8X+Q46 The Coffee Brewery" -> "The Coffee Brewery")
-  const plusCodeMatch = name.match(/^[A-Z0-9]{4}\+[A-Z0-9]+\s+(.+)$/i)
-  if (plusCodeMatch) {
-    return plusCodeMatch[1]
+  if (!coordMatch || coordMatch.index === undefined) {
+    console.error('[extractDataArray] No coordinate pattern found')
+    return null
   }
-  return name.trim()
+
+  const anchorPos = coordMatch.index
+
+  // Walk backwards to find the enclosing array start
+  // We need to find the outermost [ that contains all location data
+  // Look for a pattern like [[null,[ which typically starts location entries
+  let arrayStart = -1
+  let depth = 0
+
+  for (let i = anchorPos - 1; i >= 0; i--) {
+    if (script[i] === ']') depth++
+    if (script[i] === '[') {
+      depth--
+      if (depth < 0) {
+        // Found an unmatched [ - this could be our container
+        // Keep going back to find the outermost one
+        arrayStart = i
+        depth = 0
+      }
+    }
+  }
+
+  if (arrayStart === -1) {
+    console.error('[extractDataArray] Could not find array start')
+    return null
+  }
+
+  // Now find the matching end bracket
+  depth = 0
+  let arrayEnd = -1
+
+  for (let i = arrayStart; i < script.length; i++) {
+    if (script[i] === '[') depth++
+    if (script[i] === ']') depth--
+    if (depth === 0) {
+      arrayEnd = i + 1
+      break
+    }
+  }
+
+  if (arrayEnd === -1) {
+    console.error('[extractDataArray] Could not find array end')
+    return null
+  }
+
+  const arrayStr = script.slice(arrayStart, arrayEnd)
+  console.log(`[extractDataArray] Extracted array of ${arrayStr.length} chars`)
+
+  return arrayStr
 }
 
 /**
- * Extracts the list name from the HTML
+ * Step 3: Parse the isolated array string
+ *
+ * The array is embedded in a string context with escape sequences.
+ * We need to properly unescape before parsing.
+ */
+function parseArray(arrayStr: string): unknown | null {
+  // The data has multiple levels of escaping because it's inside a string literal.
+  // We need to unescape all JS escape sequences properly.
+  //
+  // Order matters:
+  // 1. \\\\ -> \ (escaped backslash)
+  // 2. \\\" -> " (escaped quote inside nested string)
+  // 3. \" -> " (escaped quote)
+  // 4. \\n -> newline
+  // 5. \\t -> tab
+  // 6. \\uXXXX -> unicode (already handled by JS parser)
+
+  let unescaped = arrayStr
+    .replace(/\\\\/g, '\u0000')  // Placeholder for escaped backslash
+    .replace(/\\"/g, '"')         // Unescape quotes
+    .replace(/\u0000/g, '\\')     // Restore backslashes
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    return Function(`"use strict"; return (${unescaped})`)()
+  } catch (e) {
+    console.error('[parseArray] Parse failed:', e)
+    console.error('[parseArray] Start:', arrayStr.slice(0, 200))
+    console.error('[parseArray] End:', arrayStr.slice(-200))
+    return null
+  }
+}
+
+/**
+ * Checks if a string is a valid location name
+ */
+function isValidName(s: string): boolean {
+  return (
+    s.length >= 1 &&
+    s.length <= 200 &&
+    !s.startsWith('/g/') &&
+    !s.startsWith('http') &&
+    !/^\d+$/.test(s) &&
+    !/^[A-Z0-9]{4}\+/.test(s) // Not a plus code
+  )
+}
+
+/**
+ * Extracts location data from a details array
+ */
+function extractDetailsFromArray(arr: unknown[]): {
+  lat: number | null
+  lng: number | null
+  cid2: string | null
+  placeId: string | null
+} {
+  let lat: number | null = null
+  let lng: number | null = null
+  let cid2: string | null = null
+  let placeId: string | null = null
+
+  for (const value of arr) {
+    // Coordinates: [null, null, lat, lng]
+    if (
+      Array.isArray(value) &&
+      value.length >= 4 &&
+      value[0] === null &&
+      value[1] === null &&
+      typeof value[2] === 'number' &&
+      typeof value[3] === 'number'
+    ) {
+      lat = value[2]
+      lng = value[3]
+    }
+
+    // CID pair: ["CID1", "CID2"]
+    if (
+      Array.isArray(value) &&
+      value.length === 2 &&
+      typeof value[0] === 'string' &&
+      typeof value[1] === 'string' &&
+      /^\d{15,25}$/.test(value[0]) &&
+      /^-?\d{15,25}$/.test(value[1])
+    ) {
+      cid2 = value[1]
+    }
+
+    // Place ID: /g/...
+    if (typeof value === 'string' && value.startsWith('/g/')) {
+      placeId = value
+    }
+  }
+
+  return { lat, lng, cid2, placeId }
+}
+
+/**
+ * Step 4: Extract locations from parsed data
+ *
+ * Two structure variants exist:
+ *
+ * Variant A (66 entries):
+ * - entry[1] contains /g/, coords, CID
+ * - entry[2] is name
+ *
+ * Variant B (13 entries):
+ * - entry[1] contains coords (no /g/)
+ * - entry[2] is name
+ * - entry[8][1] contains CID
+ *
+ * We handle both by scanning flexibly.
+ */
+function walkAndExtract(
+  node: unknown,
+  results: ParsedLocation[],
+  seen: Set<string>
+): void {
+  if (!Array.isArray(node)) return
+
+  // Try to find location data from children
+  let lat: number | null = null
+  let lng: number | null = null
+  let cid2: string | null = null
+  let placeId: string | null = null
+  let name: string | null = null
+
+  // Scan all children for data
+  for (const value of node) {
+    // Check for name string
+    if (typeof value === 'string' && isValidName(value) && !name) {
+      name = value
+    }
+
+    // Check child arrays for details
+    if (Array.isArray(value)) {
+      // Look for /g/ pattern
+      for (const v of value) {
+        if (typeof v === 'string' && v.startsWith('/g/')) {
+          placeId = v
+        }
+      }
+
+      // Look for coordinates [null, null, lat, lng]
+      for (const v of value) {
+        if (
+          Array.isArray(v) &&
+          v.length >= 4 &&
+          v[0] === null &&
+          v[1] === null &&
+          typeof v[2] === 'number' &&
+          typeof v[3] === 'number'
+        ) {
+          lat = v[2]
+          lng = v[3]
+        }
+      }
+
+      // Look for CID pair ["CID1", "CID2"]
+      for (const v of value) {
+        if (
+          Array.isArray(v) &&
+          v.length === 2 &&
+          typeof v[0] === 'string' &&
+          typeof v[1] === 'string' &&
+          /^\d{15,25}$/.test(v[0]) &&
+          /^-?\d{15,25}$/.test(v[1])
+        ) {
+          cid2 = v[1]
+        }
+      }
+
+      // Variant B: CID might be in a nested array like entry[8][1]
+      // Look for [[1], ["CID1", "CID2"]] pattern
+      if (
+        value.length === 2 &&
+        Array.isArray(value[1]) &&
+        value[1].length === 2 &&
+        typeof value[1][0] === 'string' &&
+        typeof value[1][1] === 'string' &&
+        /^\d{15,25}$/.test(value[1][0]) &&
+        /^-?\d{15,25}$/.test(value[1][1])
+      ) {
+        cid2 = value[1][1]
+      }
+    }
+  }
+
+  // Emit if we have enough data (name, coords, CID)
+  // placeId is optional for Variant B entries
+  if (
+    name &&
+    lat !== null &&
+    lng !== null &&
+    cid2 &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  ) {
+    const cid = toUnsignedCid(cid2)
+
+    if (!seen.has(cid)) {
+      seen.add(cid)
+      results.push({
+        name: cleanName(name),
+        latitude: lat,
+        longitude: lng,
+        cid,
+        googleMapsUrl: constructGoogleMapsUrlFromCid(cid),
+      })
+    }
+  }
+
+  // Recurse into child arrays
+  for (const value of node) {
+    if (Array.isArray(value)) {
+      walkAndExtract(value, results, seen)
+    }
+  }
+}
+
+/**
+ * Step 5: Convert negative CID to unsigned 64-bit format
+ */
+function toUnsignedCid(cid: string): string {
+  if (!cid.startsWith('-')) {
+    return cid
+  }
+  const signed = BigInt(cid)
+  const unsigned = signed < BigInt(0) ? signed + BigInt('18446744073709551616') : signed
+  return unsigned.toString()
+}
+
+/**
+ * Step 6: Clean place names
+ */
+function cleanName(name: string): string {
+  // Decode unicode escapes (e.g., \u0026 -> &)
+  let decoded = name.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
+    String.fromCharCode(parseInt(hex, 16))
+  )
+
+  // Remove plus codes (e.g., "WH8X+Q46 Coffee Shop" -> "Coffee Shop")
+  const plusCode = decoded.match(/^[A-Z0-9]{4}\+[A-Z0-9]+\s+(.+)$/i)
+  if (plusCode) return plusCode[1]
+
+  return decoded.trim()
+}
+
+/**
+ * Main extraction pipeline
+ */
+function extractLocations(html: string): ParsedLocation[] {
+  // Step 1: Find the script containing location data
+  const script = findLocationScript(html)
+  if (!script) {
+    return []
+  }
+
+  // Step 2: Locate the data array within the script
+  const arrayStr = extractDataArray(script)
+  if (!arrayStr) {
+    return []
+  }
+
+  // Step 3: Parse the array
+  const data = parseArray(arrayStr)
+  if (!data) {
+    return []
+  }
+
+  // Step 4: Walk and extract
+  const results: ParsedLocation[] = []
+  const seen = new Set<string>()
+  walkAndExtract(data, results, seen)
+
+  console.log(`[extractLocations] Found ${results.length} locations`)
+  return results
+}
+
+/**
+ * Extracts the list name from HTML title
  */
 function extractListName(html: string): string | undefined {
-  try {
-    const titleMatch = html.match(/<title>([^<]+)<\/title>/)
-    if (titleMatch) {
-      return titleMatch[1].replace(/ - Google Maps$/, '').trim()
-    }
-  } catch (error) {
-    console.error('Error extracting list name:', error)
+  const match = html.match(/<title>([^<]+)<\/title>/)
+  if (match) {
+    return match[1].replace(/ - Google Maps$/, '').trim()
   }
   return undefined
 }

@@ -10,12 +10,6 @@ import { bulkImportLocationsAction } from "@/lib/supabase/api/bulkImportLocation
 import { ParsedLocation } from "@/lib/services/googleMapsListService"
 import { MapPin, Loader2, CheckCircle2, XCircle, Link2, ExternalLink } from "lucide-react"
 
-interface ParseStats {
-  total: number
-  withCid: number
-  withoutCid: number
-}
-
 interface GoogleMapsListImportProps {
   // For direct import mode (when map already exists)
   mapId?: string
@@ -39,13 +33,10 @@ export function GoogleMapsListImport({
   const [locations, setLocations] = useState<ParsedLocation[]>([])
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set())
   const [listName, setListName] = useState<string | undefined>()
-  const [stats, setStats] = useState<ParseStats | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [importResult, setImportResult] = useState<{
     imported: number
     skipped: number
-    withCidImported: number
-    withoutCidImported: number
     errors: string[]
   } | null>(null)
 
@@ -66,7 +57,6 @@ export function GoogleMapsListImport({
     setIsParsing(true)
     setError(null)
     setLocations([])
-    setStats(null)
     setImportResult(null)
 
     try {
@@ -79,22 +69,15 @@ export function GoogleMapsListImport({
 
       setLocations(result.locations)
       setListName(result.listName)
-      setStats(result.stats || null)
       // Select all by default
       setSelectedIndices(new Set(result.locations.map((_, i) => i)))
 
-      // Debug logging for coverage analysis
-      if (result.stats) {
-        const { total, withCid, withoutCid } = result.stats
-        const coverage = total > 0 ? ((withCid / total) * 100).toFixed(1) : 0
-        console.log(`[GoogleMapsListImport] Stats: ${withCid} with CID, ${withoutCid} without CID, Coverage: ${coverage}%`)
-
-        // Log sample CID links
-        const cidSamples = result.locations.filter(l => l.cid).slice(0, 2)
-        if (cidSamples.length > 0) {
-          console.log('[GoogleMapsListImport] Sample CID links:')
-          cidSamples.forEach(l => console.log(`  - ${l.name}: ${l.googleMapsUrl}`))
-        }
+      // Debug logging
+      console.log(`[GoogleMapsListImport] Parsed ${result.locations.length} locations`)
+      if (result.locations.length > 0) {
+        const samples = result.locations.slice(0, 2)
+        console.log('[GoogleMapsListImport] Sample locations:')
+        samples.forEach(l => console.log(`  - ${l.name}: ${l.googleMapsUrl}`))
       }
     } catch (err) {
       setError("An error occurred while parsing the list")
@@ -131,8 +114,6 @@ export function GoogleMapsListImport({
       setImportResult({
         imported: result.imported,
         skipped: result.skipped,
-        withCidImported: result.withCidImported,
-        withoutCidImported: result.withoutCidImported,
         errors: result.errors,
       })
 
@@ -335,7 +316,6 @@ export function GoogleMapsListImport({
             onClick={() => {
               setUrl("")
               setLocations([])
-              setStats(null)
               setImportResult(null)
               setSelectedIndices(new Set())
             }}
