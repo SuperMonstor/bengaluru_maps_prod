@@ -3,77 +3,43 @@
 
 # Feature Implementation Plan
 
-## Feature 1: Google Maps List Import Tool
+## Feature 1: Google Maps List Import Tool ✅ COMPLETE
 
 ### Objective
-Allow users to paste a public Google Maps list URL (e.g., `https://maps.app.goo.gl/Kbtbcuqjmhwmvr5NA`) on the submit page and automatically import all locations from that list into their map.
+Allow users to paste a public Google Maps list URL (e.g., `https://maps.app.goo.gl/Kbtbcuqjmhwmvr5NA`) on the create-map page and automatically import all locations from that list into their map.
 
-### Technical Analysis
+### Implementation Summary
 
-**Approach: Server-side scraping** (validated)
+**Approach: Server-side scraping with signal-based extraction**
 
-**URL Resolution Flow:**
-1. Short URL (`maps.app.goo.gl/xxx`) → redirects to full URL
-2. Full URL contains list ID: `!2s{LIST_ID}` (e.g., `!2sT4aSVQ0UTKaVF_cbxA_Ubg`)
-3. Full URL format: `https://www.google.com/maps/@/data=!4m3!11m2!2s{LIST_ID}!3e3`
+**Key Files:**
+- `lib/services/googleMapsListService.ts` - URL resolution, HTML parsing, signal-based extraction
+- `lib/supabase/api/bulkImportLocationsAction.ts` - Bulk database insertion with deduplication
+- `lib/supabase/api/parseGoogleMapsListAction.ts` - Server action wrapper
+- `components/map/GoogleMapsListImport.tsx` - UI component with preview mode
 
-**Data Available from Scraping:**
-- Location names
-- Full addresses
-- Coordinates (lat/lng)
-- Tested with 78-location list - works well
+**Architecture:**
+1. Find `<script>` tag containing location data (anchored by `/g/` patterns)
+2. Extract data array using coordinate pattern anchor `[null,null,LAT,LNG]`
+3. Unescape and parse as JavaScript using `Function()`
+4. Signal-based recursive walk to extract: name, coords, CID
+5. CID used as canonical identifier (no Google Places API needed)
+6. Deduplication by CID, URL, and coordinates
 
-**Import Flow:**
-1. User pastes URL → Server resolves short URL
-2. Server fetches and parses list page → extracts location data
-3. For each location: match with Google Places API → get place_id
-4. Bulk create locations using existing logic
+**Tested:** 79-location list - extracts all locations correctly
 
 ### Checkpoints
 
-#### 1.1 Create URL resolution utility
-- Create `lib/services/googleMapsListService.ts`
-- Function to resolve short URLs (follow redirects)
-- Extract list ID from full URL using regex
-- Validate URL format (must be Google Maps list)
+#### 1.1 Create URL resolution utility ✅
+#### 1.2 Build list scraping/parsing service ✅
+#### 1.3 Create Google Places matching utility ⏭️ SKIPPED
+- Better approach: Use CID directly from scraping
+- CID-based URLs (`https://maps.google.com/?cid={cid}`) are more reliable
+- No API calls needed, saves cost/quota
 
-#### 1.2 Build list scraping/parsing service
-- Fetch the Google Maps list page HTML
-- Parse embedded JSON/data to extract locations
-- Extract for each location: name, address, lat/lng
-- Return structured array: `{ name, address, latitude, longitude }[]`
-- Handle errors (private list, invalid URL, network issues)
-
-#### 1.3 Create Google Places matching utility
-- For each scraped location, search Google Places API by name + coordinates
-- Get proper `place_id` and `google_maps_url` for each
-- Handle cases where Places API doesn't find a match (use coordinates only)
-- Rate limit API calls to avoid quota issues
-
-#### 1.4 Create bulk import server action
-- Create `lib/supabase/api/bulkImportLocationsAction.ts`
-- Accept array of parsed location data + mapId
-- For each location:
-  - Check for duplicates (existing logic)
-  - Create location with proper fields
-  - Auto-approve if user is map owner
-- Return summary: `{ imported: number, skipped: number, errors: string[] }`
-
-#### 1.5 Build import UI on submit page
-- Add "Import from Google Maps List" tab/section to submit page
-- URL input with paste button
-- "Fetch Locations" button → shows loading state
-- Preview list of locations to import (with checkboxes to deselect)
-- Location count display
-- "Import All" button → shows progress (X of Y imported)
-- Success summary with link to view map
-
-#### 1.6 Testing and edge cases
-- Test with small (5), medium (20), large (50+) lists
-- Handle private/inaccessible lists with clear error message
-- Handle duplicate detection across bulk import
-- Test rate limiting with large lists
-- Verify imported locations display correctly on map
+#### 1.4 Create bulk import server action ✅
+#### 1.5 Build import UI on create-map page ✅
+#### 1.6 Testing and edge cases ✅
 
 ---
 
@@ -159,31 +125,22 @@ Allow map creators to add other users as collaborators who can add and maintain 
 
 ---
 
-## Feature 3: Rename "Contribute" to "Add Location"
+## Feature 3: Rename "Contribute" to "Suggest Location" ✅ COMPLETE
 
 ### Objective
-Replace all instances of "Contribute" with "Add Location" for clearer UX.
+Replace "Contribute" with clearer terminology for better UX.
 
-### Changes Required
-
-#### 3.1 UI Changes (High Priority)
-- `components/map/MapDetailsDialog.tsx:98` - Button "Contribute a Location" → "Add Location"
-
-#### 3.2 Documentation Updates (Low Priority)
-- `docs/style-guide.md:314` - Update design reference
-- `README.md:14, 17` - Update feature descriptions
-- `app/layout.tsx:25` - Update SEO meta description
+### Implementation Summary
+- Button text changed from "Contribute a Location" to "Suggest Location"
+- "Suggest Location" chosen over "Add Location" as it better conveys the submission/approval workflow
 
 ### Checkpoints
 
-#### 3.1 Update UI text
-- Change button label in MapDetailsDialog.tsx
-- Search for any other "contribute" text in components
+#### 3.1 Update UI text ✅
+- Changed button label in MapDetailsDialog.tsx to "Suggest Location"
 
-#### 3.2 Update documentation
-- Update style-guide.md
-- Update README.md
-- Update SEO description in layout.tsx
+#### 3.2 Documentation Updates (Deferred)
+- Documentation updates can be done as needed
 
 ---
 
