@@ -8,6 +8,14 @@
         "@playwright/mcp@latest"
       ],
       "env": {}
+    },
+    "supabase": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server"
+      ]
     }
   }
 }
