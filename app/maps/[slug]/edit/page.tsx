@@ -11,9 +11,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/lib/hooks/use-toast"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
+import { CollaboratorsSection } from "@/components/map/CollaboratorsSection"
 import Image from "next/image"
 import { slugify, isReservedSlug, validateSlug } from "@/lib/utils/slugify"
 import { use } from "react"
+import { isCollaborator } from "@/lib/supabase/collaboratorService"
 
 interface EditMapPageProps {
 	params: Promise<{ slug: string }>
@@ -31,6 +33,7 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 	const [loading, setLoading] = useState(true)
 	const [submitting, setSubmitting] = useState(false)
 	const [error, setError] = useState<string | null>(null)
+	const [isOwner, setIsOwner] = useState(false)
 	const [formData, setFormData] = useState({
 		title: "",
 		slug: "",
@@ -72,12 +75,16 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 					return
 				}
 
-				// Check if user is the owner
-				if (user?.id !== data.owner_id) {
+				// Check if user is owner or collaborator
+				const userIsOwner = user?.id === data.owner_id
+				const userIsCollaborator = user?.id ? await isCollaborator(data.id, user.id) : false
+
+				if (!userIsOwner && !userIsCollaborator) {
 					setError("You don't have permission to edit this map")
 					return
 				}
 
+				setIsOwner(userIsOwner)
 				setMap(data)
 				const currentSlug = data.slug || slugify(data.title)
 				setOriginalSlug(currentSlug)
@@ -270,7 +277,7 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 
 	return (
 		<main className="min-h-screen bg-gray-50/50 p-4">
-			<div className="container mx-auto max-w-3xl py-8">
+			<div className="container mx-auto max-w-3xl py-8 space-y-6">
 				<div className="bg-white p-6 rounded-lg shadow-sm">
 					<h1 className="text-2xl font-bold mb-6">Edit Map</h1>
 
@@ -414,6 +421,9 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 						</div>
 					</form>
 				</div>
+
+				{/* Collaborators Section */}
+				<CollaboratorsSection mapId={map.id} isOwner={isOwner} />
 			</div>
 		</main>
 	)
