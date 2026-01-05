@@ -319,6 +319,15 @@ function ClientMapPageContentInner({
 											<Info className="h-3 w-3" />
 											More info
 										</button>
+										{user && user.id === map.owner_id && (
+											<Link
+												href={`/maps/${map.slug}/edit`}
+												className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
+											>
+												<Edit className="h-3 w-3" />
+												Edit
+											</Link>
+										)}
 										<Link
 											href={`/maps/${map.slug}/submit`}
 											className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
