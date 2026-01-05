@@ -147,6 +147,12 @@ export async function getMapByInviteTokenAction(token: string): Promise<
 	}>
 > {
 	try {
+		// Validate token is a valid UUID format
+		const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+		if (!uuidRegex.test(token)) {
+			return { success: false, error: "Invalid or expired invite link" }
+		}
+
 		const supabase = await createClient()
 
 		const {
@@ -174,10 +180,8 @@ export async function getMapByInviteTokenAction(token: string): Promise<
 			.single()
 
 		if (error) {
-			if (error.code === "PGRST116") {
-				return { success: false, error: "Invalid or expired invite link" }
-			}
-			return { success: false, error: `Failed to fetch map: ${error.message}` }
+			// Return user-friendly error for any database errors
+			return { success: false, error: "Invalid or expired invite link" }
 		}
 
 		const owner = data.users as unknown as {

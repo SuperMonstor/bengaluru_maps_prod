@@ -27,7 +27,7 @@ interface MapInfo {
 export default function InvitePage() {
 	const params = useParams()
 	const router = useRouter()
-	const user = useUser()
+	const { user } = useUser()
 	const { toast } = useToast()
 	const token = params.token as string
 
