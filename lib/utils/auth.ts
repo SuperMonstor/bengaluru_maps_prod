@@ -3,11 +3,35 @@ import { createClient } from "../supabase/api/supabaseClient"
 import { updateUserInDatabase } from "../supabase/userService"
 import { LoginInput } from "../validations/auth"
 
-export async function signInWithGoogle() {
+// Cookie name for storing redirect URL after OAuth
+export const AUTH_REDIRECT_COOKIE = "auth_redirect"
+
+/**
+ * Set a cookie to redirect after OAuth login
+ * Call this before initiating OAuth
+ */
+export function setAuthRedirect(redirectPath: string) {
+	// Store for 10 minutes - should be enough for OAuth flow
+	document.cookie = `${AUTH_REDIRECT_COOKIE}=${encodeURIComponent(redirectPath)}; path=/; max-age=600; SameSite=Lax`
+}
+
+/**
+ * Clear the auth redirect cookie
+ */
+export function clearAuthRedirect() {
+	document.cookie = `${AUTH_REDIRECT_COOKIE}=; path=/; max-age=0`
+}
+
+export async function signInWithGoogle(redirectAfterLogin?: string) {
 	const supabase = createClient()
 	const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL
 		? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
 		: "http://localhost:3000/auth/callback" // Fallback for local dev
+
+	// If a redirect is specified, store it in a cookie before OAuth
+	if (redirectAfterLogin) {
+		setAuthRedirect(redirectAfterLogin)
+	}
 
 	const { data, error } = await supabase.auth.signInWithOAuth({
 		provider: "google",
@@ -18,6 +42,10 @@ export async function signInWithGoogle() {
 
 	if (error) {
 		console.error("Error signing in with Google:", error.message)
+		// Clear the redirect cookie on error
+		if (redirectAfterLogin) {
+			clearAuthRedirect()
+		}
 		return { error }
 	}
 
