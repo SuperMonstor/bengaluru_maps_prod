@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "./supabaseServer"
+import { hasMapEditPermission } from "./permissionHelpers"
 
 export async function deleteLocationAction(locationId: string) {
 	try {
@@ -32,22 +33,13 @@ export async function deleteLocationAction(locationId: string) {
 			}
 		}
 
-		// Get the map to check ownership
-		const { data: map, error: mapError } = await supabase
-			.from("maps")
-			.select("owner_id")
-			.eq("id", location.map_id)
-			.single()
+		// Check permission: user can delete if they are:
+		// 1. The location creator, OR
+		// 2. The map owner or a collaborator
+		const isCreator = location.creator_id === user.id
+		const canEditMap = await hasMapEditPermission(supabase, location.map_id, user.id)
 
-		if (mapError) {
-			return {
-				success: false,
-				error: `Failed to find map: ${mapError.message}`,
-			}
-		}
-
-		// Only allow deletion if user is the map owner or the location creator
-		if (map.owner_id !== user.id && location.creator_id !== user.id) {
+		if (!isCreator && !canEditMap) {
 			return {
 				success: false,
 				error: "You don't have permission to delete this location",

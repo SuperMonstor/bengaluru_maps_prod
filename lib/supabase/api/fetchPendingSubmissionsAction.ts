@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "./supabaseServer"
+import { hasMapEditPermission } from "./permissionHelpers"
 
 export async function fetchPendingSubmissionsAction(mapId: string) {
 	try {
@@ -19,23 +20,9 @@ export async function fetchPendingSubmissionsAction(mapId: string) {
 			}
 		}
 
-		// Check if user is the map owner
-		const { data: mapData, error: mapError } = await supabase
-			.from("maps")
-			.select("owner_id")
-			.eq("id", mapId)
-			.single()
-
-		if (mapError) {
-			return {
-				success: false,
-				error: `Failed to fetch map: ${mapError.message}`,
-				data: null,
-			}
-		}
-
-		// Security check: Only map owner can view pending submissions
-		if (mapData.owner_id !== user.id) {
+		// Security check: Only map owner or collaborators can view pending submissions
+		const canEdit = await hasMapEditPermission(supabase, mapId, user.id)
+		if (!canEdit) {
 			return {
 				success: false,
 				error: "You do not have permission to view pending submissions for this map",
