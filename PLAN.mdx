@@ -46,82 +46,86 @@ Allow users to paste a public Google Maps list URL (e.g., `https://maps.app.goo.
 ## Feature 2: Add Collaborators
 
 ### Objective
-Allow map creators to add other users as collaborators who can add and maintain locations on the map. Include email notifications for invitations.
+Allow map creators to add collaborators via shareable invite links. Collaborators get full edit access (add locations, approve/reject submissions) without needing approval workflow.
 
 ### Technical Analysis
 
 **Current State:**
 - Maps have single `owner_id` - only owner can edit
 - No collaborator table exists
-- Email system (Resend) already in place
+- Auth callback doesn't support custom redirects after login
 - Authorization checks are application-level in server actions
 
+**Approach: Invite Links (not email-based)**
+- Owner generates a unique invite link per map
+- Shares link via WhatsApp, email, etc. (manual sharing)
+- Anyone with link can join as collaborator
+- No email system needed for invitations
+
 **New Components Needed:**
-- `map_collaborators` database table
-- Collaborator management UI (invite, remove)
-- Updated permission checks across all relevant actions
-- Email templates for invitations
+- `map_collaborators` table (user_id, map_id, role, joined_at)
+- `invite_token` column on maps table
+- Invite link generation/regeneration UI
+- Updated auth callback to support redirect URLs
+- Collaborator acceptance flow with popup
 
 ### Checkpoints
 
-#### 2.1 Create database schema for collaborators
+#### 2.1 Create database schema
+- Add `invite_token` (UUID) column to maps table
 - Create `map_collaborators` table:
   ```sql
   - id (UUID, primary key)
   - map_id (UUID, FK to maps)
-  - user_id (UUID, FK to users, nullable for pending invites)
-  - email (string, for pending invites)
-  - role ('editor' | 'viewer')
-  - status ('pending' | 'accepted' | 'declined')
-  - invited_by (UUID, FK to users)
-  - created_at, updated_at
+  - user_id (UUID, FK to users)
+  - role ('editor')
+  - joined_at (timestamp)
+  - UNIQUE(map_id, user_id)
   ```
 - Add RLS policies for security
 - Create TypeScript types in `lib/types/mapTypes.ts`
 
-#### 2.2 Create collaborator service functions
-- `addCollaborator(mapId, email, role)` - invite by email
-- `removeCollaborator(mapId, collaboratorId)` - remove collaborator
+#### 2.2 Create invite link service functions
+- `generateInviteToken(mapId)` - create/regenerate token
+- `getMapByInviteToken(token)` - fetch map for acceptance
+- `addCollaborator(mapId, userId)` - add user as collaborator
+- `removeCollaborator(mapId, userId)` - remove collaborator
 - `getCollaborators(mapId)` - list all collaborators
-- `acceptInvitation(invitationId)` - accept invite
-- `checkCollaboratorPermission(mapId, userId, permission)` - permission check helper
+- `isCollaborator(mapId, userId)` - check if user is collaborator
 
-#### 2.3 Create server actions for collaborator management
-- `inviteCollaboratorAction` - sends invite email
+#### 2.3 Create server actions
+- `generateInviteTokenAction` - generates new token
+- `acceptInviteAction` - accepts invite for logged-in user
 - `removeCollaboratorAction` - removes collaborator
-- `acceptInvitationAction` - accepts pending invite
 - `getCollaboratorsAction` - fetches collaborator list
 
-#### 2.4 Update permission checks across codebase
-- Update `updateMapAction` to allow collaborators with edit role
-- Update `fetchPendingSubmissionsAction` to allow collaborators
-- Update `approveLocationAction` / `rejectLocationAction`
-- Update location deletion permissions
-- Create shared `hasMapEditPermission(mapId, userId)` helper
+#### 2.4 Update auth callback for redirects
+- Modify `/app/auth/callback/route.ts`
+- Support redirect URL after login (for invite flow)
+- Store redirect in cookie before OAuth, read after
 
-#### 2.5 Create email templates for collaborator invitations
-- Invitation email template (with accept link)
-- Acceptance confirmation email to inviter
-- Add to existing `emailService.ts`
+#### 2.5 Update permission checks
+- Create `hasMapEditPermission(mapId, userId)` helper
+- Returns true if owner OR collaborator
+- Update: `updateMapAction`, `fetchPendingSubmissionsAction`, `approveLocationAction`, `deleteLocationAction`
 
-#### 2.6 Build collaborator management UI
+#### 2.6 Build invite acceptance flow
+- Create `/invite/[token]` route
+- If logged in: Show popup "Join [Map Name] as collaborator?" → Accept/Decline
+- If not logged in: Redirect to login with return URL, then show popup
+- On accept: Add to collaborators, redirect to map
+- On decline: Redirect to home
+
+#### 2.7 Build collaborator management UI
 - Add "Collaborators" section to map edit page
-- Email input to invite new collaborators
-- List of current collaborators with remove button
-- Role selector (editor/viewer)
-- Pending invitations display
-
-#### 2.7 Build invitation acceptance flow
-- Create `/invitations/[id]/accept` route
-- Handle logged-in vs logged-out users
-- Link user account to invitation on accept
-- Redirect to map after acceptance
+- Show invite link with copy button
+- "Regenerate Link" button (invalidates old link)
+- List current collaborators with remove button
 
 #### 2.8 Testing
-- Test invitation flow end-to-end
+- Test invite flow (logged in vs logged out)
 - Verify permission checks work for collaborators
-- Test edge cases (invite existing collaborator, remove self, etc.)
-- Verify emails are sent correctly
+- Test edge cases (already collaborator, invalid token, owner clicking own link)
 
 ---
 
@@ -160,7 +164,9 @@ Replace "Contribute" with clearer terminology for better UX.
 - [ ] Rate limiting for bulk Places API calls - implement delays between calls
 
 ### Feature 2 (Collaborators)
-- [ ] Should collaborators be able to invite other collaborators?
-- [ ] Do we need a "viewer" role or just "editor"?
-- [ ] Should there be a limit on number of collaborators?
+- [x] ~~Should collaborators be able to invite other collaborators?~~ **No, only owner can share link**
+- [x] ~~Do we need a "viewer" role or just "editor"?~~ **Just editor for now**
+- [x] ~~Should there be a limit on number of collaborators?~~ **No limit**
+- [x] ~~Can collaborators approve/reject submissions?~~ **Yes, full edit access**
+- [x] ~~Link expiry?~~ **No expiry, but owner can regenerate to invalidate**
 
