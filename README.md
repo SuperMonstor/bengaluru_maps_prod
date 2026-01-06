@@ -4,6 +4,8 @@
 
 A community-driven platform to discover and share the best spots in Bengaluru. Tired of cool recommendations buried in WhatsApp groups? Bengaluru Maps aggregates curated lists of cafes, restaurants, events, and hidden gems in one searchable, shareable place.
 
+<img src="public/screenshots/desktop-map-view.png" alt="Desktop Map View" width="100%" />
+
 ## The Problem
 
 Your friends have amazing Google Maps lists—Korean restaurants, quiet cafes to work from, new startups' hangouts—but they're locked away in personal accounts or scattered across WhatsApp groups. There's no common way to discover what's cool and new in the city. Bengaluru Maps solves this by creating a community-curated directory where anyone can create and share thematic maps of their favorite places.
@@ -25,17 +27,11 @@ Your friends have amazing Google Maps lists—Korean restaurants, quiet cafes to
 3. **Share**: Share the map URL with friends, post in communities, or make it public for the city to discover
 4. **Grow**: Watch your map evolve as the community adds locations and upvotes favorites
 
-## Screenshots
+## Mobile View
 
-### Desktop View
-Interactive map with curated locations and contributors list
-
-![Desktop Map View](/screenshots/desktop-map-view.png)
-
-### Mobile View
 Responsive design for on-the-go discovery and contributions
 
-![Mobile Expanded View](/screenshots/mobile-expanded-with-edit.png)
+<img src="public/screenshots/mobile-expanded-with-edit.png" alt="Mobile Expanded View" width="100%" />
 
 ## Tech Highlights
 
