@@ -69,6 +69,7 @@ supabase db push
 ```
 
 This runs migrations in the correct order. Alternatively, run migrations manually in Supabase SQL Editor in this order:
+
 - `20251127151321_add_city_columns.sql`
 - `20251127152500_update_rpc_functions_city.sql`
 - `20251127160000_add_location_votes.sql`
@@ -110,6 +111,7 @@ We'd love help from developers interested in community platforms, maps, or just 
 5. Push and open a Pull Request
 
 Areas we'd love help with:
+
 - Performance improvements to map rendering
 - Additional data import sources (beyond Google Maps)
 - Enhanced location discovery (filters, search, recommendations)

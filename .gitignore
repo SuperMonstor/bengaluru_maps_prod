@@ -48,3 +48,5 @@ supabase/.temp
 # development config
 .claude/
 .vscode/
+
+.playwright-mcp/
