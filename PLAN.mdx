@@ -43,85 +43,49 @@ Allow users to paste a public Google Maps list URL (e.g., `https://maps.app.goo.
 
 ---
 
-## Feature 2: Add Collaborators
+## Feature 2: Add Collaborators ✅ COMPLETE
 
 ### Objective
-Allow map creators to add other users as collaborators who can add and maintain locations on the map. Include email notifications for invitations.
+Allow map creators to add collaborators via shareable invite links. Collaborators get full edit access (add locations, approve/reject submissions) without needing approval workflow.
 
-### Technical Analysis
+### Implementation Summary
 
-**Current State:**
-- Maps have single `owner_id` - only owner can edit
-- No collaborator table exists
-- Email system (Resend) already in place
-- Authorization checks are application-level in server actions
+**Approach: Invite Links (not email-based)**
+- Owner generates a unique invite link per map
+- Shares link via WhatsApp, email, etc. (manual sharing)
+- Anyone with link can join as collaborator
+- No email system needed for invitations
 
-**New Components Needed:**
-- `map_collaborators` database table
-- Collaborator management UI (invite, remove)
-- Updated permission checks across all relevant actions
-- Email templates for invitations
+**Key Files:**
+- `lib/supabase/collaboratorService.ts` - Client-side service functions
+- `lib/supabase/api/collaboratorActions.ts` - Server actions for invite flow
+- `lib/supabase/api/permissionHelpers.ts` - Shared permission check helpers
+- `app/invite/[token]/page.tsx` - Invite acceptance page with all states
+- `components/map/CollaboratorsSection.tsx` - UI for managing collaborators
+- `lib/utils/auth.ts` - Updated with redirect cookie support
+
+**Database Changes:**
+- Added `invite_token` (UUID) column to maps table with auto-generation
+- Created `map_collaborators` table with RLS policies
+- Added `has_map_edit_permission()` PostgreSQL function
+
+**Tested:**
+- Owner visiting own invite link → "This is your map!"
+- Logged-out user visiting invite → Sign-in prompt with redirect
+- Invalid/expired tokens → Clean error message
+- Copy/regenerate invite links → Works correctly
+- Old links invalidated after regeneration
 
 ### Checkpoints
 
-#### 2.1 Create database schema for collaborators
-- Create `map_collaborators` table:
-  ```sql
-  - id (UUID, primary key)
-  - map_id (UUID, FK to maps)
-  - user_id (UUID, FK to users, nullable for pending invites)
-  - email (string, for pending invites)
-  - role ('editor' | 'viewer')
-  - status ('pending' | 'accepted' | 'declined')
-  - invited_by (UUID, FK to users)
-  - created_at, updated_at
-  ```
-- Add RLS policies for security
-- Create TypeScript types in `lib/types/mapTypes.ts`
-
-#### 2.2 Create collaborator service functions
-- `addCollaborator(mapId, email, role)` - invite by email
-- `removeCollaborator(mapId, collaboratorId)` - remove collaborator
-- `getCollaborators(mapId)` - list all collaborators
-- `acceptInvitation(invitationId)` - accept invite
-- `checkCollaboratorPermission(mapId, userId, permission)` - permission check helper
-
-#### 2.3 Create server actions for collaborator management
-- `inviteCollaboratorAction` - sends invite email
-- `removeCollaboratorAction` - removes collaborator
-- `acceptInvitationAction` - accepts pending invite
-- `getCollaboratorsAction` - fetches collaborator list
-
-#### 2.4 Update permission checks across codebase
-- Update `updateMapAction` to allow collaborators with edit role
-- Update `fetchPendingSubmissionsAction` to allow collaborators
-- Update `approveLocationAction` / `rejectLocationAction`
-- Update location deletion permissions
-- Create shared `hasMapEditPermission(mapId, userId)` helper
-
-#### 2.5 Create email templates for collaborator invitations
-- Invitation email template (with accept link)
-- Acceptance confirmation email to inviter
-- Add to existing `emailService.ts`
-
-#### 2.6 Build collaborator management UI
-- Add "Collaborators" section to map edit page
-- Email input to invite new collaborators
-- List of current collaborators with remove button
-- Role selector (editor/viewer)
-- Pending invitations display
-
-#### 2.7 Build invitation acceptance flow
-- Create `/invitations/[id]/accept` route
-- Handle logged-in vs logged-out users
-- Link user account to invitation on accept
-- Redirect to map after acceptance
-
-#### 2.8 Testing
-- Test invitation flow end-to-end
-- Verify permission checks work for collaborators
-- Test edge cases (invite existing collaborator, remove self, etc.)
-- Verify emails are sent correctly
+#### 2.1 Create database schema ✅
+#### 2.2 Create invite link service functions ✅
+#### 2.3 Create server actions ✅
+#### 2.4 Update auth callback for redirects ✅
+#### 2.5 Update permission checks ✅
+#### 2.6 Build invite acceptance flow ✅
+#### 2.7 Build collaborator management UI ✅
+#### 2.8 Testing ✅
 
 ---
 
@@ -160,7 +124,9 @@ Replace "Contribute" with clearer terminology for better UX.
 - [ ] Rate limiting for bulk Places API calls - implement delays between calls
 
 ### Feature 2 (Collaborators)
-- [ ] Should collaborators be able to invite other collaborators?
-- [ ] Do we need a "viewer" role or just "editor"?
-- [ ] Should there be a limit on number of collaborators?
+- [x] ~~Should collaborators be able to invite other collaborators?~~ **No, only owner can share link**
+- [x] ~~Do we need a "viewer" role or just "editor"?~~ **Just editor for now**
+- [x] ~~Should there be a limit on number of collaborators?~~ **No limit**
+- [x] ~~Can collaborators approve/reject submissions?~~ **Yes, full edit access**
+- [x] ~~Link expiry?~~ **No expiry, but owner can regenerate to invalidate**
 

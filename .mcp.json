@@ -3,11 +3,18 @@
     "playwright": {
       "type": "stdio",
       "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "env": {}
+    },
+    "supabase": {
+      "type": "stdio",
+      "command": "npx",
       "args": [
         "-y",
-        "@playwright/mcp@latest"
-      ],
-      "env": {}
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "${SUPABASE_ACCESS_TOKEN}"
+      ]
     }
   }
 }

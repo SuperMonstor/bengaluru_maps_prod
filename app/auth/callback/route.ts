@@ -1,11 +1,16 @@
 import { createClient } from "@/lib/supabase/api/supabaseServer"
 import { updateUserInDatabase } from "@/lib/supabase/userService"
+import { AUTH_REDIRECT_COOKIE } from "@/lib/utils/auth"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
 	const requestUrl = new URL(request.url)
 	const code = requestUrl.searchParams.get("code")
 	const origin = requestUrl.origin
+
+	// Check for redirect cookie (set before OAuth for invite flow, etc.)
+	const redirectCookie = request.cookies.get(AUTH_REDIRECT_COOKIE)
+	const redirectPath = redirectCookie?.value ? decodeURIComponent(redirectCookie.value) : null
 
 	if (code) {
 		const supabase = await createClient()
@@ -16,7 +21,10 @@ export async function GET(request: NextRequest) {
 		if (exchangeError) {
 			console.error("[AuthCallback] Code exchange failed:", exchangeError.message)
 			// Redirect to home with error - user might already be authenticated
-			return NextResponse.redirect(`${origin}/?error=auth_failed`)
+			const response = NextResponse.redirect(`${origin}/?error=auth_failed`)
+			// Clear the redirect cookie on error
+			response.cookies.delete(AUTH_REDIRECT_COOKIE)
+			return response
 		}
 
 		// Get the session to verify and update user in database
@@ -24,7 +32,9 @@ export async function GET(request: NextRequest) {
 
 		if (sessionError || !session) {
 			console.error("[AuthCallback] No session after exchange:", sessionError?.message)
-			return NextResponse.redirect(`${origin}/?error=no_session`)
+			const response = NextResponse.redirect(`${origin}/?error=no_session`)
+			response.cookies.delete(AUTH_REDIRECT_COOKIE)
+			return response
 		}
 
 		// Update user in database - don't fail auth if this fails
@@ -36,6 +46,20 @@ export async function GET(request: NextRequest) {
 		}
 	}
 
-	// Redirect to home page
-	return NextResponse.redirect(origin)
+	// Determine redirect destination
+	let redirectUrl = origin
+	if (redirectPath) {
+		// Validate that redirectPath is a relative path (security)
+		if (redirectPath.startsWith("/") && !redirectPath.startsWith("//")) {
+			redirectUrl = `${origin}${redirectPath}`
+		}
+	}
+
+	// Create response and clear redirect cookie
+	const response = NextResponse.redirect(redirectUrl)
+	if (redirectCookie) {
+		response.cookies.delete(AUTH_REDIRECT_COOKIE)
+	}
+
+	return response
 }

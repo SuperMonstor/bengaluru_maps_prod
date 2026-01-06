@@ -3,21 +3,19 @@
 // components/CafeCard.tsx
 import Image from "next/image"
 import { MapPin, Users } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { cn } from "@/lib/utils/utils"
 import { UpvoteButton } from "./UpvoteButton"
 import { memo } from "react"
+import { CollaboratorAvatars, Contributor } from "./CollaboratorAvatars"
 
 interface CafeCardProps {
 	title: string
 	description: string
 	image: string
 	locations: number
-	contributors: number
+	contributors: Contributor[]
 	upvotes: number
-	username: string
-	userProfilePicture?: string | null
 	className?: string
 	mapId: string
 	initialIsUpvoted?: boolean
@@ -32,8 +30,6 @@ export const CafeCard = memo(function CafeCard({
 	locations,
 	contributors,
 	upvotes,
-	username,
-	userProfilePicture,
 	className,
 	mapId,
 	initialIsUpvoted,
@@ -106,39 +102,28 @@ export const CafeCard = memo(function CafeCard({
 								</div>
 								<div className="flex items-center gap-1.5 px-2.5 py-1 md:px-3 md:py-1.5 bg-gray-50 rounded-full text-[10px] md:text-xs text-[#64748B] font-medium">
 									<Users className="h-3 w-3 md:h-3.5 md:w-3.5" />
-									<span>{contributors}</span>
+									<span>{contributors.length}</span>
 								</div>
 							</div>
 						</div>
 					</CardHeader>
 
 					<CardFooter className="border-t border-border/40 px-4 py-3 md:px-6">
-						<div className="flex items-center gap-2.5 text-sm">
-							<Avatar className="h-6 w-6 border border-border/50">
-								{userProfilePicture ? (
-									<Image
-										src={userProfilePicture}
-										alt={username}
-										fill
-										className="object-cover rounded-full"
-										sizes="24px"
-									/>
-								) : (
-									<AvatarFallback className="text-xs">
-										{username
-											.split(" ")
-											.map((n) => n[0])
-											.join("")
-											.toUpperCase()}
-									</AvatarFallback>
-								)}
-							</Avatar>
-							<span className="text-[#64748B]">
-								Started by{" "}
-								<span className="font-medium text-[#0F172A]">
-									{username}
+						<div className="flex items-center gap-2.5 text-sm text-[#64748B]">
+							<CollaboratorAvatars contributors={contributors} size="sm" />
+							{contributors.length > 0 && (
+								<span className="truncate max-w-[calc(100%-60px)]">
+									<span className="font-medium text-[#0F172A]">
+										{contributors.find(c => c.is_owner)?.full_name || "Unknown User"}
+									</span>
+									{contributors.filter(c => !c.is_owner).length > 0 && (
+										<>
+											{" "}
+											&bull; {contributors.filter(c => !c.is_owner).length} collaborators
+										</>
+									)}
 								</span>
-							</span>
+							)}
 						</div>
 					</CardFooter>
 				</div>

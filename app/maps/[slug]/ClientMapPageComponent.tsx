@@ -17,6 +17,7 @@ import {
 	Info,
 	Plus,
 	Share2,
+	UserPlus,
 } from "lucide-react"
 import { LocationCard } from "@/components/map/LocationCard"
 import { MapDetailsDialog } from "@/components/map/MapDetailsDialog"
@@ -25,7 +26,9 @@ import ShareButton from "@/components/custom-ui/ShareButton"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import dynamic from "next/dynamic"
-import { Location, MapUI } from "@/lib/types/mapTypes"
+import { Location, MapUI, Contributor } from "@/lib/types/mapTypes"
+import { CollaboratorAvatars } from "@/components/custom-ui/CollaboratorAvatars"
+import { InviteCollaboratorDialog } from "@/components/map/InviteCollaboratorDialog"
 
 const OSMMap = dynamic(() => import("@/components/map/OSMMap"), {
 	ssr: false,
@@ -76,6 +79,7 @@ function ClientMapPageContentInner({
 	const [isLoadingLocation, setIsLoadingLocation] = useState(false)
 	const [sortBy, setSortBy] = useState<"upvotes" | "distance">("upvotes")
 	const [showMapDetails, setShowMapDetails] = useState(false)
+	const [showInviteDialog, setShowInviteDialog] = useState(false)
 
 	// Manage map data in state so we can update it when locations are deleted
 	const [map, setMap] = useState<MapUI>(initialMap)
@@ -272,23 +276,21 @@ function ClientMapPageContentInner({
 										</h1>
 
 										{/* User Info Line */}
-										<div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500">
-											<Avatar className="h-4 w-4 border border-gray-200">
-												{map.userProfilePicture ? (
-													<Image
-														src={map.userProfilePicture}
-														alt={map.username}
-														fill
-														className="object-cover rounded-full"
-														sizes="16px"
-													/>
-												) : (
-													<AvatarFallback className="text-[8px]">
-														{map.username?.slice(0, 2).toUpperCase()}
-													</AvatarFallback>
-												)}
-											</Avatar>
-											<span className="truncate max-w-[150px]">by {map.username}</span>
+										<div className="flex items-center gap-2.5 mt-2 text-xs text-gray-500">
+											<CollaboratorAvatars contributors={map.contributors} size="sm" />
+											{map.contributors.length > 0 && (
+												<span className="truncate max-w-[calc(100%-60px)]">
+													<span className="font-medium text-gray-900">
+														{map.contributors.find(c => c.is_owner)?.full_name || "Unknown User"}
+													</span>
+													{map.contributors.filter(c => !c.is_owner).length > 0 && (
+														<>
+															{" "}
+															&bull; {map.contributors.filter(c => !c.is_owner).length} collaborators
+														</>
+													)}
+												</span>
+											)}
 										</div>
 
 										{/* Stats Line */}
@@ -306,7 +308,7 @@ function ClientMapPageContentInner({
 											</span>
 											<span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full border border-gray-100 text-xs text-gray-500 h-6">
 												<Users className="h-3 w-3" />
-												{map.contributors}
+												{map.contributors.length}
 											</span>
 										</div>
 									</div>
@@ -319,6 +321,24 @@ function ClientMapPageContentInner({
 											<Info className="h-3 w-3" />
 											More info
 										</button>
+										{user && user.id === map.owner_id && (
+											<Link
+												href={`/maps/${map.slug}/edit`}
+												className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
+											>
+												<Edit className="h-3 w-3" />
+												Edit
+											</Link>
+										)}
+										{user && user.id === map.owner_id && (
+											<button
+												onClick={() => setShowInviteDialog(true)}
+												className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
+											>
+												<UserPlus className="h-3 w-3" />
+												Invite
+											</button>
+										)}
 										<Link
 											href={`/maps/${map.slug}/submit`}
 											className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
@@ -699,7 +719,7 @@ function ClientMapPageContentInner({
 											</div>
 											<div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-500 h-6">
 												<Users className="h-3.5 w-3.5" />
-												<span>{map.contributors}</span>
+												<span>{map.contributors.length}</span>
 											</div>
 										</div>
 
@@ -717,6 +737,18 @@ function ClientMapPageContentInner({
 													Suggest location
 												</Button>
 											</Link>
+											{user && user.id === map.owner_id && (
+												<Button
+													size="sm"
+													onClick={(e) => {
+														e.stopPropagation()
+														setShowInviteDialog(true)
+													}}
+													className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-sm px-3"
+												>
+													<UserPlus className="h-3.5 w-3.5" />
+												</Button>
+											)}
 											<Button
 												size="sm"
 												onClick={(e) => {
@@ -854,6 +886,15 @@ function ClientMapPageContentInner({
 						locationName={selectedLocation.name}
 						onDeleted={handleLocationDeleted}
 						onCancel={() => setShowDeleteDialog(false)}
+					/>
+				)}
+
+				{/* Invite Collaborator Dialog */}
+				{showInviteDialog && user && user.id === map.owner_id && (
+					<InviteCollaboratorDialog
+						mapId={map.id}
+						isOpen={showInviteDialog}
+						onOpenChange={setShowInviteDialog}
 					/>
 				)}
 			</div>

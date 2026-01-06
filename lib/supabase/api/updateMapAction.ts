@@ -3,6 +3,7 @@
 import { createClient } from "./supabaseServer"
 import { slugify, validateSlug, isReservedSlug } from "@/lib/utils/slugify"
 import { ImageProcessor, IMAGE_CONFIG } from "@/lib/utils/images"
+import { hasMapEditPermission } from "./permissionHelpers"
 
 export async function updateMapAction(formData: FormData) {
 	try {
@@ -29,7 +30,16 @@ export async function updateMapAction(formData: FormData) {
 			return { success: false, error: "Required fields are missing" }
 		}
 
-		// Check if the user is the owner of the map
+		// Check if the user has edit permission (owner or collaborator)
+		const canEdit = await hasMapEditPermission(supabase, mapId, user.id)
+		if (!canEdit) {
+			return {
+				success: false,
+				error: "You don't have permission to edit this map",
+			}
+		}
+
+		// Get current map data for slug comparison
 		const { data: mapData, error: mapError } = await supabase
 			.from("maps")
 			.select("owner_id, display_picture, slug")
@@ -39,15 +49,7 @@ export async function updateMapAction(formData: FormData) {
 		if (mapError) {
 			return {
 				success: false,
-				error: `Error checking map ownership: ${mapError.message}`,
-			}
-		}
-
-		// Only allow update if user is the map owner
-		if (mapData.owner_id !== user.id) {
-			return {
-				success: false,
-				error: "You don't have permission to edit this map",
+				error: `Error fetching map: ${mapError.message}`,
 			}
 		}
 
