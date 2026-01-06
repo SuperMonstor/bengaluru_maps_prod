@@ -122,7 +122,7 @@ export default function MyMapsPage() {
 												</span>
 												<span className="flex items-center gap-1">
 													<Users className="h-3 w-3" />
-													{mapItem.contributors} contributors
+													{mapItem.contributors.length} contributors
 												</span>
 												<span className="flex items-center gap-1">
 													<ThumbsUp className="h-3 w-3" />
@@ -165,17 +165,17 @@ export default function MyMapsPage() {
 								<CardFooter className="pt-2 flex gap-2 border-t border-border mt-auto">
 									<div className="flex items-center gap-2 flex-grow">
 										<Avatar className="h-6 w-6">
-											{mapItem.userProfilePicture ? (
+											{user.picture_url ? (
 												<Image
-													src={mapItem.userProfilePicture}
-													alt={mapItem.username}
+													src={user.picture_url}
+													alt={user.first_name || "You"}
 													fill
 													className="object-cover rounded-full"
 													sizes="24px"
 												/>
 											) : (
 												<AvatarFallback>
-													{mapItem.username.charAt(0).toUpperCase()}
+													{(user.first_name || "U").charAt(0).toUpperCase()}
 												</AvatarFallback>
 											)}
 										</Avatar>

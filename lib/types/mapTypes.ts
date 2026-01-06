@@ -82,11 +82,9 @@ export interface MapResponse {
 	description: string
 	image: string
 	locations: number
-	contributors: number
+	contributors: Contributor[]
 	upvotes: number
 	hasUpvoted: boolean
-	username: string
-	userProfilePicture: string | null
 	owner_id?: string
 	slug?: string
 	city: string
@@ -117,10 +115,8 @@ export interface UserMap {
 	body: string
 	image: string
 	locations: Location[]
-	contributors: number
+	contributors: Contributor[]
 	upvotes: number
-	username: string
-	userProfilePicture: string | null
 	pendingCount: number
 	owner_id?: string
 	slug?: string
@@ -152,10 +148,8 @@ export interface MapUI {
 	body: string
 	image: string
 	locations: Location[]
-	contributors: number
+	contributors: Contributor[]
 	upvotes: number
-	username: string
-	userProfilePicture: string | null
 	owner_id?: string
 	hasUpvoted: boolean
 	slug?: string
@@ -185,3 +179,11 @@ export interface CollaboratorWithUser extends MapCollaborator {
 		picture_url: string | null
 	}
 }
+
+export interface Contributor {
+	id: string
+	full_name: string
+	picture_url: string | null
+	is_owner: boolean
+}
+

@@ -7,6 +7,7 @@ import {
 	MapsResult,
 	CreateMapResult,
 	CreateLocationResult,
+	Contributor,
 } from "@/lib/types/mapTypes"
 import { User } from "@/lib/types/userTypes"
 import { toggleUpvote } from "./votesService"
@@ -166,7 +167,6 @@ export async function getMaps(
 		if (countError) throw countError
 
 		// Use a more efficient approach with a subquery to get maps sorted by upvotes
-		// This SQL query will be executed on the database side
 		const { data, error: mapsError } = await supabase.rpc(
 			"get_maps_sorted_by_upvotes",
 			{
@@ -182,26 +182,30 @@ export async function getMaps(
 			return { data: [], total: count || 0, page, limit, error: null }
 		}
 
-		// Extract map IDs for additional queries
 		const mapIds = data.map((map: any) => map.id)
 		const mapsData = data as unknown as MapData[]
-
-		// Get owner IDs to fetch user information
 		const ownerIds = [...new Set(mapsData.map((map) => map.owner_id))]
 
 		// Get additional data needed for the response
-		const [locationCountsRes, contributorCountsRes, usersRes] = await Promise.all([
+		const [locationCountsRes, usersRes, collaboratorsRes] = await Promise.all([
 			supabase.rpc("get_location_counts", { map_ids: mapIds, p_city: 'Bangalore' }),
-			supabase.rpc("get_contributor_counts", { map_ids: mapIds, p_city: 'Bangalore' }),
 			supabase
 				.from("users")
 				.select("id, first_name, last_name, picture_url")
 				.in("id", ownerIds),
+			supabase
+				.from("map_collaborators")
+				.select(`
+					map_id,
+					users (id, first_name, last_name, picture_url)
+				`)
+				.in("map_id", mapIds)
 		])
 
 		if (locationCountsRes.error) throw locationCountsRes.error
-		if (contributorCountsRes.error) throw contributorCountsRes.error
 		if (usersRes.error) throw usersRes.error
+		if (collaboratorsRes.error) throw collaboratorsRes.error
+
 
 		// Create maps for efficient lookups
 		const locationCounts = new Map<string, number>(
@@ -212,23 +216,46 @@ export async function getMaps(
 				]
 			) || []
 		)
-		const contributorCounts = new Map<string, number>(
-			contributorCountsRes.data?.map(
-				(c: { map_id: string; contributor_count: number }) => [
-					c.map_id,
-					Number(c.contributor_count),
-				]
-			) || []
-		)
+
 		const usersMap = new Map(
 			usersRes.data?.map((user: any) => [
 				user.id,
 				{
-					username: `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim(),
+					id: user.id,
+					full_name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
 					picture_url: user.picture_url || null,
 				},
 			]) || []
 		)
+
+		const contributorsByMap = new Map<string, Contributor[]>()
+		
+		// Add owners to the contributors map
+		for (const map of mapsData) {
+			const owner = usersMap.get(map.owner_id)
+			if (owner) {
+				contributorsByMap.set(map.id, [{ ...owner, is_owner: true }])
+			}
+		}
+
+		// Add collaborators to the contributors map
+		collaboratorsRes.data?.forEach((collab: any) => {
+			const mapId = collab.map_id
+			const user = collab.users
+			if (mapId && user) {
+				const contributor: Contributor = {
+					id: user.id,
+					full_name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+					picture_url: user.picture_url || null,
+					is_owner: false,
+				}
+				const existing = contributorsByMap.get(mapId) || []
+				if (!existing.some(e => e.id === contributor.id)) {
+					contributorsByMap.set(mapId, [...existing, contributor])
+				}
+			}
+		})
+
 
 		// Check if the current user has upvoted each map
 		let hasUpvotedMap: Map<string, boolean> = new Map()
@@ -242,7 +269,6 @@ export async function getMaps(
 
 			if (votesError) throw votesError
 
-			// Create a map of map_id to whether the user has upvoted it
 			hasUpvotedMap = new Map(
 				userVotes?.map((vote: { map_id: string }) => [vote.map_id, true]) || []
 			)
@@ -250,21 +276,18 @@ export async function getMaps(
 
 		// Create the response maps array
 		const maps: MapResponse[] = mapsData.map((map) => {
-			const userInfo = usersMap.get(map.owner_id)
 			return {
 				id: map.id,
 				title: map.name,
 				description: map.short_description,
 				image: map.display_picture || "/placeholder.svg",
 				locations: locationCounts.get(map.id) ?? 0,
-				contributors: contributorCounts.get(map.id) ?? 0,
-				upvotes: map.vote_count || 0, // Use the vote_count from the RPC function
+				upvotes: map.vote_count || 0,
 				hasUpvoted: hasUpvotedMap.get(map.id) || false,
-				username: userInfo?.username || "Unknown User",
-				userProfilePicture: userInfo?.picture_url || null,
 				owner_id: map.owner_id,
 				slug: map.slug || slugify(map.name),
 				city: map.city || 'Bangalore',
+				contributors: contributorsByMap.get(map.id) || [],
 			}
 		})
 
@@ -324,21 +347,38 @@ export async function getMapById(mapId: string, userId?: string) {
 
 		if (error) throw error
 
-		const { data: contributorCountsRes, error: contributorError } =
-			await supabase.rpc("get_contributor_counts", { map_ids: [data.id], p_city: 'Bangalore' })
+		// Fetch collaborators
+		const { data: collaboratorsRes, error: collaboratorsError } = await supabase
+			.from("map_collaborators")
+			.select(`
+				users (id, first_name, last_name, picture_url)
+			`)
+			.eq("map_id", data.id)
 
-		if (contributorError) throw contributorError
+		if (collaboratorsError) throw collaboratorsError
 
-		const contributorCounts = new Map<string, number>(
-			contributorCountsRes?.map(
-				(c: { map_id: string; contributor_count: number }) => [
-					c.map_id,
-					Number(c.contributor_count),
-				]
-			) || []
-		)
+		const owner = data.users as unknown as User
+		const contributors: Contributor[] = []
+		if (owner) {
+			contributors.push({
+				id: owner.id,
+				full_name: `${owner.first_name || ""} ${owner.last_name || ""}`.trim(),
+				picture_url: owner.picture_url || null,
+				is_owner: true,
+			})
+		}
+		collaboratorsRes?.forEach((collab: any) => {
+			if (collab.users && collab.users.id !== owner.id) {
+				contributors.push({
+					id: collab.users.id,
+					full_name: `${collab.users.first_name || ""} ${collab.users.last_name || ""}`.trim(),
+					picture_url: collab.users.picture_url || null,
+					is_owner: false,
+				})
+			}
+		})
 
-		const user = data.users as unknown as User
+
 		const hasUpvoted = userId
 			? data.votes.some((vote) => vote.user_id === userId)
 			: false
@@ -415,16 +455,12 @@ export async function getMapById(mapId: string, userId?: string) {
 				body: data.body,
 				image: data.display_picture || "/placeholder.svg",
 				locations: enhancedLocations,
-				contributors: contributorCounts.get(data.id) ?? 0,
 				upvotes: data.votes.length,
-				username: user
-					? `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim()
-					: "Unknown User",
-				userProfilePicture: user?.picture_url || null,
 				owner_id: data.owner_id,
 				hasUpvoted,
 				slug: data.slug || slugify(data.name),
 				city: data.city || 'Bangalore',
+				contributors,
 			},
 			error: null,
 		}
@@ -488,21 +524,37 @@ export async function getMapBySlug(slug: string, userId?: string) {
 
 		if (error) throw error
 
-		const { data: contributorCountsRes, error: contributorError } =
-			await supabase.rpc("get_contributor_counts", { map_ids: [data.id], p_city: 'Bangalore' })
+		// Fetch collaborators
+		const { data: collaboratorsRes, error: collaboratorsError } = await supabase
+			.from("map_collaborators")
+			.select(`
+				users (id, first_name, last_name, picture_url)
+			`)
+			.eq("map_id", data.id)
 
-		if (contributorError) throw contributorError
+		if (collaboratorsError) throw collaboratorsError
 
-		const contributorCounts = new Map<string, number>(
-			contributorCountsRes?.map(
-				(c: { map_id: string; contributor_count: number }) => [
-					c.map_id,
-					Number(c.contributor_count),
-				]
-			) || []
-		)
+		const owner = data.users as unknown as User
+		const contributors: Contributor[] = []
+		if (owner) {
+			contributors.push({
+				id: owner.id,
+				full_name: `${owner.first_name || ""} ${owner.last_name || ""}`.trim(),
+				picture_url: owner.picture_url || null,
+				is_owner: true,
+			})
+		}
+		collaboratorsRes?.forEach((collab: any) => {
+			if (collab.users && collab.users.id !== owner.id) {
+				contributors.push({
+					id: collab.users.id,
+					full_name: `${collab.users.first_name || ""} ${collab.users.last_name || ""}`.trim(),
+					picture_url: collab.users.picture_url || null,
+					is_owner: false,
+				})
+			}
+		})
 
-		const user = data.users as unknown as User
 		const hasUpvoted = userId
 			? data.votes.some((vote) => vote.user_id === userId)
 			: false
@@ -578,16 +630,12 @@ export async function getMapBySlug(slug: string, userId?: string) {
 				body: data.body,
 				image: data.display_picture || "/placeholder.svg",
 				locations: locationsWithUserInfo,
-				contributors: contributorCounts.get(data.id) ?? 0,
 				upvotes: data.votes.length,
-				username: user
-					? `${user.first_name || "Unnamed"} ${user.last_name || "User"}`.trim()
-					: "Unknown User",
-				userProfilePicture: user?.picture_url || null,
 				owner_id: data.owner_id,
 				hasUpvoted,
 				slug: data.slug || slugify(data.name),
 				city: data.city || 'Bangalore',
+				contributors,
 			},
 			error: null,
 		}

@@ -56,7 +56,7 @@ function Signup() {
 					<Button
 						variant="outline"
 						className="w-full flex items-center justify-center space-x-2"
-						onClick={signInWithGoogle}
+						onClick={handleGoogleSignIn}
 						disabled={isLoading}
 					>
 						<img src={googleLogo.src} alt="Google logo" className="w-5 h-5" />

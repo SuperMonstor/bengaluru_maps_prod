@@ -2,7 +2,6 @@
 
 import { MapUI } from "@/lib/types/mapTypes"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
     Dialog,
     DialogContent,
@@ -13,6 +12,7 @@ import { MapPin, Users } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { Markdown } from "@/components/markdown/MarkdownRenderer"
+import { CollaboratorAvatars } from "@/components/custom-ui/CollaboratorAvatars"
 
 interface MapDetailsDialogProps {
     map: MapUI
@@ -52,7 +52,7 @@ export function MapDetailsDialog({ map, isOpen, onOpenChange }: MapDetailsDialog
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-100">
                             <Users className="h-4 w-4 text-gray-500" />
                             <span className="text-sm font-medium text-gray-700">
-                                {map.contributors} contributors
+                                {map.contributors.length} contributors
                             </span>
                         </div>
                     </div>
@@ -68,26 +68,11 @@ export function MapDetailsDialog({ map, isOpen, onOpenChange }: MapDetailsDialog
                         </div>
                     </div>
 
-                    {/* Creator Info */}
+                    {/* Contributors */}
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <Avatar className="h-10 w-10 border border-gray-200">
-                            {map.userProfilePicture ? (
-                                <Image
-                                    src={map.userProfilePicture}
-                                    alt={map.username}
-                                    fill
-                                    className="object-cover rounded-full"
-                                    sizes="40px"
-                                />
-                            ) : (
-                                <AvatarFallback>
-                                    {map.username?.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                            )}
-                        </Avatar>
-                        <div className="flex flex-col">
-                            <span className="text-xs text-gray-500">Created by</span>
-                            <span className="font-medium text-gray-900">{map.username}</span>
+                        <div className="flex flex-col gap-2">
+                            <span className="text-xs text-gray-500">Contributors</span>
+                            <CollaboratorAvatars contributors={map.contributors} size="md" />
                         </div>
                     </div>
 
