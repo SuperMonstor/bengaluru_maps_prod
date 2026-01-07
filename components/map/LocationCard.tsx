@@ -92,7 +92,7 @@ export const LocationCard = memo(function LocationCard({
                         )}
                     </Avatar>
                     <span className="font-medium truncate max-w-[150px]">
-                        Added by {location.user_username || "Unknown User"}
+                        Suggested by {location.user_username || "Unknown User"}
                     </span>
                 </div>
             </div>

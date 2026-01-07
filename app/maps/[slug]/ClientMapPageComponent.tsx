@@ -344,7 +344,9 @@ function ClientMapPageContentInner({
 											className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
 										>
 											<Plus className="h-3 w-3" />
-											Suggest location
+											{user && (user.id === map.owner_id || map.contributors.some(c => c.id === user.id && !c.is_owner))
+												? "Add location"
+												: "Suggest location"}
 										</Link>
 										<button
 											onClick={handleShareMap}
@@ -526,7 +528,7 @@ function ClientMapPageContentInner({
 										)}
 									</Avatar>
 									<div className="flex flex-col">
-										<span className="text-xs text-gray-400">Added by</span>
+										<span className="text-xs text-gray-400">Suggested by</span>
 										<span className="font-medium text-gray-900">
 											{selectedLocation.user_username || "Unknown User"}
 											<span className="text-gray-400 font-normal ml-1">
@@ -734,7 +736,9 @@ function ClientMapPageContentInner({
 													size="sm"
 													className="w-full h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-sm"
 												>
-													Suggest location
+													{user && (user.id === map.owner_id || map.contributors.some(c => c.id === user.id && !c.is_owner))
+														? "Add location"
+														: "Suggest location"}
 												</Button>
 											</Link>
 											{user && user.id === map.owner_id && (
