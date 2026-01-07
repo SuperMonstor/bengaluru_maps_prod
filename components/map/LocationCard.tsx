@@ -91,7 +91,7 @@ export const LocationCard = memo(function LocationCard({
                             </AvatarFallback>
                         )}
                     </Avatar>
-                    <span className="font-medium truncate max-w-[150px]">
+                    <span className="font-medium truncate flex-1 min-w-0">
                         Suggested by {location.user_username || "Unknown User"}
                     </span>
                 </div>
