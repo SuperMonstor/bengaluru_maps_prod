@@ -36,6 +36,15 @@ Note: Small steps that are self-explanatory (e.g., renaming variables, installin
 - Never expose secrets in client-side code
 - Use RLS policies in Supabase
 
+## Database Operations with Supabase MCP
+
+When working with Supabase (migrations, queries, schema changes, RLS policies):
+- Use `mcp__supabase__apply_migration` to apply DDL operations directly instead of writing migration files
+- Use `mcp__supabase__execute_sql` for executing raw SQL queries
+- Use `mcp__supabase__get_advisors` to check for security vulnerabilities
+- Use `mcp__supabase__list_tables`, `mcp__supabase__list_migrations` to inspect schema
+- This ensures changes are applied directly to the production database and tracked properly
+
 ## Project Context
 
 - Next.js 16 with React 19
