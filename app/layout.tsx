@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
+import { Analytics } from "@vercel/analytics/react"
 import "./globals.css"
 import { getUser } from "@/lib/auth/getUser"
 import { LayoutClient } from "@/components/layout/LayoutClient"
@@ -151,6 +152,7 @@ export default async function RootLayout({
 			</head>
 			<body className="font-sans antialiased h-full overflow-hidden">
 				<LayoutClient user={user}>{children}</LayoutClient>
+				<Analytics />
 			</body>
 		</html>
 	)
