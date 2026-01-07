@@ -284,7 +284,6 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 				})
 
 				router.push(`/maps/${map.slug || slugify(map.title)}`)
-				router.refresh()
 			}
 		} catch (error) {
 			console.error("Error in submission:", error)

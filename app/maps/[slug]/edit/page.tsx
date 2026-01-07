@@ -227,7 +227,6 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 				// Redirect to the updated map page
 				const newSlug = result.data.slug || slugify(result.data.title)
 				router.push(`/maps/${newSlug}`)
-				router.refresh()
 			} else {
 				toast({
 					variant: "destructive",
