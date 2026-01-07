@@ -5,6 +5,7 @@ import { UserSchema } from "@/lib/types/userTypes"
 import { PendingCountProvider } from "@/lib/context/PendingCountContext"
 import { UserLocationProvider } from "@/lib/context/UserLocationContext"
 import { RouteTransition } from "@/components/custom-ui/RouteTransition"
+import { ProfileModalTrigger } from "@/components/auth/ProfileModalTrigger"
 import Header from "@/components/custom-ui/Header"
 import { Toaster } from "@/components/ui/toaster"
 
@@ -38,6 +39,7 @@ export function LayoutClient({ user, children }: LayoutClientProps) {
 			<UserLocationProvider>
 				<PendingCountProvider>
 					<RouteTransition />
+					<ProfileModalTrigger />
 					{/* Create a flex layout with header and main content */}
 					<div className="flex flex-col h-full">
 						<Header />

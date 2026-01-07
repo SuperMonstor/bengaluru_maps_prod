@@ -14,9 +14,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useUser } from "@/components/layout/LayoutClient"
 import { signOutAction } from "@/lib/actions/auth"
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton"
+import { ProfileEditModal } from "@/components/auth/ProfileEditModal"
 import { usePendingCount } from "@/lib/context/PendingCountContext"
 import { useUserLocation } from "@/lib/context/UserLocationContext"
-import { HeartHandshake, Menu, MapPin, Loader2 } from "lucide-react"
+import { HeartHandshake, Menu, MapPin, Loader2, User } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/lib/hooks/use-toast"
@@ -87,6 +88,7 @@ const Header = memo(function Header() {
 	const router = useRouter()
 	const { toast } = useToast()
 	const [mounted, setMounted] = useState(false)
+	const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
 
 	// Prevent hydration mismatch by only rendering interactive components after mount
 	useEffect(() => {
@@ -265,6 +267,14 @@ const Header = memo(function Header() {
 											)}
 										</DropdownMenuItem>
 									</Link>
+
+									<DropdownMenuItem
+										className="flex items-center gap-2 cursor-pointer px-3 py-2"
+										onClick={() => setIsProfileModalOpen(true)}
+									>
+										<User className="h-4 w-4" />
+										<span>Edit Profile</span>
+									</DropdownMenuItem>
 								</div>
 
 								<div className="py-1 border-t border-gray-100">
@@ -297,6 +307,24 @@ const Header = memo(function Header() {
 					)}
 				</div>
 			</div>
+
+			{/* Profile Edit Modal */}
+			{user && mounted && (
+				<ProfileEditModal
+					isOpen={isProfileModalOpen}
+					onOpenChange={setIsProfileModalOpen}
+					currentUser={{
+						id: user.id,
+						firstName: user.first_name || "",
+						lastName: user.last_name || "",
+						pictureUrl: user.picture_url,
+						email: user.email,
+					}}
+					onSuccess={() => {
+						router.refresh()
+					}}
+				/>
+			)}
 		</header>
 	)
 })

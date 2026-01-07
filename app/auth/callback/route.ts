@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
 	const redirectCookie = request.cookies.get(AUTH_REDIRECT_COOKIE)
 	const redirectPath = redirectCookie?.value ? decodeURIComponent(redirectCookie.value) : null
 
+	let isNewUser = false
+
 	if (code) {
 		const supabase = await createClient()
 
@@ -40,7 +42,8 @@ export async function GET(request: NextRequest) {
 		// Update user in database - don't fail auth if this fails
 		// Pass the authenticated supabase client to ensure RLS works
 		try {
-			await updateUserInDatabase(session.user, supabase)
+			const result = await updateUserInDatabase(session.user, supabase)
+			isNewUser = result.isNewUser || false
 		} catch (updateError) {
 			console.error("[AuthCallback] User update failed:", updateError)
 			// Continue anyway - user is authenticated, DB sync can happen later
@@ -60,6 +63,15 @@ export async function GET(request: NextRequest) {
 	const response = NextResponse.redirect(redirectUrl)
 	if (redirectCookie) {
 		response.cookies.delete(AUTH_REDIRECT_COOKIE)
+	}
+
+	// Set cookie to show profile modal for new users
+	if (isNewUser) {
+		response.cookies.set("show_profile_modal", "true", {
+			maxAge: 60 * 60, // 1 hour
+			path: "/",
+			httpOnly: false, // Allow client-side JS to read it
+		})
 	}
 
 	return response
