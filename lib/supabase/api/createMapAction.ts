@@ -120,12 +120,9 @@ export async function createMapAction(formData: FormData) {
 		// Auto-upvote the map for the creator using the votesService
 		if (data) {
 			try {
-				const upvoteResult = await toggleUpvote(data.id, user.id)
+				const upvoteResult = await toggleUpvote(data.id, user.id, supabase)
 				if (!upvoteResult.success) {
 					console.error("Failed to auto-upvote map:", upvoteResult.error)
-				} else {
-					// Ensure the upvote is reflected in the database
-					await supabase.rpc("get_vote_counts", { map_ids: [data.id] })
 				}
 			} catch (upvoteError) {
 				console.error("Error auto-upvoting map:", upvoteError)

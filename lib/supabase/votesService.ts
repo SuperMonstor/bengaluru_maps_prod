@@ -1,6 +1,7 @@
 import { createClient } from "./api/supabaseClient"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
-const supabase = createClient()
+const browserClient = createClient()
 
 export interface VoteResult {
 	success: boolean
@@ -15,8 +16,10 @@ export interface VoteResult {
  */
 export async function toggleUpvote(
 	mapId: string,
-	userId: string
+	userId: string,
+	supabaseClient?: SupabaseClient
 ): Promise<VoteResult> {
+	const supabase = supabaseClient || browserClient
 	try {
 		// Check if the user has already upvoted this map
 		const { data: existingVote, error: checkError } = await supabase
@@ -77,7 +80,7 @@ export async function hasUserUpvoted(
 	userId: string
 ): Promise<boolean> {
 	try {
-		const { data, error } = await supabase
+		const { data, error } = await browserClient
 			.from("votes")
 			.select("id")
 			.eq("map_id", mapId)
