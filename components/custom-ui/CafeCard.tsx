@@ -112,14 +112,14 @@ export const CafeCard = memo(function CafeCard({
 						<div className="flex items-center gap-2.5 text-sm text-[#64748B]">
 							<CollaboratorAvatars contributors={contributors} size="sm" />
 							{contributors.length > 0 && (
-								<span className="truncate max-w-[calc(100%-60px)]">
+								<span className="truncate flex-1 min-w-0">
 									<span className="font-medium text-[#0F172A]">
 										{contributors.find(c => c.is_owner)?.full_name || "Unknown User"}
 									</span>
-									{contributors.filter(c => !c.is_owner).length > 0 && (
+									{contributors.length > 1 && (
 										<>
 											{" "}
-											&bull; {contributors.filter(c => !c.is_owner).length} collaborators
+											&bull; {contributors.length} collaborators
 										</>
 									)}
 								</span>
