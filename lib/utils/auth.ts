@@ -67,7 +67,8 @@ export async function signInWithPassword(data: LoginInput) {
 	}
 
 	const { success, error: updateError } = await updateUserInDatabase(
-		authData.user
+		authData.user,
+		supabase
 	)
 	if (!success) {
 		console.error("User update failed:", updateError)

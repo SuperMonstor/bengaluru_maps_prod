@@ -1,5 +1,4 @@
-import { User } from "@supabase/supabase-js"
-import { createClient } from "./api/supabaseClient"
+import { User, SupabaseClient } from "@supabase/supabase-js"
 
 interface UpdateUserResult {
 	success: boolean
@@ -7,10 +6,10 @@ interface UpdateUserResult {
 }
 
 export async function updateUserInDatabase(
-	user: User
+	user: User,
+	supabase: SupabaseClient
 ): Promise<UpdateUserResult> {
 	try {
-		const supabase = createClient()
 
 		// Parse name safely - handle missing or malformed full_name
 		const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "User"

@@ -38,8 +38,9 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Update user in database - don't fail auth if this fails
+		// Pass the authenticated supabase client to ensure RLS works
 		try {
-			await updateUserInDatabase(session.user)
+			await updateUserInDatabase(session.user, supabase)
 		} catch (updateError) {
 			console.error("[AuthCallback] User update failed:", updateError)
 			// Continue anyway - user is authenticated, DB sync can happen later
