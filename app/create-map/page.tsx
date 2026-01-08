@@ -51,6 +51,7 @@ export default function CreateMapPage() {
 	}>({ checking: false, available: null, message: "" })
 	const [userEditedSlug, setUserEditedSlug] = useState(false)
 	const [locationsToImport, setLocationsToImport] = useState<ParsedLocation[]>([])
+	const [lastError, setLastError] = useState<string | null>(null)
 
 	const {
 		register,
@@ -173,6 +174,7 @@ export default function CreateMapPage() {
 
 		if (isSubmitting) return // Prevent multiple submissions
 
+		setLastError(null) // Clear previous errors when retrying
 		setIsSubmitting(true) // Disable the button immediately
 
 		try {
@@ -187,11 +189,13 @@ export default function CreateMapPage() {
 			const result = await createMapAction(formData)
 
 			if (!result.success) {
-				console.error("Error creating map:", result.error)
+				const errorMsg = result.error || "An unexpected error occurred"
+				console.error("Error creating map:", errorMsg)
+				setLastError(errorMsg)
 				toast({
 					variant: "destructive",
 					title: "Error creating map",
-					description: result.error || "An error occurred",
+					description: errorMsg,
 				})
 				setIsSubmitting(false)
 			} else {
@@ -241,11 +245,13 @@ export default function CreateMapPage() {
 				}, 1000)
 			}
 		} catch (err) {
+			const errorMsg = err instanceof Error ? err.message : String(err)
 			console.error("Unexpected error:", err)
+			setLastError(errorMsg)
 			toast({
 				variant: "destructive",
 				title: "Error",
-				description: "An unexpected error occurred. Please try again.",
+				description: errorMsg,
 			})
 			setIsSubmitting(false) // Re-enable the button only on error
 		}
@@ -258,6 +264,16 @@ export default function CreateMapPage() {
 		return null
 	}
 
+	const copyErrorToClipboard = () => {
+		if (lastError) {
+			navigator.clipboard.writeText(lastError)
+			toast({
+				title: "Copied!",
+				description: "Error message copied to clipboard",
+			})
+		}
+	}
+
 	return (
 		<main className="min-h-[calc(100vh-4rem)] p-4 bg-white">
 			<section className="max-w-2xl mx-auto space-y-8">
@@ -267,6 +283,23 @@ export default function CreateMapPage() {
 						{CREATE_MAP_CONTENT.subtitle}
 					</p>
 				</header>
+
+				{lastError && (
+					<div className="bg-red-50 border border-red-200 rounded-lg p-4">
+						<div className="flex items-start justify-between gap-4">
+							<div className="flex-1">
+								<h3 className="font-semibold text-red-900 mb-1">Error Details</h3>
+								<p className="text-sm text-red-700 break-words font-mono">{lastError}</p>
+							</div>
+							<button
+								onClick={copyErrorToClipboard}
+								className="flex-shrink-0 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium rounded whitespace-nowrap transition-colors"
+							>
+								Copy Error
+							</button>
+						</div>
+					</div>
+				)}
 
 				<div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
 					<h2 className="font-semibold text-blue-800 mb-2">{CREATE_MAP_CONTENT.mapIdeas.title}</h2>
