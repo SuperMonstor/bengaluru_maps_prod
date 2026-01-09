@@ -207,6 +207,90 @@ Resend integration in `/lib/services/emailService.ts`:
 - Separate business logic from UI (service layer pattern)
 - Use `/lib` for anything not tied to a specific page route
 
+## Design System & Style Guide
+
+**IMPORTANT**: Always follow the design system defined in `/docs/style-guide.md`. Refer to the full guide for comprehensive patterns.
+
+### Colors
+```
+Primary Orange: #FF6A00 (hover: #E55F00) - Main CTAs only
+Primary Blue:   #3b82f6 (hover: #1d4ed8) - Secondary CTAs, selected states, info
+Grayscale: 900 (#111), 700 (#444), 500 (#777), 300 (#ddd), 100 (#f5f5f5)
+```
+
+### Typography Scale
+```
+H1: 28px semibold  (page titles)
+H2: 22px semibold  (section headings)
+H3: 18px medium    (card titles, subsections)
+Body: 15px regular (default text)
+Small: 13px regular (metadata)
+Caption: 12px regular (hints)
+
+Responsive: Use text-xs md:text-sm for responsive sizing
+```
+
+### Spacing System
+```
+xs: 4px, sm: 8px, md: 12px, lg: 16px, xl: 24px, 2xl: 32px, 3xl: 48px, 4xl: 64px
+Responsive: Use p-3 md:p-4 lg:p-6 for padding adjustments
+```
+
+### Button System
+```
+PRIMARY (Orange):    h-11 px-6 rounded-lg bg-[#FF6A00] hover:bg-[#E55F00] text-white
+SECONDARY (Blue):    h-11 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white
+OUTLINE:             h-11 px-6 rounded-lg border border-gray-300 text-gray-700
+TERTIARY:            h-11 px-6 rounded-lg text-gray-500 hover:bg-gray-100
+TEXT LINK:           text-blue-600 hover:text-blue-700 (wrap in button for 44px touch target on mobile)
+ICON BUTTON:         h-10 w-10 (h-11 w-11 on mobile), rounded-lg, 20x20px icon inside
+
+CRITICAL:
+  - All touch targets >= 44x44px (h-11)
+  - All buttons: rounded-lg (8px), NOT rounded-xl
+  - Orange for primary actions only (one per section max)
+  - Blue for secondary, suggestion, and external link actions
+```
+
+### When to Use Orange vs Blue
+```
+ORANGE (#FF6A00):
+  ✓ Primary CTA (Submit, Create, Save)
+  ✓ Main action user expects
+  ✗ Never more than one prominent orange per section
+
+BLUE (#3b82f6):
+  ✓ Secondary/alternative actions
+  ✓ "Suggest", "Add", "Contribute" actions
+  ✓ Selected/active states (bg-blue-50/50 border-blue-200)
+  ✓ External links (View on Maps)
+  ✓ Information boxes (bg-blue-50 border-blue-100)
+```
+
+### Mobile-First Rules
+1. **Single column by default** - Add md:/lg: for multi-column on larger screens
+2. **Responsive text** - Use text-xs md:text-sm for labels, text-lg md:text-xl for headings
+3. **Responsive spacing** - Use p-3 md:p-4 lg:p-6 for padding adjustments
+4. **Touch targets** - All interactive elements >= 44x44px
+5. **Bottom sheets** - Use full-width bottom sheet on mobile instead of fixed sidebars
+6. **Readable text** - Never smaller than 12px (caption), prefer 14px+ on mobile
+
+### Common Patterns
+- **Cards**: border rounded-xl p-4 md:p-6, hover shadow-md scale(1.01)
+- **Images**: aspect-[16/9] rounded-lg md:rounded-xl object-cover
+- **Selected state**: bg-blue-50/50 border-blue-200 shadow-sm (blue, never orange)
+- **Info boxes**: bg-blue-50 border-blue-100 p-4 md:p-6 rounded-xl
+- **User attribution**: [Avatar h-8 w-8] + [Name text] with gap-2
+
+### What NOT to Do
+❌ Don't hardcode text sizes (use responsive scale: text-xs md:text-sm)
+❌ Don't use rounded-xl (12px) for buttons - use rounded-lg (8px)
+❌ Don't make buttons smaller than h-11 (44px minimum)
+❌ Don't use orange for non-primary actions
+❌ Don't use orange for selected states (use blue)
+❌ Don't create new colors (use grayscale + brand orange/blue)
+❌ Don't forget responsive classes (sm:/md:/lg: for text and spacing)
+
 ## Security Practices
 
 - Always validate user input on both client and server
