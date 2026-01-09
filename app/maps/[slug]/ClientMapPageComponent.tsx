@@ -90,6 +90,10 @@ function ClientMapPageContentInner({
 	// Use global location context
 	const { latitude: userLat, longitude: userLng } = useUserLocation()
 
+	// Track current location being fetched to prevent stale closure updates
+	const fetchAbortControllerRef = useRef<AbortController | null>(null)
+	const currentLocationIdRef = useRef<string | null>(null)
+
 	// Sort locations
 	const sortedLocations = useMemo(() => {
 		let locations: Location[] = [...map.locations]
@@ -162,8 +166,23 @@ function ClientMapPageContentInner({
 		// If clicking the same marker, deselect it
 		if (selectedLocation && selectedLocation.id === location.id) {
 			setSelectedLocation(null)
+			// Cancel any pending fetch
+			if (fetchAbortControllerRef.current) {
+				fetchAbortControllerRef.current.abort()
+				fetchAbortControllerRef.current = null
+			}
+			currentLocationIdRef.current = null
 			return
 		}
+
+		// Cancel any previous pending request
+		if (fetchAbortControllerRef.current) {
+			fetchAbortControllerRef.current.abort()
+		}
+
+		// Set current location being fetched
+		currentLocationIdRef.current = location.id
+		fetchAbortControllerRef.current = new AbortController()
 
 		// Set initial location data and open panel immediately for fast UI
 		// These are batched together to prevent the note from flashing
@@ -175,7 +194,8 @@ function ClientMapPageContentInner({
 		setIsLoadingLocation(true)
 		try {
 			const result = await getLocationDetailsAction(location.id)
-			if (result.success && result.data) {
+			// Only update state if this is still the current location and request wasn't aborted
+			if (currentLocationIdRef.current === location.id && !fetchAbortControllerRef.current?.signal.aborted && result.success && result.data) {
 				// Merge the fresh data but preserve the user info from the list
 				setSelectedLocation(prev => prev ? ({
 					...prev,
@@ -185,9 +205,15 @@ function ClientMapPageContentInner({
 				} as Location) : null)
 			}
 		} catch (error) {
-			console.error("Error fetching location details:", error)
+			// Ignore errors from aborted requests
+			if (error instanceof Error && error.name !== 'AbortError') {
+				console.error("Error fetching location details:", error)
+			}
 		} finally {
-			setIsLoadingLocation(false)
+			// Only clear loading if this is still the current location
+			if (currentLocationIdRef.current === location.id) {
+				setIsLoadingLocation(false)
+			}
 		}
 	}, [selectedLocation])
 
@@ -225,6 +251,15 @@ function ClientMapPageContentInner({
 			setIsOpen(true)
 		}
 	}, [shouldExpand])
+
+	// Cleanup pending requests on unmount
+	useEffect(() => {
+		return () => {
+			if (fetchAbortControllerRef.current) {
+				fetchAbortControllerRef.current.abort()
+			}
+		}
+	}, [])
 
 
 
