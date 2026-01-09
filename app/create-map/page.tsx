@@ -19,6 +19,9 @@ import { CREATE_MAP_CONTENT } from "@/lib/constants/createMapContent"
 import { GoogleMapsListImport } from "@/components/map/GoogleMapsListImport"
 import { ParsedLocation } from "@/lib/services/googleMapsListService"
 import { bulkImportLocationsAction } from "@/lib/supabase/api/bulkImportLocationsAction"
+import MapIdeasModal from "@/components/map/MapIdeasModal"
+import MapOwnershipModal from "@/components/map/MapOwnershipModal"
+import SimplifiedMarkdownEditor from "@/components/markdown/SimplifiedMarkdownEditor"
 
 const MDXEditorDynamic = dynamic(
 	() => import("@mdxeditor/editor").then((mod) => mod.MDXEditor),
@@ -52,6 +55,10 @@ export default function CreateMapPage() {
 	const [userEditedSlug, setUserEditedSlug] = useState(false)
 	const [locationsToImport, setLocationsToImport] = useState<ParsedLocation[]>([])
 	const [lastError, setLastError] = useState<string | null>(null)
+	const [mapIdeasModalOpen, setMapIdeasModalOpen] = useState(false)
+	const [showOwnershipModal, setShowOwnershipModal] = useState(false)
+	const [pendingFormData, setPendingFormData] = useState<CreateMapForm | null>(null)
+	const [isMobile, setIsMobile] = useState(false)
 
 	const {
 		register,
@@ -66,6 +73,21 @@ export default function CreateMapPage() {
 	const title = watch("title")
 	const slug = watch("slug")
 	const shortDescription = watch("shortDescription")
+
+	// Mobile detection with debounce
+	useEffect(() => {
+		let timeoutId: NodeJS.Timeout
+		const checkMobile = () => {
+			clearTimeout(timeoutId)
+			timeoutId = setTimeout(() => setIsMobile(window.innerWidth < 768), 150)
+		}
+		checkMobile()
+		window.addEventListener("resize", checkMobile)
+		return () => {
+			clearTimeout(timeoutId)
+			window.removeEventListener("resize", checkMobile)
+		}
+	}, [])
 
 	// Auto-generate slug from title with debounce
 	useEffect(() => {
@@ -166,25 +188,29 @@ export default function CreateMapPage() {
 		}
 	}, [displayPicture])
 
-	const onSubmit: SubmitHandler<CreateMapForm> = async (data) => {
-		if (!user) {
+	const onSubmit: SubmitHandler<CreateMapForm> = (data) => {
+		setPendingFormData(data)
+		setShowOwnershipModal(true)
+	}
+
+	const handleConfirmOwnership = async () => {
+		if (!pendingFormData || !user) {
 			router.push("/login")
 			return
 		}
 
-		if (isSubmitting) return // Prevent multiple submissions
-
-		setLastError(null) // Clear previous errors when retrying
-		setIsSubmitting(true) // Disable the button immediately
+		setShowOwnershipModal(false)
+		setIsSubmitting(true)
+		setLastError(null)
 
 		try {
 			// Create FormData for server action
 			const formData = new FormData()
-			formData.append("title", data.title)
-			formData.append("slug", data.slug)
-			formData.append("shortDescription", data.shortDescription)
-			formData.append("body", data.body)
-			formData.append("displayPicture", data.displayPicture![0])
+			formData.append("title", pendingFormData.title)
+			formData.append("slug", pendingFormData.slug)
+			formData.append("shortDescription", pendingFormData.shortDescription)
+			formData.append("body", pendingFormData.body)
+			formData.append("displayPicture", pendingFormData.displayPicture![0])
 
 			const result = await createMapAction(formData)
 
@@ -253,10 +279,8 @@ export default function CreateMapPage() {
 				title: "Error",
 				description: errorMsg,
 			})
-			setIsSubmitting(false) // Re-enable the button only on error
+			setIsSubmitting(false)
 		}
-		// Don't set isSubmitting to false on success - keep the button disabled
-		// The page will redirect anyway, so there's no need to re-enable the button
 	}
 
 	if (!user) {
@@ -275,11 +299,11 @@ export default function CreateMapPage() {
 	}
 
 	return (
-		<main className="min-h-[calc(100vh-4rem)] p-4 bg-white">
-			<section className="max-w-2xl mx-auto space-y-8">
+		<main className="min-h-[calc(100vh-4rem)] p-3 md:p-4 bg-white">
+			<section className="max-w-2xl mx-auto space-y-4 md:space-y-8">
 				<header>
-					<h1 className="text-2xl font-bold text-gray-900">{CREATE_MAP_CONTENT.title}</h1>
-					<p className="text-gray-600 mt-2">
+					<h1 className="text-xl md:text-2xl font-bold text-gray-900">{CREATE_MAP_CONTENT.title}</h1>
+					<p className="text-sm md:text-base text-gray-600 mt-2">
 						{CREATE_MAP_CONTENT.subtitle}
 					</p>
 				</header>
@@ -301,16 +325,24 @@ export default function CreateMapPage() {
 					</div>
 				)}
 
-				<div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-					<h2 className="font-semibold text-blue-800 mb-2">{CREATE_MAP_CONTENT.mapIdeas.title}</h2>
-					<p className="text-sm text-blue-700 mb-2">
-						{CREATE_MAP_CONTENT.mapIdeas.description}
+				<div className="bg-blue-50 p-3 md:p-4 rounded-lg border border-blue-100">
+					<div className="flex items-center justify-between">
+						<h2 className="text-sm md:text-base font-semibold text-blue-800">
+							Need ideas for your map?
+						</h2>
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							onClick={() => setMapIdeasModalOpen(true)}
+							className="text-blue-700 hover:text-blue-900 hover:bg-blue-100 text-xs md:text-sm"
+						>
+							View Ideas
+						</Button>
+					</div>
+					<p className="text-xs md:text-sm text-blue-700 mt-1">
+						Click to see popular map ideas from the community
 					</p>
-					<ul className="text-sm text-blue-700 list-disc pl-5 space-y-1">
-						{CREATE_MAP_CONTENT.mapIdeas.ideas.map((idea, index) => (
-							<li key={index}>{idea}</li>
-						))}
-					</ul>
 				</div>
 
 				{/* Google Maps List Import */}
@@ -319,11 +351,11 @@ export default function CreateMapPage() {
 					onLocationsChange={setLocationsToImport}
 				/>
 
-				<form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+				<form onSubmit={handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
 					<div className="space-y-2">
 						<label
 							htmlFor="title"
-							className="text-sm font-medium text-gray-700"
+							className="text-xs md:text-sm font-medium text-gray-700"
 						>
 							{CREATE_MAP_CONTENT.form.title.label} *
 						</label>
@@ -342,11 +374,11 @@ export default function CreateMapPage() {
 					<div className="space-y-2">
 						<label
 							htmlFor="slug"
-							className="text-sm font-medium text-gray-700"
+							className="text-xs md:text-sm font-medium text-gray-700"
 						>
 							{CREATE_MAP_CONTENT.form.slug.label} *
 						</label>
-						<p className="text-xs text-gray-500">
+						<p className="text-xs md:text-sm text-gray-500">
 							{CREATE_MAP_CONTENT.form.slug.description}
 							<span className="font-semibold">{slug || "your-slug"}</span>
 						</p>
@@ -412,22 +444,26 @@ export default function CreateMapPage() {
 					</div>
 
 					<div className="space-y-2">
-						<div className="flex justify-between">
+						<div className="flex justify-between items-center">
 							<label
 								htmlFor="shortDescription"
-								className="text-sm font-medium text-gray-700"
+								className="text-xs md:text-sm font-medium text-gray-700"
 							>
 								{CREATE_MAP_CONTENT.form.shortDescription.label} *
 							</label>
 							<span
-								className={`text-xs ${
-									charCount > maxDescriptionLength ? "text-red-500" : "text-gray-500"
+								className={`text-sm md:text-base font-semibold ${
+									charCount > maxDescriptionLength
+										? "text-red-600"
+										: charCount > maxDescriptionLength * 0.9
+											? "text-orange-500"
+											: "text-gray-600"
 								}`}
 							>
-								{charCount}/{maxDescriptionLength} characters
+								{charCount}/{maxDescriptionLength}
 							</span>
 						</div>
-						<p className="text-xs text-gray-500">
+						<p className="text-xs md:text-sm text-gray-500">
 							{CREATE_MAP_CONTENT.form.shortDescription.description}
 						</p>
 						<Textarea
@@ -454,10 +490,13 @@ export default function CreateMapPage() {
 					<div className="space-y-2">
 						<label
 							htmlFor="displayPicture"
-							className="text-sm font-medium text-gray-700"
+							className="text-xs md:text-sm font-medium text-gray-700"
 						>
-							{CREATE_MAP_CONTENT.form.displayPicture.label} *
+							Display Picture *
 						</label>
+						<p className="text-xs md:text-sm text-gray-500">
+							16:9 aspect ratio recommended for best display
+						</p>
 						<Input
 							type="file"
 							accept="image/*"
@@ -488,7 +527,7 @@ export default function CreateMapPage() {
 					</div>
 
 					<div className="space-y-2">
-						<label htmlFor="body" className="text-sm font-medium text-gray-700">
+						<label htmlFor="body" className="text-xs md:text-sm font-medium text-gray-700">
 							{CREATE_MAP_CONTENT.form.body.label}
 						</label>
 						<div className="text-sm text-gray-500 space-y-2 mb-3">
@@ -502,38 +541,34 @@ export default function CreateMapPage() {
 								{CREATE_MAP_CONTENT.chatGPTPrompt.helpText}
 							</p>
 						</div>
-						<MarkdownEditor
-							value={markdownValue}
-							onChange={(markdown) => {
-								setMarkdownValue(markdown)
-								setValue("body", markdown, { shouldValidate: true })
-							}}
-							placeholder={CREATE_MAP_CONTENT.form.body.placeholder}
-							className="mdxeditor"
-						/>
+						{isMobile ? (
+							<SimplifiedMarkdownEditor
+								value={markdownValue}
+								onChange={(markdown) => {
+									setMarkdownValue(markdown)
+									setValue("body", markdown, { shouldValidate: true })
+								}}
+								placeholder={CREATE_MAP_CONTENT.form.body.placeholder}
+							/>
+						) : (
+							<MarkdownEditor
+								value={markdownValue}
+								onChange={(markdown) => {
+									setMarkdownValue(markdown)
+									setValue("body", markdown, { shouldValidate: true })
+								}}
+								placeholder={CREATE_MAP_CONTENT.form.body.placeholder}
+								className="mdxeditor"
+							/>
+						)}
 						{errors.body && (
 							<p className="text-sm text-red-500">{errors.body.message}</p>
 						)}
 					</div>
 
-					<div className="bg-amber-50 p-4 rounded-lg border border-amber-100 my-6">
-						<h2 className="font-semibold text-amber-800 mb-2">{CREATE_MAP_CONTENT.ownership.title}</h2>
-						<p className="text-sm text-amber-700">
-							{CREATE_MAP_CONTENT.ownership.description}
-						</p>
-						<ul className="text-sm text-amber-700 list-disc pl-5 space-y-1 mt-2">
-							{CREATE_MAP_CONTENT.ownership.privileges.map((privilege, index) => (
-								<li key={index}>{privilege}</li>
-							))}
-						</ul>
-						<p className="text-sm text-amber-700 mt-2">
-							{CREATE_MAP_CONTENT.ownership.agreement}
-						</p>
-					</div>
-
 					<Button
 						type="submit"
-						className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-md py-2"
+						className="w-full bg-[#FF6A00] hover:bg-[#E55F00] text-white rounded-md py-2 transition-colors"
 						disabled={isSubmitting || charCount > maxDescriptionLength}
 					>
 						{isSubmitting ? (
@@ -565,6 +600,20 @@ export default function CreateMapPage() {
 						)}
 					</Button>
 				</form>
+
+				<MapIdeasModal
+					isOpen={mapIdeasModalOpen}
+					onOpenChange={setMapIdeasModalOpen}
+				/>
+
+				<MapOwnershipModal
+					isOpen={showOwnershipModal}
+					onOpenChange={(open) => {
+						if (!isSubmitting) setShowOwnershipModal(open)
+					}}
+					onConfirm={handleConfirmOwnership}
+					isSubmitting={isSubmitting}
+				/>
 			</section>
 		</main>
 	)
