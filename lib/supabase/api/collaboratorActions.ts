@@ -250,10 +250,18 @@ export async function acceptInviteAction(
 			return { success: false, error: "You must be logged in to accept an invite" }
 		}
 
-		// Get map by token
+		// Get map by token with owner details for email notification
 		const { data: mapData, error: mapError } = await supabase
 			.from("maps")
-			.select("id, owner_id, slug")
+			.select(`
+				id,
+				owner_id,
+				slug,
+				name,
+				users!maps_owner_id_fkey (
+					email
+				)
+			`)
 			.eq("invite_token", token)
 			.single()
 
@@ -290,6 +298,40 @@ export async function acceptInviteAction(
 
 		if (insertError) {
 			return { success: false, error: `Failed to join as collaborator: ${insertError.message}` }
+		}
+
+		// Send email notification to map owner
+		try {
+			// Get collaborator's name
+			const { data: collaboratorData } = await supabase
+				.from("users")
+				.select("first_name, last_name")
+				.eq("id", user.id)
+				.single()
+
+			const owner = mapData.users as unknown as { email: string | null }
+			const ownerEmail = owner?.email
+
+			if (ownerEmail && collaboratorData) {
+				const collaboratorName = `${collaboratorData.first_name || ""} ${collaboratorData.last_name || ""}`.trim() || "Someone"
+				const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.com"
+				const mapUrl = `${baseUrl}/maps/${mapData.slug}`
+
+				// Call the email API
+				await fetch(`${baseUrl}/api/email/collaborator-joined`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						ownerEmail,
+						mapTitle: mapData.name,
+						collaboratorName,
+						mapUrl,
+					}),
+				})
+			}
+		} catch (emailError) {
+			// Log error but don't fail the invite acceptance
+			console.error("Error sending collaborator joined email:", emailError)
 		}
 
 		return {
