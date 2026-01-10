@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
 		// Prepare email payload
 		const emailPayload = {
-			from: "Bengaluru Maps <sudarshan@bobscompany.co>",
+			from: "Bengaluru Maps <notifications@bengalurumaps.com>",
 			to: submitterEmail,
 			subject: `Your Location "${locationName}" Has Been Approved`,
 			html: getApprovalNotificationTemplate(mapTitle, locationName, mapUrl),
@@ -87,30 +87,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		try {
-			// First try with the custom domain
-			let result = await resend.emails.send(emailPayload)
-
-			// If we get a domain verification error, try with Resend's sandbox domain
-			if (
-				result.error &&
-				(result.error.message?.includes("domain is not verified") ||
-					result.error.message?.includes("bobscompany.co") ||
-					(result.error as any).statusCode === 403)
-			) {
-				if (process.env.NODE_ENV === "development") {
-					console.log("[Approval Email API] Using sandbox domain as fallback")
-				}
-
-				// Use Resend's sandbox domain as fallback
-				const sandboxPayload = {
-					...emailPayload,
-					from: "onboarding@resend.dev", // This is Resend's sandbox domain
-				}
-
-				result = await resend.emails.send(sandboxPayload)
-			}
-
-			const { data, error } = result
+			const { data, error } = await resend.emails.send(emailPayload)
 
 			if (error) {
 				return NextResponse.json(

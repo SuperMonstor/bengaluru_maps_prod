@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
 		// Prepare email payload
 		const emailPayload = {
-			from: "Bengaluru Maps <sudarshan@bobscompany.co>",
+			from: "Bengaluru Maps <notifications@bengalurumaps.com>",
 			to: ownerEmail,
 			subject: `New Location Submission: ${locationName}`,
 			html: getSubmissionNotificationTemplate(
@@ -174,31 +174,7 @@ export async function POST(request: NextRequest) {
 
 		console.log("[Email API] Sending email via Resend...")
 		try {
-			// First try with the custom domain
-			let result = await resend.emails.send(emailPayload)
-
-			// If we get a domain verification error, try with Resend's sandbox domain
-			if (
-				result.error &&
-				(result.error.message?.includes("domain is not verified") ||
-					result.error.message?.includes("bobscompany.co") ||
-					(result.error as any).statusCode === 403)
-			) {
-				console.log(
-					"[Email API] Custom domain not verified, trying with Resend sandbox domain..."
-				)
-
-				// Use Resend's sandbox domain as fallback
-				const sandboxPayload = {
-					...emailPayload,
-					from: "onboarding@resend.dev", // This is Resend's sandbox domain
-				}
-
-				console.log("[Email API] Using sandbox domain:", sandboxPayload.from)
-				result = await resend.emails.send(sandboxPayload)
-			}
-
-			const { data, error } = result
+			const { data, error } = await resend.emails.send(emailPayload)
 
 			if (error) {
 				console.error("[Email API] Error from Resend API:", error)

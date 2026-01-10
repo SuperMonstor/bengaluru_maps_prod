@@ -106,7 +106,7 @@ export async function sendSubmissionNotification(
 
 		console.log("Preparing email payload")
 		const emailPayload = {
-			from: "Bengaluru Maps <sudarshan@bobscompany.co>",
+			from: "Bengaluru Maps <notifications@bengalurumaps.com>",
 			to: ownerEmail,
 			subject: `New Location Submission: ${locationName}`,
 			html: getSubmissionNotificationTemplate(
@@ -207,7 +207,7 @@ export async function sendApprovalNotification(
 		console.log("Preparing approval email payload")
 		// First try with the custom domain
 		const emailPayload = {
-			from: "Bengaluru Maps <sudarshan@bobscompany.co>",
+			from: "Bengaluru Maps <notifications@bengalurumaps.com>",
 			to: submitterEmail,
 			subject: `Your Location "${locationName}" Has Been Approved`,
 			html: getApprovalNotificationTemplate(mapTitle, locationName, mapUrl),
@@ -305,7 +305,7 @@ export async function sendRejectionNotification(
 		console.log("Preparing rejection email payload")
 		// First try with the custom domain
 		const emailPayload = {
-			from: "Bengaluru Maps <sudarshan@bobscompany.co>",
+			from: "Bengaluru Maps <notifications@bengalurumaps.com>",
 			to: submitterEmail,
 			subject: `Update on Your Location Submission: ${locationName}`,
 			html: getRejectionNotificationTemplate(mapTitle, locationName),
