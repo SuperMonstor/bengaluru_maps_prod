@@ -73,26 +73,26 @@ export default function MyMapsPage() {
 
 	return (
 		<main className="bg-gray-50/50 flex flex-col min-h-screen">
-			<div className="container mx-auto px-4 py-8">
-				<div className="flex justify-between items-center mb-8">
-					<h1 className="text-2xl font-bold text-foreground">My Maps</h1>
+			<div className="container mx-auto px-3 md:px-4 lg:px-6 py-6 md:py-8">
+				<div className="flex justify-between items-center mb-6 md:mb-8">
+					<h1 className="text-xl md:text-2xl font-bold text-foreground">My Maps</h1>
 					<Link href="/create-map">
-						<Button>Create New Map</Button>
+						<Button className="h-11 px-6 rounded-lg bg-[#FF6A00] hover:bg-[#E55F00] text-white">Create New Map</Button>
 					</Link>
 				</div>
 
 				{maps.length === 0 ? (
-					<div className="text-center p-8 bg-white rounded-lg shadow-sm">
-						<h2 className="text-xl font-semibold mb-2">No Maps Yet</h2>
-						<p className="text-muted-foreground mb-6">
-							You haven't created any maps yet.
+					<div className="text-center p-6 md:p-8 bg-white rounded-lg shadow-sm">
+						<h2 className="text-lg md:text-xl font-semibold mb-2">No Maps Yet</h2>
+						<p className="text-sm md:text-base text-muted-foreground mb-6">
+							You haven&apos;t created any maps yet.
 						</p>
 						<Link href="/create-map">
-							<Button>Create Your First Map</Button>
+							<Button className="h-11 px-6 rounded-lg bg-[#FF6A00] hover:bg-[#E55F00] text-white">Create Your First Map</Button>
 						</Link>
 					</div>
 				) : (
-					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+					<div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
 						{maps.map((mapItem) => (
 							<Card
 								key={mapItem.id}
@@ -189,7 +189,7 @@ export default function MyMapsPage() {
 											<Button
 												variant="default"
 												size="sm"
-												className="flex items-center gap-1"
+												className="h-11 px-4 rounded-lg flex items-center gap-1 bg-[#FF6A00] hover:bg-[#E55F00]"
 											>
 												<Clock className="h-3 w-3" />
 												Review {mapItem.pendingCount}
@@ -197,7 +197,7 @@ export default function MyMapsPage() {
 										</Link>
 									) : (
 										<Link href={`/my-maps/${mapItem.id}/pending`}>
-											<Button variant="outline" size="sm">
+											<Button variant="outline" size="sm" className="h-11 px-4 rounded-lg">
 												Manage
 											</Button>
 										</Link>

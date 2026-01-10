@@ -317,20 +317,20 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 	}
 
 	return (
-		<main className="min-h-[calc(100vh-4rem)] p-4 bg-background">
-			<section className="max-w-2xl mx-auto space-y-8">
+		<main className="min-h-[calc(100vh-4rem)] p-3 md:p-4 lg:p-6 bg-background">
+			<section className="max-w-2xl mx-auto space-y-6 md:space-y-8">
 				<header>
-					<h1 className="text-2xl font-bold text-foreground">
+					<h1 className="text-xl md:text-2xl font-bold text-foreground">
 						Submit to Community
 					</h1>
 					{map.owner_id === user.id && (
-						<p className="text-sm text-muted-foreground mt-1">
+						<p className="text-xs md:text-sm text-muted-foreground mt-1">
 							As the map owner, your submissions will be automatically approved.
 						</p>
 					)}
 				</header>
 
-				<div className="flex flex-col md:flex-row gap-6 items-start">
+				<div className="flex flex-col md:flex-row gap-4 md:gap-6 items-start">
 					<div className="relative w-full md:w-1/3 aspect-[16/9] overflow-hidden rounded-lg border border-border">
 						<Image
 							src={map.image}
@@ -341,19 +341,19 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 							className="object-cover w-full h-full"
 						/>
 					</div>
-					<div className="w-full md:w-2/3 space-y-2">
-						<h2 className="text-xl font-semibold text-foreground">
+					<div className="w-full md:w-2/3 space-y-1 md:space-y-2">
+						<h2 className="text-lg md:text-xl font-semibold text-foreground">
 							{map.title}
 						</h2>
-						<p className="text-md text-muted-foreground">{map.description}</p>
+						<p className="text-sm md:text-base text-muted-foreground">{map.description}</p>
 					</div>
 				</div>
 
-				<form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-					<div className="space-y-4">
+				<form onSubmit={handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
+					<div className="space-y-2 md:space-y-4">
 						<Label
 							htmlFor="location"
-							className="text-sm font-medium text-foreground"
+							className="text-xs md:text-sm font-medium text-foreground"
 						>
 							Location *
 						</Label>
@@ -390,8 +390,8 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 							</p>
 						)}
 						{selectedLocation && metadata && (
-							<div className="mt-4 p-4 bg-card border border-border rounded-md shadow-sm space-y-4">
-								<h3 className="text-lg font-semibold text-foreground">
+							<div className="mt-4 p-3 md:p-4 bg-card border border-border rounded-lg shadow-sm space-y-3 md:space-y-4">
+								<h3 className="text-base md:text-lg font-semibold text-foreground">
 									{metadata.name}
 								</h3>
 								{metadata.photos && metadata.photos.length > 0 && (
@@ -418,10 +418,10 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 						)}
 					</div>
 
-					<div className="space-y-4">
+					<div className="space-y-2 md:space-y-4">
 						<Label
 							htmlFor="description"
-							className="text-sm font-medium text-foreground"
+							className="text-xs md:text-sm font-medium text-foreground"
 						>
 							Leave a note about the place (optional)
 						</Label>
@@ -457,12 +457,12 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 					<Button
 						type="submit"
 						variant="primary"
-						className="w-full"
+						className="w-full h-11 rounded-lg bg-[#FF6A00] hover:bg-[#E55F00]"
 						disabled={isSubmitting}
 					>
 						{isSubmitting ? (
 							<>
-								<span className="mr-sm">Submitting...</span>
+								<span className="mr-2">Submitting...</span>
 								<svg
 									className="animate-spin h-4 w-4"
 									xmlns="http://www.w3.org/2000/svg"

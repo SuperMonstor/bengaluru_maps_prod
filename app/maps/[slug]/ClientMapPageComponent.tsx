@@ -448,7 +448,7 @@ function ClientMapPageContentInner({
 										Be the first to add a location to this map!
 									</p>
 									<Link href={`/maps/${map.slug || "map"}/submit`}>
-										<Button className="bg-blue-600 hover:bg-blue-700 text-white">
+										<Button className="h-11 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
 											Add Location
 										</Button>
 									</Link>
@@ -490,11 +490,11 @@ function ClientMapPageContentInner({
 										<Button
 											variant="outline"
 											size="sm"
-											className="text-red-600 hover:bg-red-50 border-red-200 hover:border-red-300 p-2"
+											className="h-11 w-11 p-0 rounded-lg text-red-600 hover:bg-red-50 border-red-200 hover:border-red-300"
 											onClick={() => setShowDeleteDialog(true)}
 											aria-label="Delete location"
 										>
-											<Trash2 className="h-4 w-4" />
+											<Trash2 className="h-5 w-5" />
 										</Button>
 									)}
 								</div>
@@ -536,8 +536,8 @@ function ClientMapPageContentInner({
 
 								{/* Action buttons skeleton */}
 								<div className={`flex gap-2 ${isMobile ? 'mt-4' : 'mt-auto'}`}>
-									<div className="w-20 h-11 bg-gray-200 rounded-xl animate-pulse" />
-									<div className="flex-1 h-11 bg-gray-200 rounded-xl animate-pulse" />
+									<div className="w-20 h-11 bg-gray-200 rounded-lg animate-pulse" />
+									<div className="flex-1 h-11 bg-gray-200 rounded-lg animate-pulse" />
 								</div>
 							</>
 						) : (
@@ -603,7 +603,7 @@ function ClientMapPageContentInner({
 										initialUpvotes={selectedLocation.upvotes ?? 0}
 										initialIsUpvoted={selectedLocation.hasUpvoted}
 										variant="full"
-										className="w-20 h-11 rounded-xl"
+										className="w-20 h-11 rounded-lg"
 									/>
 									<Link
 										href={
@@ -630,7 +630,7 @@ function ClientMapPageContentInner({
 										className="flex-1"
 									>
 										<Button
-											className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm"
+											className="w-full h-11 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm"
 										>
 											<ExternalLink className="h-4 w-4 mr-2" />
 											View on Google Maps
@@ -769,7 +769,7 @@ function ClientMapPageContentInner({
 											>
 												<Button
 													size="sm"
-													className="w-full h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-sm"
+													className="w-full h-11 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-sm"
 												>
 													{user && (user.id === map.owner_id || map.contributors.some(c => c.id === user.id && !c.is_owner))
 														? "Add location"
@@ -783,9 +783,9 @@ function ClientMapPageContentInner({
 														e.stopPropagation()
 														setShowInviteDialog(true)
 													}}
-													className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-sm px-3"
+													className="h-11 w-11 p-0 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm"
 												>
-													<UserPlus className="h-3.5 w-3.5" />
+													<UserPlus className="h-4 w-4" />
 												</Button>
 											)}
 											<Button
@@ -794,9 +794,9 @@ function ClientMapPageContentInner({
 													e.stopPropagation()
 													handleShareMap()
 												}}
-												className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-sm px-3"
+												className="h-11 w-11 p-0 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm"
 											>
-												<Share2 className="h-3.5 w-3.5" />
+												<Share2 className="h-4 w-4" />
 											</Button>
 										</div>
 									</div>
@@ -851,13 +851,13 @@ function ClientMapPageContentInner({
 													<Button
 														variant="ghost"
 														size="sm"
-														className="flex items-center gap-1 p-1 h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
+														className="h-11 w-11 p-0 rounded-lg text-red-600 hover:bg-red-50"
 														onClick={(e) => {
 															e.stopPropagation()
 															setShowDeleteDialog(true)
 														}}
 													>
-														<Trash2 className="h-4 w-4" />
+														<Trash2 className="h-5 w-5" />
 													</Button>
 												)}
 
@@ -869,9 +869,9 @@ function ClientMapPageContentInner({
 														<Button
 															variant="outline"
 															size="sm"
-															className="flex items-center gap-1 p-1 h-8 w-8 rounded-full"
+															className="h-11 w-11 p-0 rounded-lg"
 														>
-															<Edit className="h-4 w-4" />
+															<Edit className="h-5 w-5" />
 														</Button>
 													</Link>
 												)}

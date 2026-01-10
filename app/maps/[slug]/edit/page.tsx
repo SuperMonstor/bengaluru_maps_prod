@@ -256,12 +256,12 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 
 	if (error) {
 		return (
-			<main className="min-h-screen bg-gray-50/50 p-4">
-				<div className="container mx-auto max-w-3xl py-8">
-					<div className="bg-white p-6 rounded-lg shadow-sm">
-						<h1 className="text-xl font-bold text-red-600 mb-2">Error</h1>
-						<p className="text-gray-700">{error}</p>
-						<Button className="mt-4" onClick={() => router.back()}>
+			<main className="min-h-screen bg-gray-50/50 p-3 md:p-4 lg:p-6">
+				<div className="container mx-auto max-w-3xl py-6 md:py-8">
+					<div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+						<h1 className="text-lg md:text-xl font-bold text-red-600 mb-2">Error</h1>
+						<p className="text-sm md:text-base text-gray-700">{error}</p>
+						<Button className="mt-4 h-11 px-6 rounded-lg" onClick={() => router.back()}>
 							Go Back
 						</Button>
 					</div>
@@ -275,14 +275,14 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 	}
 
 	return (
-		<main className="min-h-screen bg-gray-50/50 p-4">
-			<div className="container mx-auto max-w-3xl py-8 space-y-6">
-				<div className="bg-white p-6 rounded-lg shadow-sm">
-					<h1 className="text-2xl font-bold mb-6">Edit Map</h1>
+		<main className="min-h-screen bg-gray-50/50 p-3 md:p-4 lg:p-6">
+			<div className="container mx-auto max-w-3xl py-6 md:py-8 space-y-4 md:space-y-6">
+				<div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+					<h1 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Edit Map</h1>
 
-					<form onSubmit={handleSubmit} className="space-y-6">
-						<div className="space-y-2">
-							<Label htmlFor="title">Title</Label>
+					<form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+						<div className="space-y-1 md:space-y-2">
+							<Label htmlFor="title" className="text-xs md:text-sm">Title</Label>
 							<Input
 								id="title"
 								name="title"
@@ -294,8 +294,8 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 							/>
 						</div>
 
-						<div className="space-y-2">
-							<Label htmlFor="slug">URL Slug</Label>
+						<div className="space-y-1 md:space-y-2">
+							<Label htmlFor="slug" className="text-xs md:text-sm">URL Slug</Label>
 							<p className="text-xs text-gray-500">
 								This will be the URL for your map: bengalurumaps.com/maps/
 								<span className="font-semibold">{formData.slug || "your-slug"}</span>
@@ -347,8 +347,8 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 							)}
 						</div>
 
-						<div className="space-y-2">
-							<Label htmlFor="shortDescription">Short Description</Label>
+						<div className="space-y-1 md:space-y-2">
+							<Label htmlFor="shortDescription" className="text-xs md:text-sm">Short Description</Label>
 							<Textarea
 								id="shortDescription"
 								name="shortDescription"
@@ -360,8 +360,8 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 							/>
 						</div>
 
-						<div className="space-y-2">
-							<Label htmlFor="body">Content</Label>
+						<div className="space-y-1 md:space-y-2">
+							<Label htmlFor="body" className="text-xs md:text-sm">Content</Label>
 							<Textarea
 								id="body"
 								name="body"
@@ -376,11 +376,11 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 							</p>
 						</div>
 
-						<div className="space-y-2">
-							<Label htmlFor="displayPicture">Cover Image</Label>
-							<div className="flex items-start gap-4">
+						<div className="space-y-1 md:space-y-2">
+							<Label htmlFor="displayPicture" className="text-xs md:text-sm">Cover Image</Label>
+							<div className="flex items-start gap-3 md:gap-4">
 								{previewImage && (
-									<div className="relative w-32 h-24 overflow-hidden rounded-md border border-gray-200">
+									<div className="relative w-24 md:w-32 h-18 md:h-24 overflow-hidden rounded-lg border border-gray-200">
 										<Image
 											src={previewImage}
 											alt="Map preview"
@@ -409,12 +409,13 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 							<Button
 								type="button"
 								variant="outline"
+								className="h-11 px-6 rounded-lg"
 								onClick={() => router.back()}
 								disabled={submitting}
 							>
 								Cancel
 							</Button>
-							<Button type="submit" disabled={submitting}>
+							<Button type="submit" className="h-11 px-6 rounded-lg bg-[#FF6A00] hover:bg-[#E55F00]" disabled={submitting}>
 								{submitting ? "Updating..." : "Update Map"}
 							</Button>
 						</div>

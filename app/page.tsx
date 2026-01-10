@@ -86,14 +86,15 @@ async function MapsList({
 
 			{totalPages > 1 && (
 				<div className="flex justify-center gap-4 mt-8">
-					<Button variant="outline" disabled={page === 1} asChild={page !== 1}>
+					<Button variant="outline" className="h-11 px-6 rounded-lg" disabled={page === 1} asChild={page !== 1}>
 						<a href={`/?page=${page - 1}`}>Previous</a>
 					</Button>
-					<span className="self-center">
+					<span className="self-center text-sm md:text-base">
 						Page {page} of {totalPages}
 					</span>
 					<Button
 						variant="outline"
+						className="h-11 px-6 rounded-lg"
 						disabled={page === totalPages}
 						asChild={page !== totalPages}
 					>
@@ -191,7 +192,7 @@ export default async function Home({ searchParams }: HomeProps) {
 				}}
 			/>
 
-			<div className="container mx-auto px-4 py-8 max-w-6xl">
+			<div className="container mx-auto px-3 md:px-4 lg:px-6 py-6 md:py-8 max-w-6xl">
 				<div className="flex flex-col items-center justify-center mb-10">
 					<h1 className="text-[44px] font-bold text-center mb-3 tracking-tight text-[#0F172A] leading-tight">
 						Discover Bengaluru&apos;s Best Places
@@ -201,7 +202,7 @@ export default async function Home({ searchParams }: HomeProps) {
 						restaurants, and hangout spots.
 					</p>
 					<Link href="/create-map" prefetch={false}>
-						<Button size="lg" className="bg-[#FF6A00] hover:bg-[#E55F00] text-white px-8 py-6 text-base rounded-xl shadow-md hover:shadow-lg transition-all">
+						<Button size="lg" className="h-11 px-6 bg-[#FF6A00] hover:bg-[#E55F00] text-white text-sm md:text-base rounded-lg shadow-md hover:shadow-lg transition-all">
 							Create Your Own Map
 						</Button>
 					</Link>
