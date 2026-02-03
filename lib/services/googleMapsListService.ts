@@ -257,6 +257,7 @@ function isValidName(s: string): boolean {
     !s.startsWith('/g/') &&
     !s.startsWith('http') &&
     !/^\d+$/.test(s) &&
+    !isLikelyIdString(s) &&
     !/^[A-Z0-9]{4}\+/.test(s) // Not a plus code
   )
 }
@@ -292,8 +293,12 @@ function walkAndExtract(
 
   for (const v of node) {
     // Name signal: first valid string
-    if (typeof v === 'string' && isValidName(v) && !signals.name) {
-      signals.name = v
+    if (typeof v === 'string' && isValidName(v)) {
+      if (!signals.name) {
+        signals.name = v
+      } else if (isLikelyIdString(signals.name) && !isLikelyIdString(v)) {
+        signals.name = v
+      }
     }
 
     // Coordinate signal: [null, null, lat, lng]
@@ -357,6 +362,10 @@ function walkAndExtract(
   }
 
   return signals
+}
+
+function isLikelyIdString(value: string): boolean {
+  return /^-?\d{10,}$/.test(value)
 }
 
 /**
