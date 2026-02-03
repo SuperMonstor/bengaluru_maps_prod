@@ -191,6 +191,64 @@ export async function createLocationAction(formData: FormData) {
 			}
 		}
 
+		// If submitter is not the owner, send notification email from server-side
+		if (!isOwner) {
+			try {
+				const { data: mapData, error: mapError } = await supabase
+					.from("maps")
+					.select(
+						`
+						id,
+						name,
+						users!maps_owner_id_fkey (
+							email
+						)
+					`
+					)
+					.eq("id", mapId)
+					.single()
+
+				if (mapError) {
+					console.error("Error fetching map owner email:", mapError)
+				} else {
+					const owner = mapData?.users as unknown as { email: string | null }
+					const ownerEmail = owner?.email
+
+					if (!ownerEmail) {
+						console.error("Owner email not found for map:", mapId)
+					} else {
+						const { data: submitterData } = await supabase
+							.from("users")
+							.select("first_name, last_name")
+							.eq("id", user.id)
+							.single()
+
+						const submitterName =
+							`${submitterData?.first_name || ""} ${submitterData?.last_name || ""}`.trim() ||
+							"Someone"
+
+						const baseUrl =
+							process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.com"
+						const mapUrl = `${baseUrl}/my-maps/${mapId}/pending`
+
+						await fetch(`${baseUrl}/api/email`, {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								ownerEmail,
+								mapTitle: mapData.name,
+								locationName: name,
+								submitterName,
+								mapUrl,
+							}),
+						})
+					}
+				}
+			} catch (emailError) {
+				console.error("Error sending submission notification email:", emailError)
+			}
+		}
+
 		return {
 			success: true,
 			error: null,

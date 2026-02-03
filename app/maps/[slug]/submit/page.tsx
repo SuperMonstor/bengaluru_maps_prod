@@ -249,33 +249,6 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 				// Check if the location was auto-approved (user is the map owner)
 				const isOwner = result.data?.isOwner || false
 
-				// Send email notification if not auto-approved
-				if (!isOwner && map.owner_email) {
-					try {
-						console.log("Sending email notification to:", map.owner_email)
-						const response = await fetch("/api/email", {
-							method: "POST",
-							headers: {
-								"Content-Type": "application/json",
-							},
-							body: JSON.stringify({
-								ownerEmail: map.owner_email,
-								mapTitle: map.title,
-								locationName: locationName,
-								submitterName: `${user.first_name} ${user.last_name}`,
-								mapUrl: `${window.location.origin}/my-maps/${map.id}/pending`,
-							}),
-						})
-
-						if (!response.ok) {
-							const errorText = await response.text()
-							console.error("Failed to send email notification:", errorText)
-						}
-					} catch (emailError) {
-						console.error("Error sending email notification:", emailError)
-					}
-				}
-
 				toast({
 					title: "Success!",
 					description: isOwner
