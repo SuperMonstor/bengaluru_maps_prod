@@ -6,10 +6,8 @@ import Image from "next/image"
 import { useLoadScript } from "@react-google-maps/api"
 import { Check, X, MapPin, Loader2 } from "lucide-react"
 import { getMapById } from "@/lib/supabase/mapsService"
-import {
-	approveLocation,
-	rejectLocation,
-} from "@/lib/supabase/mapSubmissionService"
+import { approveLocationAction } from "@/lib/supabase/api/approveLocationAction"
+import { rejectLocationAction } from "@/lib/supabase/api/rejectLocationAction"
 import { fetchPendingSubmissionsAction } from "@/lib/supabase/api/fetchPendingSubmissionsAction"
 import React from "react"
 import Link from "next/link"
@@ -165,7 +163,7 @@ export default function PendingSubmissionsPage({
 		setProcessingItems((prev) => ({ ...prev, [locationId]: "approve" }))
 
 		try {
-			const { success, error } = await approveLocation(locationId)
+			const { success, error } = await approveLocationAction(locationId)
 
 			if (success) {
 				// Update UI and refresh pending count
@@ -205,7 +203,7 @@ export default function PendingSubmissionsPage({
 		setProcessingItems((prev) => ({ ...prev, [locationId]: "reject" }))
 
 		try {
-			const { success, error } = await rejectLocation(locationId)
+			const { success, error } = await rejectLocationAction(locationId)
 
 			if (success) {
 				// Update UI and refresh pending count
