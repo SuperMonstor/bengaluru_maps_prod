@@ -56,6 +56,31 @@ export async function parseGoogleMapsList(url: string): Promise<ParseListResult>
     }
 
     const html = await response.text()
+    const entityListUrl = extractEntityListUrl(html)
+    if (entityListUrl) {
+      const resolvedEntityListUrl = resolveRelativeUrl(fullUrl, entityListUrl)
+      const entityResponse = await fetch(resolvedEntityListUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': '*/*',
+          'Accept-Language': 'en-US,en;q=0.5',
+        },
+      })
+
+      if (entityResponse.ok) {
+        const entityText = await entityResponse.text()
+        const entityData = parseEntityListResponse(entityText)
+        if (entityData) {
+          const { locations: entityLocations, listName } =
+            extractLocationsFromEntityListData(entityData)
+          if (entityLocations.length > 0) {
+            console.log(`[parseGoogleMapsList] Extracted ${entityLocations.length} locations from entity list`)
+            return { success: true, locations: entityLocations, listName }
+          }
+        }
+      }
+    }
+
     const locations = extractLocations(html)
 
     if (locations.length === 0) {
@@ -402,4 +427,53 @@ function extractListName(html: string): string | undefined {
     return match[1].replace(/ - Google Maps$/, '').trim()
   }
   return undefined
+}
+
+/**
+ * Extracts the entity list endpoint from HTML when Google Maps embeds list data via preload.
+ */
+function extractEntityListUrl(html: string): string | null {
+  const match = html.match(/<link[^>]+href="([^"]*entitylist\/getlist[^"]*)"[^>]*>/i)
+  if (!match) return null
+  return match[1].replace(/&amp;/g, '&')
+}
+
+/**
+ * Parses the entity list response, removing the XSSI prefix.
+ */
+function parseEntityListResponse(text: string): unknown | null {
+  const cleaned = text.replace(/^\)\]\}'\s*/, '')
+  try {
+    return JSON.parse(cleaned)
+  } catch (error) {
+    console.error('[parseEntityListResponse] Failed to parse entity list JSON:', error)
+    return null
+  }
+}
+
+/**
+ * Extracts list name and locations from entity list JSON.
+ */
+function extractLocationsFromEntityListData(data: unknown): {
+  locations: ParsedLocation[]
+  listName?: string
+} {
+  const results: ParsedLocation[] = []
+  const seen = new Set<string>()
+  walkAndExtract(data, results, seen)
+
+  let listName: string | undefined
+  if (Array.isArray(data) && Array.isArray(data[0]) && typeof data[0][4] === 'string') {
+    listName = cleanName(data[0][4])
+  }
+
+  return { locations: results, listName }
+}
+
+function resolveRelativeUrl(baseUrl: string, relativeUrl: string): string {
+  try {
+    return new URL(relativeUrl, baseUrl).toString()
+  } catch {
+    return relativeUrl
+  }
 }
