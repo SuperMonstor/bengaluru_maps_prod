@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { validateInternalSecret } from "@/lib/utils/internalAuth"
+import { escapeHtml } from "@/lib/utils/escapeHtml"
 
 // Initialize Resend with API key
 const resendApiKey = process.env.RESEND_API_KEY
@@ -15,9 +16,9 @@ const getCollaboratorJoinedTemplate = (
 	return `
     <h1>New Collaborator Joined</h1>
     <p>Hello,</p>
-    <p><strong>${collaboratorName}</strong> has accepted your invite and joined your map "${mapTitle}" as a collaborator.</p>
+    <p><strong>${escapeHtml(collaboratorName)}</strong> has accepted your invite and joined your map &ldquo;${escapeHtml(mapTitle)}&rdquo; as a collaborator.</p>
     <p>They can now add and edit locations on your map.</p>
-    <p><a href="${mapUrl}">View Map</a></p>
+    <p><a href="${escapeHtml(mapUrl)}">View Map</a></p>
     <p>Thank you for using Bengaluru Maps!</p>
   `
 }

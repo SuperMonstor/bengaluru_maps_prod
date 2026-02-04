@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { validateInternalSecret } from "@/lib/utils/internalAuth"
+import { escapeHtml } from "@/lib/utils/escapeHtml"
 
 // Initialize Resend with API key
 const resendApiKey = process.env.RESEND_API_KEY
@@ -19,7 +20,7 @@ const getRejectionNotificationTemplate = (
 	return `
     <h1>Location Submission Update</h1>
     <p>Hello,</p>
-    <p>Your submission "${locationName}" for the map "${mapTitle}" was not approved at this time.</p>
+    <p>Your submission &ldquo;${escapeHtml(locationName)}&rdquo; for the map &ldquo;${escapeHtml(mapTitle)}&rdquo; was not approved at this time.</p>
     <p>This could be due to various reasons such as duplicate entries, insufficient information, or not meeting the map's criteria.</p>
     <p>Feel free to submit another location that better fits the map's theme.</p>
     <p>Thank you for your understanding and for using Bengaluru Maps!</p>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { validateInternalSecret } from "@/lib/utils/internalAuth"
+import { escapeHtml } from "@/lib/utils/escapeHtml"
 
 // Initialize Resend with API key
 const resendApiKey = process.env.RESEND_API_KEY
@@ -26,11 +27,11 @@ const getSubmissionNotificationTemplate = (
 	return `
     <h1>New Location Submission</h1>
     <p>Hello,</p>
-    <p>A new location has been submitted to your map "${mapTitle}".</p>
-    <p><strong>Location:</strong> ${locationName}</p>
-    <p><strong>Submitted by:</strong> ${submitterName}</p>
+    <p>A new location has been submitted to your map &ldquo;${escapeHtml(mapTitle)}&rdquo;.</p>
+    <p><strong>Location:</strong> ${escapeHtml(locationName)}</p>
+    <p><strong>Submitted by:</strong> ${escapeHtml(submitterName)}</p>
     <p>Please review this submission by visiting your map's pending submissions page.</p>
-    <p><a href="${reviewUrl}">Review Submission</a></p>
+    <p><a href="${escapeHtml(reviewUrl)}">Review Submission</a></p>
     <p>Thank you for using Bengaluru Maps!</p>
   `
 }

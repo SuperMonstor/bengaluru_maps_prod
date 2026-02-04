@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { validateInternalSecret } from "@/lib/utils/internalAuth"
+import { escapeHtml } from "@/lib/utils/escapeHtml"
 
 // Initialize Resend with API key
 const resendApiKey = process.env.RESEND_API_KEY
@@ -20,9 +21,9 @@ const getApprovalNotificationTemplate = (
 	return `
     <h1>Location Approved</h1>
     <p>Hello,</p>
-    <p>Your submission "${locationName}" for the map "${mapTitle}" has been approved!</p>
+    <p>Your submission &ldquo;${escapeHtml(locationName)}&rdquo; for the map &ldquo;${escapeHtml(mapTitle)}&rdquo; has been approved!</p>
     <p>You can view it on the map by clicking the link below:</p>
-    <p><a href="${mapUrl}">View Map</a></p>
+    <p><a href="${escapeHtml(mapUrl)}">View Map</a></p>
     <p>Thank you for contributing to Bengaluru Maps!</p>
   `
 }
