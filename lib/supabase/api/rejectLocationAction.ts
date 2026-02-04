@@ -75,7 +75,10 @@ export async function rejectLocationAction(locationId: string) {
 
 				await fetch(`${baseUrl}/api/email/reject`, {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: {
+						"Content-Type": "application/json",
+						"x-internal-secret": process.env.INTERNAL_API_SECRET || "",
+					},
 					body: JSON.stringify({
 						submitterEmail: submitterData.email,
 						mapTitle: data.maps.name,

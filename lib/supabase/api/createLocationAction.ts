@@ -233,7 +233,10 @@ export async function createLocationAction(formData: FormData) {
 
 						await fetch(`${baseUrl}/api/email`, {
 							method: "POST",
-							headers: { "Content-Type": "application/json" },
+							headers: {
+								"Content-Type": "application/json",
+								"x-internal-secret": process.env.INTERNAL_API_SECRET || "",
+							},
 							body: JSON.stringify({
 								ownerEmail,
 								mapTitle: mapData.name,

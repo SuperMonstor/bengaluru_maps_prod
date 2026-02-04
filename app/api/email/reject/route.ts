@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
+import { validateInternalSecret } from "@/lib/utils/internalAuth"
 
 // Initialize Resend with API key
 const resendApiKey = process.env.RESEND_API_KEY
@@ -27,6 +28,14 @@ const getRejectionNotificationTemplate = (
 
 export async function POST(request: NextRequest) {
 	try {
+		// Validate internal secret
+		if (!validateInternalSecret(request)) {
+			return NextResponse.json(
+				{ success: false, error: "Forbidden: unauthorized request" },
+				{ status: 403 }
+			)
+		}
+
 		// Parse request body
 		let body
 		try {
@@ -73,7 +82,6 @@ export async function POST(request: NextRequest) {
 				)
 			}
 
-			// Return success for testing purposes
 			return NextResponse.json({
 				success: true,
 				data: {

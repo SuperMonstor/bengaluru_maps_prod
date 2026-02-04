@@ -74,7 +74,10 @@ export async function approveLocationAction(locationId: string) {
 
 				await fetch(`${baseUrl}/api/email/approve`, {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: {
+						"Content-Type": "application/json",
+						"x-internal-secret": process.env.INTERNAL_API_SECRET || "",
+					},
 					body: JSON.stringify({
 						submitterEmail: submitterData.email,
 						mapTitle: data.maps.name,
