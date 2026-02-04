@@ -222,27 +222,134 @@ function extractDataArray(script: string): string | null {
 function parseArray(arrayStr: string): unknown | null {
   // The data has multiple levels of escaping because it's inside a string literal.
   // We need to unescape all JS escape sequences properly.
-  //
-  // Order matters:
-  // 1. \\\\ -> \ (escaped backslash)
-  // 2. \\\" -> " (escaped quote inside nested string)
-  // 3. \" -> " (escaped quote)
-  // 4. \\n -> newline
-  // 5. \\t -> tab
-  // 6. \\uXXXX -> unicode (already handled by JS parser)
-
   let unescaped = arrayStr
     .replace(/\\\\/g, '\u0000')  // Placeholder for escaped backslash
     .replace(/\\"/g, '"')         // Unescape quotes
     .replace(/\u0000/g, '\\')     // Restore backslashes
 
+  return parseJsArraySafe(unescaped)
+}
+
+/**
+ * Safe recursive-descent parser for JavaScript array literals.
+ * Handles: arrays, strings, numbers, booleans, null.
+ * Does NOT execute code - purely structural parsing.
+ */
+export function parseJsArraySafe(input: string): unknown | null {
+  let pos = 0
+  const src = input.trim()
+
+  function skipWhitespace(): void {
+    while (pos < src.length && /\s/.test(src[pos])) pos++
+  }
+
+  function parseValue(): unknown {
+    skipWhitespace()
+    if (pos >= src.length) throw new Error('Unexpected end of input')
+
+    const ch = src[pos]
+    if (ch === '[') return parseArrayValue()
+    if (ch === '"') return parseString()
+    if (ch === '-' || (ch >= '0' && ch <= '9')) return parseNumber()
+    if (src.startsWith('null', pos)) { pos += 4; return null }
+    if (src.startsWith('true', pos)) { pos += 4; return true }
+    if (src.startsWith('false', pos)) { pos += 5; return false }
+
+    throw new Error(`Unexpected character '${ch}' at position ${pos}`)
+  }
+
+  function parseArrayValue(): unknown[] {
+    pos++ // skip '['
+    skipWhitespace()
+    const arr: unknown[] = []
+
+    if (pos < src.length && src[pos] === ']') {
+      pos++
+      return arr
+    }
+
+    while (pos < src.length) {
+      arr.push(parseValue())
+      skipWhitespace()
+      if (pos < src.length && src[pos] === ',') {
+        pos++
+        skipWhitespace()
+        continue
+      }
+      if (pos < src.length && src[pos] === ']') {
+        pos++
+        return arr
+      }
+      throw new Error(`Expected ',' or ']' at position ${pos}`)
+    }
+    throw new Error('Unterminated array')
+  }
+
+  function parseString(): string {
+    pos++ // skip opening '"'
+    let result = ''
+    while (pos < src.length) {
+      const ch = src[pos]
+      if (ch === '\\') {
+        pos++
+        if (pos >= src.length) throw new Error('Unterminated string escape')
+        const esc = src[pos]
+        if (esc === '"') { result += '"'; pos++; continue }
+        if (esc === '\\') { result += '\\'; pos++; continue }
+        if (esc === '/') { result += '/'; pos++; continue }
+        if (esc === 'n') { result += '\n'; pos++; continue }
+        if (esc === 'r') { result += '\r'; pos++; continue }
+        if (esc === 't') { result += '\t'; pos++; continue }
+        if (esc === 'b') { result += '\b'; pos++; continue }
+        if (esc === 'f') { result += '\f'; pos++; continue }
+        if (esc === 'u') {
+          const hex = src.slice(pos + 1, pos + 5)
+          if (/^[0-9a-fA-F]{4}$/.test(hex)) {
+            result += String.fromCharCode(parseInt(hex, 16))
+            pos += 5
+            continue
+          }
+        }
+        // Unknown escape - include literally
+        result += esc
+        pos++
+        continue
+      }
+      if (ch === '"') {
+        pos++
+        return result
+      }
+      result += ch
+      pos++
+    }
+    throw new Error('Unterminated string')
+  }
+
+  function parseNumber(): number {
+    const start = pos
+    if (src[pos] === '-') pos++
+    while (pos < src.length && src[pos] >= '0' && src[pos] <= '9') pos++
+    if (pos < src.length && src[pos] === '.') {
+      pos++
+      while (pos < src.length && src[pos] >= '0' && src[pos] <= '9') pos++
+    }
+    if (pos < src.length && (src[pos] === 'e' || src[pos] === 'E')) {
+      pos++
+      if (pos < src.length && (src[pos] === '+' || src[pos] === '-')) pos++
+      while (pos < src.length && src[pos] >= '0' && src[pos] <= '9') pos++
+    }
+    const numStr = src.slice(start, pos)
+    const num = Number(numStr)
+    if (isNaN(num)) throw new Error(`Invalid number: ${numStr}`)
+    return num
+  }
+
   try {
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
-    return Function(`"use strict"; return (${unescaped})`)()
+    const result = parseValue()
+    skipWhitespace()
+    return result
   } catch (e) {
-    console.error('[parseArray] Parse failed:', e)
-    console.error('[parseArray] Start:', arrayStr.slice(0, 200))
-    console.error('[parseArray] End:', arrayStr.slice(-200))
+    console.error('[parseJsArraySafe] Parse failed:', e)
     return null
   }
 }
