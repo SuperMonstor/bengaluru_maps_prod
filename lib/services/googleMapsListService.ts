@@ -101,8 +101,31 @@ export async function parseGoogleMapsList(url: string): Promise<ParseListResult>
 /**
  * Resolves short URLs to full URLs
  */
+const allowedMapsHosts = new Set([
+  'maps.app.goo.gl',
+  'google.com',
+  'www.google.com',
+])
+
+function isAllowedGoogleMapsUrl(candidate: string): boolean {
+  try {
+    const parsed = new URL(candidate)
+    const hostname = parsed.hostname.toLowerCase()
+
+    if (!allowedMapsHosts.has(hostname)) return false
+
+    if (hostname === 'google.com' || hostname === 'www.google.com') {
+      return parsed.pathname.startsWith('/maps')
+    }
+
+    return true
+  } catch {
+    return false
+  }
+}
+
 async function resolveUrl(url: string): Promise<string | null> {
-  if (!url.includes('maps.app.goo.gl') && !url.includes('google.com/maps')) {
+  if (!isAllowedGoogleMapsUrl(url)) {
     return null
   }
 
@@ -112,7 +135,8 @@ async function resolveUrl(url: string): Promise<string | null> {
 
   try {
     const response = await fetch(url, { method: 'HEAD', redirect: 'follow' })
-    return response.url
+    const resolvedUrl = response.url
+    return isAllowedGoogleMapsUrl(resolvedUrl) ? resolvedUrl : null
   } catch {
     return null
   }
