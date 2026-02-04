@@ -1,10 +1,50 @@
 "use server"
 
 import { createClient } from "./supabaseServer"
+import { hasMapEditPermission } from "./permissionHelpers"
 
 export async function approveLocationAction(locationId: string) {
 	try {
 		const supabase = await createClient()
+
+		const {
+			data: { user },
+		} = await supabase.auth.getUser()
+
+		if (!user) {
+			return {
+				success: false,
+				error: "You must be logged in to approve a location",
+			}
+		}
+
+		// Fetch the location to get map_id for permission check
+		const { data: location, error: locationError } = await supabase
+			.from("locations")
+			.select("id, map_id, creator_id")
+			.eq("id", locationId)
+			.single()
+
+		if (locationError) {
+			return {
+				success: false,
+				error: `Failed to find location: ${locationError.message}`,
+			}
+		}
+
+		// Verify user has edit permission on the map
+		const canEdit = await hasMapEditPermission(
+			supabase,
+			location.map_id,
+			user.id
+		)
+
+		if (!canEdit) {
+			return {
+				success: false,
+				error: "You don't have permission to approve locations on this map",
+			}
+		}
 
 		const { data, error } = await supabase
 			.from("locations")
