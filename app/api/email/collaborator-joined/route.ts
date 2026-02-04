@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { validateInternalSecret } from "@/lib/utils/internalAuth"
 import { escapeHtml } from "@/lib/utils/escapeHtml"
+import { sanitizeEmailSubject } from "@/lib/utils/emailSanitize"
 
 // Initialize Resend with API key
 const resendApiKey = process.env.RESEND_API_KEY
@@ -67,7 +68,9 @@ export async function POST(request: NextRequest) {
 		const emailPayload = {
 			from: "Bengaluru Maps <notifications@bengalurumaps.com>",
 			to: ownerEmail,
-			subject: `${collaboratorName} joined your map "${mapTitle}"`,
+			subject: sanitizeEmailSubject(
+				`${collaboratorName} joined your map "${mapTitle}"`
+			),
 			html: getCollaboratorJoinedTemplate(mapTitle, collaboratorName, mapUrl),
 		}
 

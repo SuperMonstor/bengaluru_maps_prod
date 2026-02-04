@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { validateInternalSecret } from "@/lib/utils/internalAuth"
 import { escapeHtml } from "@/lib/utils/escapeHtml"
+import { sanitizeEmailSubject } from "@/lib/utils/emailSanitize"
 
 // Initialize Resend with API key
 const resendApiKey = process.env.RESEND_API_KEY
@@ -88,7 +89,9 @@ export async function POST(request: NextRequest) {
 		const emailPayload = {
 			from: "Bengaluru Maps <notifications@bengalurumaps.com>",
 			to: ownerEmail,
-			subject: `New Location Submission: ${locationName}`,
+			subject: sanitizeEmailSubject(
+				`New Location Submission: ${locationName}`
+			),
 			html: getSubmissionNotificationTemplate(
 				mapTitle,
 				locationName,
