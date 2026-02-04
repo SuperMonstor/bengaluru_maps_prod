@@ -67,25 +67,27 @@ export async function approveLocationAction(locationId: string) {
 
 			if (submitterError) {
 				console.error("Error fetching submitter email:", submitterError)
-			} else if (submitterData?.email && data.maps) {
-				const baseUrl =
-					process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.com"
-				const mapUrl = `${baseUrl}/maps/${data.maps.slug || "map"}`
+				} else if (submitterData?.email && data.maps) {
+					const baseUrl =
+						process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.com"
+					const map =
+						Array.isArray(data.maps) ? data.maps[0] : data.maps
+					const mapUrl = `${baseUrl}/maps/${map?.slug || "map"}`
 
-				await fetch(`${baseUrl}/api/email/approve`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"x-internal-secret": process.env.INTERNAL_API_SECRET || "",
-					},
-					body: JSON.stringify({
-						submitterEmail: submitterData.email,
-						mapTitle: data.maps.name,
-						locationName: data.name,
-						mapUrl,
-					}),
-				})
-			}
+					await fetch(`${baseUrl}/api/email/approve`, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"x-internal-secret": process.env.INTERNAL_API_SECRET || "",
+						},
+						body: JSON.stringify({
+							submitterEmail: submitterData.email,
+							mapTitle: map?.name || "Map",
+							locationName: data.name,
+							mapUrl,
+						}),
+					})
+				}
 		} catch (emailError) {
 			console.error("Error sending approval email:", emailError)
 		}

@@ -69,23 +69,25 @@ export async function rejectLocationAction(locationId: string) {
 
 			if (submitterError) {
 				console.error("Error fetching submitter email:", submitterError)
-			} else if (submitterData?.email && data.maps) {
-				const baseUrl =
-					process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.com"
+				} else if (submitterData?.email && data.maps) {
+					const baseUrl =
+						process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.com"
+					const map =
+						Array.isArray(data.maps) ? data.maps[0] : data.maps
 
-				await fetch(`${baseUrl}/api/email/reject`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"x-internal-secret": process.env.INTERNAL_API_SECRET || "",
-					},
-					body: JSON.stringify({
-						submitterEmail: submitterData.email,
-						mapTitle: data.maps.name,
-						locationName: data.name,
-					}),
-				})
-			}
+					await fetch(`${baseUrl}/api/email/reject`, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"x-internal-secret": process.env.INTERNAL_API_SECRET || "",
+						},
+						body: JSON.stringify({
+							submitterEmail: submitterData.email,
+							mapTitle: map?.name || "Map",
+							locationName: data.name,
+						}),
+					})
+				}
 		} catch (emailError) {
 			console.error("Error sending rejection email:", emailError)
 		}
