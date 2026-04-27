@@ -44,7 +44,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		type: "website",
 		locale: "en_IN",
-		url: "https://www.bengalurumaps.com",
+		url: "https://www.bengalurumaps.in",
 		title: "Bengaluru Maps | Community-Driven Maps",
 		description:
 			"Discover the best cafes, restaurants, and hangout spots in Bengaluru through community-curated maps.",
@@ -77,7 +77,7 @@ export const metadata: Metadata = {
 			"max-snippet": -1,
 		},
 	},
-	metadataBase: new URL("https://www.bengalurumaps.com"),
+	metadataBase: new URL("https://www.bengalurumaps.in"),
 	alternates: {
 		canonical: "/",
 	},

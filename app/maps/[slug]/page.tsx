@@ -138,7 +138,7 @@ export default async function MapPage({ params, searchParams }: MapPageProps) {
 		"@type": "Map",
 		name: "Bengaluru Map",
 		description: "A community-driven map of locations in Bengaluru.",
-		url: `https://www.bengalurumaps.com/maps/${slug}`,
+		url: `https://www.bengalurumaps.in/maps/${slug}`,
 	}
 
 	return (

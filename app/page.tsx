@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 		title: "Bengaluru Maps | Discover the Best Places in Bengaluru",
 		description:
 			"Explore community-driven maps of Bengaluru's best cafes, restaurants, and hangout spots.",
-		url: "https://www.bengalurumaps.com/",
+		url: "https://www.bengalurumaps.in/",
 		siteName: "Bengaluru Maps",
 		locale: "en_IN",
 		type: "website",
@@ -123,10 +123,10 @@ export default async function Home({ searchParams }: HomeProps) {
 		"@context": "https://schema.org",
 		"@type": "WebSite",
 		name: "Bengaluru Maps",
-		url: "https://www.bengalurumaps.com/",
+		url: "https://www.bengalurumaps.in/",
 		potentialAction: {
 			"@type": "SearchAction",
-			target: "https://www.bengalurumaps.com/?search={search_term_string}",
+			target: "https://www.bengalurumaps.in/?search={search_term_string}",
 			"query-input": "required name=search_term_string",
 		},
 		description:
@@ -136,7 +136,7 @@ export default async function Home({ searchParams }: HomeProps) {
 			name: "Bengaluru Maps",
 			logo: {
 				"@type": "ImageObject",
-				url: "https://www.bengalurumaps.com/logo.png",
+				url: "https://www.bengalurumaps.in/logo.png",
 			},
 		},
 	}
