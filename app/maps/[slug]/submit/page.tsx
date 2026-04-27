@@ -246,12 +246,11 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 					})
 				}
 			} else {
-				// Check if the location was auto-approved (user is the map owner)
-				const isOwner = result.data?.isOwner || false
+				const autoApproved = result.data?.autoApproved || false
 
 				toast({
 					title: "Success!",
-					description: isOwner
+					description: autoApproved
 						? "Your location has been added to the map."
 						: "Your location has been submitted and is pending approval.",
 				})
@@ -289,6 +288,13 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 		return <LoadingIndicator />
 	}
 
+	const isOwner = map.owner_id === user.id
+	const isCollaborator =
+		!isOwner &&
+		Array.isArray(map.contributors) &&
+		map.contributors.some((c: { id: string }) => c.id === user.id)
+	const canAutoApprove = isOwner || isCollaborator
+
 	return (
 		<main className="min-h-[calc(100vh-4rem)] p-3 md:p-4 lg:p-6 bg-background">
 			<section className="max-w-2xl mx-auto space-y-6 md:space-y-8">
@@ -296,9 +302,11 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 					<h1 className="text-xl md:text-2xl font-bold text-foreground">
 						Submit to Community
 					</h1>
-					{map.owner_id === user.id && (
+					{canAutoApprove && (
 						<p className="text-xs md:text-sm text-muted-foreground mt-1">
-							As the map owner, your submissions will be automatically approved.
+							{isOwner
+								? "As the map owner, your submissions will be automatically approved."
+								: "As a collaborator, your submissions will be automatically approved."}
 						</p>
 					)}
 				</header>
@@ -457,7 +465,7 @@ export default function SubmitLocationPage({ params }: SubmitLocationProps) {
 									></path>
 								</svg>
 							</>
-						) : map.owner_id === user.id ? (
+						) : canAutoApprove ? (
 							"Add Location"
 						) : (
 							"Submit for Approval"
