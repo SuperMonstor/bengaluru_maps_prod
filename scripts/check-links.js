@@ -12,7 +12,7 @@ const fs = require("fs")
 const path = require("path")
 
 // Base URL of the site
-const BASE_URL = "https://www.bengalurumaps.com"
+const BASE_URL = "https://www.bengalurumaps.in"
 // Fallback URL for development testing
 const DEV_URL =
 	"https://bengaluru-maps-opdojafeq-supermonstors-projects.vercel.app"
