@@ -4,6 +4,7 @@ import { createClient } from "./supabaseServer"
 import { slugify, generateUniqueSlug, validateSlug, isReservedSlug } from "@/lib/utils/slugify"
 import { ImageProcessor } from "@/lib/utils/images"
 import { toggleUpvote } from "../votesService"
+import { notifyDiscordNewMap } from "@/lib/services/discordNotifier"
 
 export async function createMapAction(formData: FormData) {
 	try {
@@ -129,6 +130,14 @@ export async function createMapAction(formData: FormData) {
 				// Continue even if upvote fails
 			}
 		}
+
+		// Best-effort Discord ping. The helper swallows errors and timeouts
+		// so a webhook outage can't break map creation for the user.
+		await notifyDiscordNewMap({
+			title: data.name,
+			slug: data.slug,
+			creatorEmail: user.email,
+		})
 
 		return {
 			success: true,
