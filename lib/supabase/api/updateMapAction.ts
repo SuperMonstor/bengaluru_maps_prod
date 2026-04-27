@@ -155,7 +155,7 @@ export async function updateMapAction(formData: FormData) {
 			data: {
 				id: data.id,
 				title: data.name,
-				slug: slugify(data.name),
+				slug: data.slug,
 			},
 		}
 	} catch (error) {
