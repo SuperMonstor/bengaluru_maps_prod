@@ -134,22 +134,18 @@ export async function createLocationAction(formData: FormData) {
 			}
 		}
 
-		// Check if the user is the owner of the map
-		const { data: mapData, error: mapError } = await supabase
-			.from("maps")
-			.select("owner_id")
-			.eq("id", mapId)
-			.single()
+		// Auto-approve if the user can edit the map (owner or collaborator)
+		const { data: canAutoApprove, error: permError } = await supabase.rpc(
+			"has_map_edit_permission",
+			{ p_map_id: mapId, p_user_id: user.id }
+		)
 
-		if (mapError) {
+		if (permError) {
 			return {
 				success: false,
-				error: `Error checking map ownership: ${mapError.message}`,
+				error: `Error checking map permissions: ${permError.message}`,
 			}
 		}
-
-		// Auto-approve if the creator is the map owner
-		const isOwner = mapData.owner_id === user.id
 
 		// Insert the location - creator_id comes from authenticated user
 		const { data, error } = await supabase
@@ -164,8 +160,8 @@ export async function createLocationAction(formData: FormData) {
 				note: description || null,
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
-				is_approved: isOwner,
-				status: isOwner ? "approved" : "pending",
+				is_approved: !!canAutoApprove,
+				status: canAutoApprove ? "approved" : "pending",
 				city: 'Bangalore',
 			})
 			.select()
@@ -191,8 +187,8 @@ export async function createLocationAction(formData: FormData) {
 			}
 		}
 
-		// If submitter is not the owner, send notification email from server-side
-		if (!isOwner) {
+		// If the location was not auto-approved, notify the owner
+		if (!canAutoApprove) {
 			try {
 				const { data: mapData, error: mapError } = await supabase
 					.from("maps")
@@ -257,7 +253,7 @@ export async function createLocationAction(formData: FormData) {
 			error: null,
 			data: {
 				id: data.id,
-				isOwner,
+				autoApproved: !!canAutoApprove,
 			},
 		}
 	} catch (error) {
