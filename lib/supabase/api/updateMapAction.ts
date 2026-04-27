@@ -1,7 +1,6 @@
 "use server"
 
 import { createClient } from "./supabaseServer"
-import { slugify, validateSlug, isReservedSlug } from "@/lib/utils/slugify"
 import { ImageProcessor, IMAGE_CONFIG } from "@/lib/utils/images"
 import { hasMapEditPermission } from "./permissionHelpers"
 
@@ -21,12 +20,11 @@ export async function updateMapAction(formData: FormData) {
 		// Get form data
 		const mapId = formData.get("mapId") as string
 		const title = formData.get("title") as string
-		const customSlug = formData.get("slug") as string
 		const shortDescription = formData.get("shortDescription") as string
 		const body = formData.get("body") as string
 		const displayPicture = formData.get("displayPicture") as File | null
 
-		if (!mapId || !title || !customSlug || !shortDescription || !body) {
+		if (!mapId || !title || !shortDescription || !body) {
 			return { success: false, error: "Required fields are missing" }
 		}
 
@@ -39,66 +37,13 @@ export async function updateMapAction(formData: FormData) {
 			}
 		}
 
-		// Get current map data for slug comparison
-		const { data: mapData, error: mapError } = await supabase
-			.from("maps")
-			.select("owner_id, display_picture, slug")
-			.eq("id", mapId)
-			.single()
-
-		if (mapError) {
-			return {
-				success: false,
-				error: `Error fetching map: ${mapError.message}`,
-			}
-		}
-
-		// Use custom slug if provided and changed
-		let newSlug = mapData.slug
-
-		if (customSlug !== mapData.slug) {
-			// Validate custom slug
-			const validation = validateSlug(customSlug)
-			if (!validation.valid) {
-				return {
-					success: false,
-					error: validation.error || "Invalid URL slug",
-				}
-			}
-
-			// Check if new slug is reserved
-			if (isReservedSlug(customSlug)) {
-				return {
-					success: false,
-					error: "This URL is reserved. Please choose a different one.",
-				}
-			}
-
-			// Check if slug already exists
-			const { data: existingMap } = await supabase
-				.from("maps")
-				.select("slug")
-				.eq("slug", customSlug)
-				.neq("id", mapId)
-				.single()
-
-			if (existingMap) {
-				return {
-					success: false,
-					error: "This URL is already taken. Please choose a different one.",
-				}
-			}
-
-			newSlug = customSlug
-		}
-
+		// Slug is frozen at creation time and never updated through this action.
 		// Prepare update data
 		const updateData: any = {
 			name: title,
 			short_description: shortDescription,
 			body,
 			updated_at: new Date().toISOString(),
-			slug: newSlug,
 		}
 
 		// If a new image is provided, upload it
