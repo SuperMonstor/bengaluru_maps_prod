@@ -14,7 +14,7 @@ export const CREATE_MAP_CONTENT = {
 		},
 		slug: {
 			label: "URL Slug",
-			description: "This will be the URL for your map: bengalurumaps.com/maps/",
+			description: "This will be the URL for your map: bengalurumaps.in/maps/",
 			placeholder: "best-biriyani-spots-in-bengaluru",
 		},
 		shortDescription: {

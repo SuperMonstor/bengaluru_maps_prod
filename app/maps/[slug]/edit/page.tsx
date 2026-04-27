@@ -297,7 +297,7 @@ export default function EditMapPage({ params }: EditMapPageProps) {
 						<div className="space-y-1 md:space-y-2">
 							<Label htmlFor="slug" className="text-xs md:text-sm">URL Slug</Label>
 							<p className="text-xs text-gray-500">
-								This will be the URL for your map: bengalurumaps.com/maps/
+								This will be the URL for your map: bengalurumaps.in/maps/
 								<span className="font-semibold">{formData.slug || "your-slug"}</span>
 							</p>
 							<div className="relative">
