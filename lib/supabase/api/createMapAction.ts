@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "./supabaseServer"
-import { slugify, generateUniqueSlug, validateSlug, isReservedSlug } from "@/lib/utils/slugify"
+import { generateUniqueSlug, isReservedSlug } from "@/lib/utils/slugify"
 import { ImageProcessor } from "@/lib/utils/images"
 import { toggleUpvote } from "../votesService"
 import { notifyDiscordNewMap } from "@/lib/services/discordNotifier"
@@ -21,7 +21,6 @@ export async function createMapAction(formData: FormData) {
 
 		// Get form data
 		const title = formData.get("title") as string
-		const customSlug = formData.get("slug") as string
 		const shortDescription = formData.get("shortDescription") as string
 		const body = formData.get("body") as string
 		const displayPicture = formData.get("displayPicture") as File | null
@@ -44,46 +43,12 @@ export async function createMapAction(formData: FormData) {
 			}
 		}
 
-		// Handle slug generation/validation
-		let slug: string
-		if (customSlug) {
-			slug = customSlug
-			// Validate custom slug
-			const validation = validateSlug(slug)
-			if (!validation.valid) {
-				return {
-					success: false,
-					error: validation.error || "Invalid slug",
-				}
-			}
-			if (isReservedSlug(slug)) {
-				return {
-					success: false,
-					error: "This URL is reserved. Please choose a different one.",
-				}
-			}
-			// Check if slug already exists
-			const { data: existingMap } = await supabase
-				.from("maps")
-				.select("slug")
-				.eq("slug", slug)
-				.single()
-			if (existingMap) {
-				return {
-					success: false,
-					error: "This URL is already taken. Please choose a different one.",
-				}
-			}
-		} else {
-			// Generate unique slug by checking database directly
-			slug = await generateUniqueSlug(title, supabase)
-
-			// Check if slug is reserved
-			if (isReservedSlug(slug)) {
-				return {
-					success: false,
-					error: "This title generates a reserved URL. Please choose a different title.",
-				}
+		// Generate a unique slug from the title. Slug is frozen at creation time.
+		const slug = await generateUniqueSlug(title, supabase)
+		if (isReservedSlug(slug)) {
+			return {
+				success: false,
+				error: "This title generates a reserved URL. Please choose a different title.",
 			}
 		}
 

@@ -14,7 +14,6 @@ import { createMapAction } from "@/lib/supabase/api/createMapAction"
 import { Toaster } from "@/components/ui/toaster"
 import { useToast } from "@/lib/hooks/use-toast"
 import { LoadingIndicator } from "@/components/custom-ui/loading-indicator"
-import { slugify, validateSlug, isReservedSlug } from "@/lib/utils/slugify"
 import { CREATE_MAP_CONTENT } from "@/lib/constants/createMapContent"
 import { GoogleMapsListImport } from "@/components/map/GoogleMapsListImport"
 import { ParsedLocation } from "@/lib/services/googleMapsListService"
@@ -33,7 +32,6 @@ const MDXEditorDynamic = dynamic(
 
 interface CreateMapForm {
 	title: string
-	slug: string
 	shortDescription: string
 	body: string
 	displayPicture?: FileList
@@ -47,12 +45,6 @@ export default function CreateMapPage() {
 	const [imagePreview, setImagePreview] = useState<string>("")
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
 	const [charCount, setCharCount] = useState<number>(0)
-	const [slugStatus, setSlugStatus] = useState<{
-		checking: boolean
-		available: boolean | null
-		message: string
-	}>({ checking: false, available: null, message: "" })
-	const [userEditedSlug, setUserEditedSlug] = useState(false)
 	const [locationsToImport, setLocationsToImport] = useState<ParsedLocation[]>([])
 	const [lastError, setLastError] = useState<string | null>(null)
 	const [mapIdeasModalOpen, setMapIdeasModalOpen] = useState(false)
@@ -68,10 +60,8 @@ export default function CreateMapPage() {
 		watch,
 	} = useForm<CreateMapForm>()
 
-	// Watch for file changes, title, slug, and short description
+	// Watch for file changes, title, and short description
 	const displayPicture = watch("displayPicture")
-	const title = watch("title")
-	const slug = watch("slug")
 	const shortDescription = watch("shortDescription")
 
 	// Mobile detection with debounce
@@ -88,81 +78,6 @@ export default function CreateMapPage() {
 			window.removeEventListener("resize", checkMobile)
 		}
 	}, [])
-
-	// Auto-generate slug from title with debounce
-	useEffect(() => {
-		if (!title) return
-
-		const timer = setTimeout(() => {
-			if (!userEditedSlug) {
-				const generatedSlug = slugify(title)
-				setValue("slug", generatedSlug)
-			}
-		}, 500) // Wait 500ms after user stops typing
-
-		return () => clearTimeout(timer)
-	}, [title, userEditedSlug, setValue])
-
-	// Check slug availability with debounce
-	useEffect(() => {
-		if (!slug || slug.length === 0) {
-			setSlugStatus({ checking: false, available: null, message: "" })
-			return
-		}
-
-		// Validate format first
-		const validation = validateSlug(slug)
-		if (!validation.valid) {
-			setSlugStatus({
-				checking: false,
-				available: false,
-				message: validation.error || "Invalid slug format",
-			})
-			return
-		}
-
-		// Check if reserved
-		if (isReservedSlug(slug)) {
-			setSlugStatus({
-				checking: false,
-				available: false,
-				message: "This URL is reserved",
-			})
-			return
-		}
-
-		setSlugStatus({ checking: true, available: null, message: "Checking..." })
-
-		const timer = setTimeout(async () => {
-			try {
-				const response = await fetch(`/api/check-slug?slug=${encodeURIComponent(slug)}`)
-				const data = await response.json()
-
-				if (data.available) {
-					setSlugStatus({
-						checking: false,
-						available: true,
-						message: "Available!",
-					})
-				} else {
-					setSlugStatus({
-						checking: false,
-						available: false,
-						message: "This URL is already taken",
-					})
-				}
-			} catch (error) {
-				console.error("Error checking slug:", error)
-				setSlugStatus({
-					checking: false,
-					available: null,
-					message: "",
-				})
-			}
-		}, 500) // Debounce 500ms
-
-		return () => clearTimeout(timer)
-	}, [slug])
 
 	// Update character count when short description changes
 	useEffect(() => {
@@ -207,7 +122,6 @@ export default function CreateMapPage() {
 			// Create FormData for server action
 			const formData = new FormData()
 			formData.append("title", pendingFormData.title)
-			formData.append("slug", pendingFormData.slug)
 			formData.append("shortDescription", pendingFormData.shortDescription)
 			formData.append("body", pendingFormData.body)
 			formData.append("displayPicture", pendingFormData.displayPicture![0])
@@ -368,78 +282,6 @@ export default function CreateMapPage() {
 						/>
 						{errors.title && (
 							<p className="text-sm text-red-500">{errors.title.message}</p>
-						)}
-					</div>
-
-					<div className="space-y-2">
-						<label
-							htmlFor="slug"
-							className="text-xs md:text-sm font-medium text-gray-700"
-						>
-							{CREATE_MAP_CONTENT.form.slug.label} *
-						</label>
-						<p className="text-xs md:text-sm text-gray-500">
-							{CREATE_MAP_CONTENT.form.slug.description}
-							<span className="font-semibold">{slug || "your-slug"}</span>
-						</p>
-						<div className="relative">
-							<Input
-								{...register("slug", {
-									required: "URL slug is required",
-									validate: {
-										format: (value) => {
-											const validation = validateSlug(value)
-											return validation.valid || validation.error || "Invalid slug"
-										},
-										notReserved: (value) =>
-											!isReservedSlug(value) ||
-											"This URL is reserved. Please choose a different one.",
-									},
-									onChange: () => {
-										setUserEditedSlug(true)
-									},
-								})}
-								id="slug"
-								placeholder={CREATE_MAP_CONTENT.form.slug.placeholder}
-								className={`w-full border rounded-md shadow-sm text-gray-700 placeholder-gray-400 focus:ring-1 pr-10 ${
-									slugStatus.available === true
-										? "border-green-500 focus:border-green-500 focus:ring-green-500"
-										: slugStatus.available === false
-											? "border-red-500 focus:border-red-500 focus:ring-red-500"
-											: "border-gray-300 focus:border-gray-500 focus:ring-gray-500"
-								}`}
-							/>
-							{slugStatus.checking && (
-								<div className="absolute right-3 top-1/2 -translate-y-1/2">
-									<div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full"></div>
-								</div>
-							)}
-							{!slugStatus.checking && slugStatus.available === true && (
-								<div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">
-									✓
-								</div>
-							)}
-							{!slugStatus.checking && slugStatus.available === false && (
-								<div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600">
-									✗
-								</div>
-							)}
-						</div>
-						{slugStatus.message && (
-							<p
-								className={`text-sm ${
-									slugStatus.available === true
-										? "text-green-600"
-										: slugStatus.available === false
-											? "text-red-500"
-											: "text-gray-500"
-								}`}
-							>
-								{slugStatus.message}
-							</p>
-						)}
-						{errors.slug && (
-							<p className="text-sm text-red-500">{errors.slug.message}</p>
 						)}
 					</div>
 
