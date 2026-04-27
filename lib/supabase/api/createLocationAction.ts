@@ -228,7 +228,7 @@ export async function createLocationAction(formData: FormData) {
 							"Someone"
 
 						const baseUrl =
-							process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.com"
+							process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.in"
 						const mapUrl = `${baseUrl}/my-maps/${mapId}/pending`
 
 						await fetch(`${baseUrl}/api/email`, {

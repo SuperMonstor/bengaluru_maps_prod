@@ -57,7 +57,7 @@ export async function generateInviteTokenAction(
 			return { success: false, error: `Failed to generate invite token: ${error.message}` }
 		}
 
-		const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.com"
+		const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.in"
 		const inviteUrl = `${baseUrl}/invite/${data.invite_token}`
 
 		return {
@@ -109,7 +109,7 @@ export async function getInviteTokenAction(
 			return { success: false, error: "Only the map owner can view the invite link" }
 		}
 
-		const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.com"
+		const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.in"
 		const inviteUrl = data.invite_token ? `${baseUrl}/invite/${data.invite_token}` : null
 
 		return {
@@ -314,7 +314,7 @@ export async function acceptInviteAction(
 
 			if (ownerEmail && collaboratorData) {
 				const collaboratorName = `${collaboratorData.first_name || ""} ${collaboratorData.last_name || ""}`.trim() || "Someone"
-				const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.com"
+				const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.in"
 				const mapUrl = `${baseUrl}/maps/${mapData.slug}`
 
 				// Call the email API

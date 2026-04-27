@@ -71,7 +71,7 @@ export async function rejectLocationAction(locationId: string) {
 				console.error("Error fetching submitter email:", submitterError)
 				} else if (submitterData?.email && data.maps) {
 					const baseUrl =
-						process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.com"
+						process.env.NEXT_PUBLIC_SITE_URL || "https://bengalurumaps.in"
 					const map =
 						Array.isArray(data.maps) ? data.maps[0] : data.maps
 
