@@ -7,19 +7,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	// Base URLs that we know exist
 	const baseUrls = [
 		{
-			url: "https://www.bengalurumaps.com",
+			url: "https://www.bengalurumaps.in",
 			lastModified: new Date(),
 			changeFrequency: "daily" as const,
 			priority: 1,
 		},
 		{
-			url: "https://www.bengalurumaps.com/create-map",
+			url: "https://www.bengalurumaps.in/create-map",
 			lastModified: new Date(),
 			changeFrequency: "weekly" as const,
 			priority: 0.8,
 		},
 		{
-			url: "https://www.bengalurumaps.com/my-maps",
+			url: "https://www.bengalurumaps.in/my-maps",
 			lastModified: new Date(),
 			changeFrequency: "weekly" as const,
 			priority: 0.7,
@@ -36,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 			maps?.map((map) => {
 				const slug = map.slug || slugify(map.title)
 				return {
-					url: `https://www.bengalurumaps.com/maps/${slug}`,
+					url: `https://www.bengalurumaps.in/maps/${slug}`,
 					lastModified: new Date(),
 					changeFrequency: "weekly" as const,
 					priority: 0.9,
