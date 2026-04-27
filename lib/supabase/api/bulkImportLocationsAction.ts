@@ -47,22 +47,19 @@ export async function bulkImportLocationsAction(
       }
     }
 
-    // Check if user is the map owner
-    const { data: mapData, error: mapError } = await supabase
-      .from("maps")
-      .select("owner_id")
-      .eq("id", mapId)
-      .single()
+    // Auto-approve if the user can edit the map (owner or collaborator)
+    const { data: canAutoApprove, error: permError } = await supabase.rpc(
+      "has_map_edit_permission",
+      { p_map_id: mapId, p_user_id: user.id }
+    )
 
-    if (mapError || !mapData) {
+    if (permError) {
       return {
         ...result,
         success: false,
-        error: "Map not found",
+        error: "Failed to check map permissions",
       }
     }
-
-    const isOwner = mapData.owner_id === user.id
 
     // Get existing locations for duplicate detection
     const { data: existingLocations, error: existingError } = await supabase
@@ -149,8 +146,8 @@ export async function bulkImportLocationsAction(
             note: null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            is_approved: isOwner,
-            status: isOwner ? "approved" : "pending",
+            is_approved: !!canAutoApprove,
+            status: canAutoApprove ? "approved" : "pending",
             city: "Bangalore",
           })
           .select()
