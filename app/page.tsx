@@ -195,7 +195,7 @@ export default async function Home({ searchParams }: HomeProps) {
 			<div className="container mx-auto px-3 md:px-4 lg:px-6 py-6 md:py-8 max-w-6xl">
 				<div className="flex flex-col items-center justify-center mb-10">
 					<h1 className="text-[44px] font-bold text-center mb-3 tracking-tight text-[#0F172A] leading-tight">
-						Discover Bengaluru&apos;s Best Places
+						Share your Google Maps lists with Bangalore.
 					</h1>
 					<p className="text-[19px] text-center text-[#64748B] max-w-2xl mb-8 leading-relaxed">
 						Explore community-driven maps of Bengaluru&apos;s best cafes,
