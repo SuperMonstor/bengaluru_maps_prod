@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 
 		// Prepare email payload
 		const emailPayload = {
-			from: "Bengaluru Maps <notifications@bengalurumaps.com>",
+			from: "Bengaluru Maps <notifications@bengalurumaps.in>",
 			to: submitterEmail,
 			subject: sanitizeEmailSubject(
 				`Your Location "${locationName}" Has Been Approved`

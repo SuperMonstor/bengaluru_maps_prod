@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 
 		// Prepare email payload
 		const emailPayload = {
-			from: "Bengaluru Maps <notifications@bengalurumaps.com>",
+			from: "Bengaluru Maps <notifications@bengalurumaps.in>",
 			to: ownerEmail,
 			subject: sanitizeEmailSubject(
 				`New Location Submission: ${locationName}`
